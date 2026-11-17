@@ -102,11 +102,24 @@ describe('open-map normalization', () => {
         expect(map).not.toHaveProperty('propertyNames');
     });
 
-    it('still deletes an empty additionalProperties at a component root', () => {
+    it('publishes an empty additionalProperties at a component root as true', () => {
+        // A `looseObject` root. Omitting the keyword means "open" to a validator but "closed" to a code
+        // generator run with its defaults, which then drops every undeclared key on re-encode.
         const components = toOpenApiComponents({
             Root: { type: 'object', properties: { a: { type: 'string' } }, additionalProperties: {} },
         });
-        expect(components.Root.additionalProperties).toBeUndefined();
+        expect(components.Root.additionalProperties).toBe(true);
+    });
+
+    it('leaves a bare open object root without additionalProperties', () => {
+        // Already free-form to every generator; `true` would only retype it (Java: Object -> a Map
+        // that defaults to empty and is then sent as `{}`).
+        const components = toOpenApiComponents({
+            Bag: { type: 'object', additionalProperties: {} },
+            DescribedBag: { type: 'object', additionalProperties: {}, description: 'A bag.' },
+        });
+        expect(components.Bag).toEqual({ type: 'object' });
+        expect(components.DescribedBag).toEqual({ type: 'object', description: 'A bag.' });
     });
 
     it('keeps a propertyNames that actually constrains the keys', () => {

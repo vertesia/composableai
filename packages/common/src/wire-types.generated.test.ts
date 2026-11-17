@@ -1078,6 +1078,14 @@ interface Checks {
         W.ContentSourceReportQuery,
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportQuerySchema>
     >;
+    InferenceBudgetSettings: Same<
+        W.InferenceBudgetSettings,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').InferenceBudgetSettingsSchema>
+    >;
+    UpdateInferenceBudget: Same<
+        W.UpdateInferenceBudget,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').UpdateInferenceBudgetSchema>
+    >;
     CostAnalyticsQuery: Same<
         W.CostAnalyticsQuery,
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostAnalyticsQuerySchema>
@@ -1779,6 +1787,10 @@ interface Checks {
         W.InferenceProfile,
         z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileSchema>
     >;
+    InferenceProfileInvocation: Same<
+        W.InferenceProfileInvocation,
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileInvocationSchema>
+    >;
     InferenceProfileSnapshot: Same<
         W.InferenceProfileSnapshot,
         z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileSnapshotSchema>
@@ -1906,6 +1918,10 @@ interface Checks {
     ConversationStripOptions: Same<
         W.ConversationStripOptions,
         z.infer<typeof import('./api-schemas/interaction.js').ConversationStripOptionsSchema>
+    >;
+    CompactConversationOptions: Same<
+        W.CompactConversationOptions,
+        z.infer<typeof import('./api-schemas/interaction.js').CompactConversationOptionsSchema>
     >;
     CatalogInteractionRef: Same<
         W.CatalogInteractionRef,
@@ -2427,6 +2443,10 @@ interface Checks {
     OAuthProviderExchangePayload: Same<
         W.OAuthProviderExchangePayload,
         z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderExchangePayloadSchema>
+    >;
+    OAuthProviderTokenRequest: Same<
+        W.OAuthProviderTokenRequest,
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderTokenRequestSchema>
     >;
     SortOrder: Same<W.SortOrder, z.infer<typeof import('./api-schemas/interaction.js').SortOrderSchema>>;
     SortOption: Same<W.SortOption, z.infer<typeof import('./api-schemas/interaction.js').SortOptionSchema>>;
@@ -4954,6 +4974,18 @@ interface Checks {
         W.ToolErrorClassWire,
         z.infer<typeof import('./api-schemas/agent-runs.js').ToolErrorClassSchema>
     >;
+    ToolApprovalOriginWire: Same<
+        W.ToolApprovalOriginWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalOriginSchema>
+    >;
+    ToolApprovalReviewerOutcomeWire: Same<
+        W.ToolApprovalReviewerOutcomeWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalReviewerOutcomeSchema>
+    >;
+    ToolApprovalRiskLevelWire: Same<
+        W.ToolApprovalRiskLevelWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalRiskLevelSchema>
+    >;
     EvaluationGateReasonWire: Same<
         W.EvaluationGateReasonWire,
         z.infer<typeof import('./api-schemas/agent-runs.js').EvaluationGateReasonSchema>
@@ -5622,6 +5654,10 @@ interface Checks {
         W.ApiComponentTypes['OAuthProviderExchangePayload'],
         z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderExchangePayloadSchema>
     >;
+    'component:OAuthProviderTokenRequest': Same<
+        W.ApiComponentTypes['OAuthProviderTokenRequest'],
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderTokenRequestSchema>
+    >;
     'component:OAuthClientType': Same<
         W.ApiComponentTypes['OAuthClientType'],
         z.infer<typeof import('./api-schemas/oauth-server.js').OAuthClientTypeSchema>
@@ -6078,6 +6114,10 @@ interface Checks {
         W.ApiComponentTypes['InferenceProfile'],
         z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileSchema>
     >;
+    'component:InferenceProfileInvocation': Same<
+        W.ApiComponentTypes['InferenceProfileInvocation'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileInvocationSchema>
+    >;
     'component:InferenceProfileSnapshot': Same<
         W.ApiComponentTypes['InferenceProfileSnapshot'],
         z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileSnapshotSchema>
@@ -6361,6 +6401,10 @@ interface Checks {
     'component:ConversationStripOptions': Same<
         W.ApiComponentTypes['ConversationStripOptions'],
         z.infer<typeof import('./api-schemas/interaction.js').ConversationStripOptionsSchema>
+    >;
+    'component:CompactConversationOptions': Same<
+        W.ApiComponentTypes['CompactConversationOptions'],
+        z.infer<typeof import('./api-schemas/interaction.js').CompactConversationOptionsSchema>
     >;
     'component:StreamingOptions': Same<
         W.ApiComponentTypes['StreamingOptions'],
@@ -7406,6 +7450,14 @@ interface Checks {
     'component:CostAnalyticsQuery': Same<
         W.ApiComponentTypes['CostAnalyticsQuery'],
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostAnalyticsQuerySchema>
+    >;
+    'component:InferenceBudgetSettings': Same<
+        W.ApiComponentTypes['InferenceBudgetSettings'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').InferenceBudgetSettingsSchema>
+    >;
+    'component:UpdateInferenceBudget': Same<
+        W.ApiComponentTypes['UpdateInferenceBudget'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').UpdateInferenceBudgetSchema>
     >;
     'component:CostRunPriceQuery': Same<
         W.ApiComponentTypes['CostRunPriceQuery'],
@@ -8986,6 +9038,18 @@ interface Checks {
     'component:ToolErrorClass': Same<
         W.ApiComponentTypes['ToolErrorClass'],
         z.infer<typeof import('./api-schemas/agent-runs.js').ToolErrorClassSchema>
+    >;
+    'component:ToolApprovalOrigin': Same<
+        W.ApiComponentTypes['ToolApprovalOrigin'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalOriginSchema>
+    >;
+    'component:ToolApprovalReviewerOutcome': Same<
+        W.ApiComponentTypes['ToolApprovalReviewerOutcome'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalReviewerOutcomeSchema>
+    >;
+    'component:ToolApprovalRiskLevel': Same<
+        W.ApiComponentTypes['ToolApprovalRiskLevel'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalRiskLevelSchema>
     >;
     'component:EvaluationGateReason': Same<
         W.ApiComponentTypes['EvaluationGateReason'],
@@ -11031,6 +11095,8 @@ const checks: Checks = {
     ContentSourceReportEntry: true,
     ContentSourceReportAction: true,
     ContentSourceReportQuery: true,
+    InferenceBudgetSettings: true,
+    UpdateInferenceBudget: true,
     CostAnalyticsQuery: true,
     CostModelPricesQuery: true,
     CostExportQuery: true,
@@ -11225,6 +11291,7 @@ const checks: Checks = {
     InferenceProfileId: true,
     InferenceProfileName: true,
     InferenceProfile: true,
+    InferenceProfileInvocation: true,
     InferenceProfileSnapshot: true,
     ProjectInferenceProfiles: true,
     CreateInferenceProfilePayload: true,
@@ -11257,6 +11324,7 @@ const checks: Checks = {
     ProjectIntegrationConfigResponse: true,
     InteractionExecutionError: true,
     ConversationStripOptions: true,
+    CompactConversationOptions: true,
     CatalogInteractionRef: true,
     CatalogAgentSearchQuery: true,
     CatalogCallSearchQuery: true,
@@ -11397,6 +11465,7 @@ const checks: Checks = {
     OAuthProviderAuthorizeResponse: true,
     OAuthProviderAccessTokenResponse: true,
     OAuthProviderExchangePayload: true,
+    OAuthProviderTokenRequest: true,
     SortOrder: true,
     SortOption: true,
     RunSearchPayload: true,
@@ -12102,6 +12171,9 @@ const checks: Checks = {
     EvaluationSeverityWire: true,
     TurnEvaluationFlagWire: true,
     ToolErrorClassWire: true,
+    ToolApprovalOriginWire: true,
+    ToolApprovalReviewerOutcomeWire: true,
+    ToolApprovalRiskLevelWire: true,
     EvaluationGateReasonWire: true,
     EvaluationOutcomeWire: true,
     EvaluationVerdictWire: true,
@@ -12272,6 +12344,7 @@ const checks: Checks = {
     'component:OAuthProviderAuthorizeResponse': true,
     'component:OAuthProviderAccessTokenResponse': true,
     'component:OAuthProviderExchangePayload': true,
+    'component:OAuthProviderTokenRequest': true,
     'component:OAuthClientType': true,
     'component:OAuthClientStatus': true,
     'component:OAuthRegistrationSource': true,
@@ -12386,6 +12459,7 @@ const checks: Checks = {
     'component:InferenceProfileId': true,
     'component:InferenceProfileName': true,
     'component:InferenceProfile': true,
+    'component:InferenceProfileInvocation': true,
     'component:InferenceProfileSnapshot': true,
     'component:ProjectInferenceProfiles': true,
     'component:InteractionStatus': true,
@@ -12457,6 +12531,7 @@ const checks: Checks = {
     'component:InitialToolCall': true,
     'component:ConversationVisibility': true,
     'component:ConversationStripOptions': true,
+    'component:CompactConversationOptions': true,
     'component:StreamingOptions': true,
     'component:StreamingTelemetryContext': true,
     'component:ResolvedRuntimeConfig': true,
@@ -12719,6 +12794,8 @@ const checks: Checks = {
     'component:DataSchemaForAI': true,
     'component:DataStoreSchemaResponse': true,
     'component:CostAnalyticsQuery': true,
+    'component:InferenceBudgetSettings': true,
+    'component:UpdateInferenceBudget': true,
     'component:CostRunPriceQuery': true,
     'component:CostModelPricesQuery': true,
     'component:CostExportQuery': true,
@@ -13114,6 +13191,9 @@ const checks: Checks = {
     'component:EvaluationSeverity': true,
     'component:TurnEvaluationFlag': true,
     'component:ToolErrorClass': true,
+    'component:ToolApprovalOrigin': true,
+    'component:ToolApprovalReviewerOutcome': true,
+    'component:ToolApprovalRiskLevel': true,
     'component:EvaluationGateReason': true,
     'component:EvaluationOutcome': true,
     'component:EvaluationVerdict': true,
@@ -13555,6 +13635,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2815);
+        expect(Object.keys(checks)).toHaveLength(2831);
     });
 });
