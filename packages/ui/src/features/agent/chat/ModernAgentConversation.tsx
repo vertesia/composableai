@@ -169,7 +169,8 @@ function isTerminalWorkflowStatus(status: string | null | undefined): boolean {
 
 /**
  * Whether the next message can continue an ended run by restarting it. FAILED runs are excluded: a
- * failed run is a dead end, so the failed box and its explicit Restart action are shown instead.
+ * failed run is a dead end for the composer, so the failed box and its explicit Restart action
+ * (or the host's `failedAction`) are shown instead.
  */
 function canContinueWorkflowStatus(status: string | null | undefined, canRestart: boolean): boolean {
     return canRestart && isTerminalWorkflowStatus(status) && status?.toUpperCase() !== 'FAILED';
@@ -723,7 +724,7 @@ export interface ModernAgentConversationProps extends AgentBudgetRequestOverride
     /** Hide the internal message input (for apps that render their own) */
     hideMessageInput?: boolean;
     /** Custom action shown in place of the input box when the run status is FAILED.
-     *  When omitted, the default "This Workflow is FAILED" message box is shown. */
+     *  When omitted, the default failed message box is shown, with a Restart action when `onRestart` is set. */
     failedAction?: React.ReactNode;
     /** Hide the internal plan panel (for apps that render their own) */
     hidePlanPanel?: boolean;
@@ -1625,13 +1626,12 @@ function ModernAgentConversationInner({
     // When a terminal conversation can be restarted (host provided a restart handler),
     // we keep the composer visible and seamlessly resume the agent on the next message
     // instead of forcing the user to click "Continue Conversation".
-    // FAILED runs are excluded: a failed run is a dead end, so we surface the failed box /
-    // `failedAction` (e.g. an explicit Restart button) instead of silently resuming.
+    // FAILED runs are excluded: a failed run is a dead end, so we surface the failed box with its
+    // explicit Restart action (or the host's `failedAction`) instead of silently resuming.
     const canContinueConversation = useMemo(
         () => canContinueWorkflowStatus(effectiveWorkflowStatus, !!onRestart),
         [effectiveWorkflowStatus, onRestart],
     );
-    const shouldRenderMessageInputArea = !hideMessageInput || canContinueConversation;
 
     // A failed run is a dead end: the input box must never show, in any state. We key off
     // both effectiveWorkflowStatus and the authoritative API status (agentRunStatus) so the
@@ -1641,6 +1641,16 @@ function ModernAgentConversationInner({
         () => effectiveWorkflowStatus?.toUpperCase() === 'FAILED' || agentRunStatus?.toUpperCase() === 'FAILED',
         [effectiveWorkflowStatus, agentRunStatus],
     );
+    // Answering a pending question or tool approval, or restarting the run, needs workflow_run on the
+    // server. A read-only viewer (auditor, support) still sees the question, but not the controls it
+    // could never use. Hosts without a permissions provider keep the controls: the server remains the
+    // authority there.
+    const userPermissions = useContext(UserPermissionsContext);
+    const canSignalRun = !userPermissions || userPermissions.hasPermission(Permission.workflow_run);
+    // The default failed box offers Restart whenever the host can restart, so it renders even when
+    // the host hides normal input, as the composer does for a restart-capable ended run.
+    const canRestartFailedRun = isFailed && !!onRestart && canSignalRun && failedAction == null;
+    const shouldRenderMessageInputArea = !hideMessageInput || canContinueConversation || canRestartFailedRun;
     const workflowFailureReason = useMemo(() => {
         for (let index = messages.length - 1; index >= 0; index--) {
             const message = messages[index];
@@ -1681,6 +1691,29 @@ function ModernAgentConversationInner({
         return runRestartRef.current;
     }, [agentRunId, client, reconnectStream]);
 
+    // Restarts a failed run in place from the failed box. The button stays disabled until the
+    // reconnected stream reports the run running (the box then unmounts), and is cleared on error
+    // or whenever the failed state changes, so a run that fails again can be restarted again.
+    const [isRestartingFailedRun, setIsRestartingFailedRun] = useState(false);
+    useEffect(() => {
+        void isFailed;
+        setIsRestartingFailedRun(false);
+    }, [isFailed]);
+    const handleRestartFailedRun = useCallback(async () => {
+        setIsRestartingFailedRun(true);
+        try {
+            await restartAndReconnect();
+        } catch (err: unknown) {
+            setIsRestartingFailedRun(false);
+            toast({
+                title: t('agent.restartFailed'),
+                status: 'error',
+                duration: 5000,
+                description: err instanceof Error ? err.message : t('agent.unknownError'),
+            });
+        }
+    }, [restartAndReconnect, t, toast]);
+
     // Delivers a signal that continues the conversation (a message, an uploaded file). When the run has
     // ended and can be continued, it is restarted first so it resumes from the existing conversation
     // history; Temporal buffers the signal until the new run is ready to receive it. We reconnect the
@@ -1716,12 +1749,6 @@ function ModernAgentConversationInner({
     const { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile, clearProcessingFiles } =
         useFileProcessing(client, agentRunId, serverFileUpdates, toast, deliveredArtifactRefs, signalContinuingRun);
     const canUploadFiles = interactive && !hideFileUpload;
-    // Answering a pending question or tool approval signals the run, which the server only allows with
-    // workflow_run. A read-only viewer (auditor, support) still sees the question, but not the controls
-    // it could never use. Hosts without a permissions provider keep the answer controls: the server
-    // remains the authority there.
-    const userPermissions = useContext(UserPermissionsContext);
-    const canSignalRun = !userPermissions || userPermissions.hasPermission(Permission.workflow_run);
 
     const handleRemoveProcessingFile = useCallback(
         (fileId: string) => {
@@ -3010,10 +3037,23 @@ function ModernAgentConversationInner({
                         {isFailed ? (
                             // FAILED takes priority over every other branch so the composer can
                             // never render for a failed run. Use the caller's action when provided,
-                            // otherwise fall back to the default failed message box.
+                            // otherwise fall back to the default failed message box, which offers
+                            // Restart when the host can restart the run.
                             (failedAction ?? (
                                 <MessageBox status="error" title={t('agent.failed')} className="m-2">
                                     {workflowFailureReason ?? t('agent.error')}
+                                    {canRestartFailedRun && (
+                                        <div className="mt-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleRestartFailedRun}
+                                                isLoading={isRestartingFailedRun}
+                                            >
+                                                {t('agent.restartRun')}
+                                            </Button>
+                                        </div>
+                                    )}
                                 </MessageBox>
                             ))
                         ) : effectiveWorkflowStatus &&
