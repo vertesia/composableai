@@ -13,6 +13,9 @@ import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { WorkflowParamNotFoundError } from '../errors.js';
 import { safeFetch, URLValidationError } from '../security/ssrf.js';
 import { getVertesiaClientOptions } from '../utils/client.js';
+import { webhookLogTarget } from '../utils/webhookLogTarget.js';
+
+export { webhookLogTarget };
 
 export interface NotifyWebhookParams {
     webhook: string | WebHookSpec; //URL to send the notification to
@@ -75,15 +78,6 @@ function describeFetchFailure(err: unknown): { error: string; cause?: string } {
     const cause = err instanceof Error ? (err.cause as { code?: unknown; message?: unknown } | undefined) : undefined;
     const detail = cause?.code ?? cause?.message;
     return typeof detail === 'string' ? { error, cause: detail } : { error };
-}
-
-export function webhookLogTarget(url: string): string {
-    try {
-        const parsed = new URL(url);
-        return `${parsed.origin}${parsed.pathname === '/' ? '' : parsed.pathname}`;
-    } catch {
-        return '[invalid webhook URL]';
-    }
 }
 
 function validationStatusCode(error: unknown): number | undefined {
