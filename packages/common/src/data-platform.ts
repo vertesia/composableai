@@ -136,6 +136,29 @@ export const DataStoreStorageFormat = {
 export type DataStoreStorageFormat = Wire.DataStoreStorageFormat;
 
 /**
+ * Whether a write that changes a store's data, an import or a row mutation, is kept as a version. Writes that change
+ * the schema, rollbacks and snapshots are always kept.
+ */
+export const DataStoreDataWriteVersioning = {
+    /** Each data write is a version, kept within the version retention. The default. */
+    KEEP: 'keep',
+    /** A data write becomes current without being kept: once replaced, it is neither listed nor restorable. */
+    SKIP: 'skip',
+} as const;
+
+export type DataStoreDataWriteVersioning = Wire.DataStoreDataWriteVersioning;
+
+/**
+ * The versioning settings of a data store.
+ */
+export type DataStoreVersioning = Wire.DataStoreVersioning;
+
+/**
+ * Payload for changing the settings of a data store.
+ */
+export type UpdateDataStorePayload = Wire.UpdateDataStorePayload;
+
+/**
  * Summary view of a data store (for listings).
  */
 export type DataStoreItem = Wire.DataStoreItem;

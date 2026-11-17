@@ -48139,6 +48139,10 @@
       "allow_full_table": {
         "type": "boolean",
         "description": "Allow UPDATE/DELETE statements without a WHERE clause. Defaults to false."
+      },
+      "version": {
+        "type": "boolean",
+        "description": "Keep this write as a version (`true`) or not (`false`). Defaults to the store's `versioning.data_writes`. A write that is not kept becomes current, but once replaced it is neither listed nor restorable. A server older than the field keeps every write."
       }
     },
     "required": [
@@ -48223,6 +48227,25 @@
       "ducklake"
     ],
     "description": "How a data store keeps its data. `duckdb`: one DuckDB database file per version. `ducklake`: a DuckLake catalog per version over Parquet files the versions share, for stores too large to rewrite on every change."
+  },
+  "DataStoreDataWriteVersioning": {
+    "type": "string",
+    "enum": [
+      "keep",
+      "skip"
+    ],
+    "description": "Whether a data write (an import or a row mutation) is kept as a version. `keep`: each data write is a version, kept within the version retention. `skip`: the write becomes current without being kept; once another write replaces it, it is neither listed nor restorable. Writes that change the schema, rollbacks and snapshots are always kept."
+  },
+  "DataStoreVersioning": {
+    "type": "object",
+    "properties": {
+      "data_writes": {
+        "$ref": "#/components/schemas/DataStoreDataWriteVersioning",
+        "description": "Whether data writes are kept as versions when the write does not say. Defaults to `keep`."
+      }
+    },
+    "additionalProperties": false,
+    "description": "How a data store versions its writes. A field left out keeps its default."
   },
   "ImportDataFormat": {
     "type": "string",
@@ -48462,6 +48485,10 @@
       "storage_format": {
         "$ref": "#/components/schemas/DataStoreStorageFormat",
         "description": "Storage format of the new store. Defaults to `duckdb`. It cannot be changed afterwards, and `ducklake` is refused where the environment does not offer it."
+      },
+      "versioning": {
+        "$ref": "#/components/schemas/DataStoreVersioning",
+        "description": "How the store versions its writes. Every data write is kept by default."
       }
     },
     "required": [
@@ -48469,6 +48496,17 @@
     ],
     "additionalProperties": false,
     "description": "Payload for creating a new data store."
+  },
+  "UpdateDataStorePayload": {
+    "type": "object",
+    "properties": {
+      "versioning": {
+        "$ref": "#/components/schemas/DataStoreVersioning",
+        "description": "Versioning settings to change. A field left out keeps its current value."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Payload for changing the settings of a data store. A field left out keeps its current value."
   },
   "QueryValidationResult": {
     "type": "object",
@@ -48917,6 +48955,10 @@
       "version_count": {
         "type": "number",
         "description": "Number of versions stored"
+      },
+      "versioning": {
+        "$ref": "#/components/schemas/DataStoreVersioning",
+        "description": "How the store versions its writes. A server that does not report it keeps every write."
       }
     },
     "required": [
@@ -49377,6 +49419,10 @@
       "snapshot_name": {
         "type": "string",
         "description": "Snapshot name (if is_snapshot)"
+      },
+      "retained": {
+        "type": "boolean",
+        "description": "False for a data write that was not kept as a version: it is listed only while it is the current version, and cannot be restored once replaced. Absent on a kept version."
       }
     },
     "required": [
@@ -49559,6 +49605,10 @@
         "type": "string",
         "minLength": 1,
         "description": "Commit message"
+      },
+      "version": {
+        "type": "boolean",
+        "description": "Keep this write as a version (`true`) or not (`false`). Defaults to the store's `versioning.data_writes`. A write that is not kept becomes current, but once replaced it is neither listed nor restorable. A server older than the field keeps every write."
       }
     },
     "required": [
@@ -49648,6 +49698,10 @@
       "current_version": {
         "type": "string",
         "description": "ID of the version this store serves. Automatic version records expire, so this version can be missing from the version list while its data stays readable. Absent on a store not written to since immutable versions were introduced."
+      },
+      "versioning": {
+        "$ref": "#/components/schemas/DataStoreVersioning",
+        "description": "How the store versions its writes. A server that does not report it keeps every write."
       },
       "schema": {
         "$ref": "#/components/schemas/DataSchema",

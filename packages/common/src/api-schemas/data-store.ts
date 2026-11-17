@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
     DataColumnType,
+    DataStoreDataWriteVersioning,
     DataStoreStatus,
     DataStoreStorageFormat,
     ImportStatus,
@@ -161,6 +162,37 @@ export const QueryPayloadSchema = z
     })
     .meta({ id: 'QueryPayload', description: 'Payload for executing a query.' });
 
+export const DataStoreDataWriteVersioningSchema = z.enum(DataStoreDataWriteVersioning).meta({
+    id: 'DataStoreDataWriteVersioning',
+    description:
+        'Whether a data write (an import or a row mutation) is kept as a version. `keep`: each data write is a ' +
+        'version, kept within the version retention. `skip`: the write becomes current without being kept; once ' +
+        'another write replaces it, it is neither listed nor restorable. Writes that change the schema, rollbacks ' +
+        'and snapshots are always kept.',
+});
+
+export const DataStoreVersioningSchema = z
+    .strictObject({
+        data_writes: DataStoreDataWriteVersioningSchema.meta({
+            description: 'Whether data writes are kept as versions when the write does not say. Defaults to `keep`.',
+        }).optional(),
+    })
+    .meta({
+        id: 'DataStoreVersioning',
+        description: 'How a data store versions its writes. A field left out keeps its default.',
+    });
+
+/** The `version` field of a data write: the per-write override of the store's `versioning.data_writes`. */
+const DATA_WRITE_VERSION_FIELD = z
+    .boolean()
+    .meta({
+        description:
+            "Keep this write as a version (`true`) or not (`false`). Defaults to the store's " +
+            '`versioning.data_writes`. A write that is not kept becomes current, but once replaced it is neither ' +
+            'listed nor restorable. A server older than the field keeps every write.',
+    })
+    .optional();
+
 export const DataStoreMutateRowsResultSchema = z
     .strictObject({
         version_id: z.string().meta({ description: 'Resulting data store version ID' }),
@@ -183,6 +215,7 @@ export const DataStoreMutateRowsPayloadSchema = z
             .boolean()
             .meta({ description: 'Allow UPDATE/DELETE statements without a WHERE clause. Defaults to false.' })
             .optional(),
+        version: DATA_WRITE_VERSION_FIELD,
     })
     .meta({
         id: 'DataStoreMutateRowsPayload',
@@ -321,8 +354,22 @@ export const CreateDataStorePayloadSchema = z
                 'Storage format of the new store. Defaults to `duckdb`. It cannot be changed afterwards, and ' +
                 '`ducklake` is refused where the environment does not offer it.',
         }).optional(),
+        versioning: DataStoreVersioningSchema.meta({
+            description: 'How the store versions its writes. Every data write is kept by default.',
+        }).optional(),
     })
     .meta({ id: 'CreateDataStorePayload', description: 'Payload for creating a new data store.' });
+
+export const UpdateDataStorePayloadSchema = z
+    .strictObject({
+        versioning: DataStoreVersioningSchema.meta({
+            description: 'Versioning settings to change. A field left out keeps its current value.',
+        }).optional(),
+    })
+    .meta({
+        id: 'UpdateDataStorePayload',
+        description: 'Payload for changing the settings of a data store. A field left out keeps its current value.',
+    });
 
 export const QueryValidationResultSchema = z
     .strictObject({
@@ -495,6 +542,9 @@ export const DataStoreItemSchema = z
         }).optional(),
         last_import_at: z.string().meta({ description: 'Last import timestamp' }).optional(),
         version_count: z.number().meta({ description: 'Number of versions stored' }),
+        versioning: DataStoreVersioningSchema.meta({
+            description: 'How the store versions its writes. A server that does not report it keeps every write.',
+        }).optional(),
     })
     .meta({ id: 'DataStoreItem', description: 'Summary view of a data store (for listings).' });
 
@@ -672,6 +722,14 @@ export const DataStoreVersionSchema = z
         gcs_path_id: z.string().meta({ description: 'Timestamp-based ID used for GCS path (internal)' }).optional(),
         is_snapshot: z.boolean().meta({ description: 'Whether this is a named snapshot' }).optional(),
         snapshot_name: z.string().meta({ description: 'Snapshot name (if is_snapshot)' }).optional(),
+        retained: z
+            .boolean()
+            .meta({
+                description:
+                    'False for a data write that was not kept as a version: it is listed only while it is the ' +
+                    'current version, and cannot be restored once replaced. Absent on a kept version.',
+            })
+            .optional(),
     })
     .meta({ id: 'DataStoreVersion', description: 'A point-in-time version of a data store.' });
 
@@ -728,6 +786,7 @@ export const ImportDataPayloadSchema = z
         tables: ImportTableDataMapSchema.meta({ description: 'Map of table name to data specification' }),
         mode: z.enum(['append', 'replace']).meta({ description: 'Import mode' }),
         message: z.string().min(1).meta({ description: 'Commit message' }),
+        version: DATA_WRITE_VERSION_FIELD,
     })
     .meta({ id: 'ImportDataPayload', description: 'Payload for importing data into tables.' });
 
@@ -761,6 +820,9 @@ export const DataStoreSchema = z
                     'ID of the version this store serves. Automatic version records expire, so this version can be missing from the version list while its data stays readable. Absent on a store not written to since immutable versions were introduced.',
             })
             .optional(),
+        versioning: DataStoreVersioningSchema.meta({
+            description: 'How the store versions its writes. A server that does not report it keeps every write.',
+        }).optional(),
         schema: DataSchemaSchema.meta({ description: 'Complete schema definition' }),
         gcs_bucket: z.string().meta({ description: 'GCS bucket name' }),
         gcs_path: z.string().meta({ description: 'Path prefix within the bucket' }),

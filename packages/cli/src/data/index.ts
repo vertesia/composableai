@@ -1,5 +1,5 @@
 import type { Command } from 'commander';
-import { createDataStore, importData, listDataStores } from './commands.js';
+import { createDataStore, importData, listDataStores, updateDataStore } from './commands.js';
 import { collectParam, exportDashboard, exportDashboardPreview, listDashboards } from './dashboards.js';
 
 export function registerDataCommand(program: Command) {
@@ -23,9 +23,26 @@ export function registerDataCommand(program: Command) {
             '--storage-format <format>',
             'How the store keeps its data: duckdb (default), or ducklake for stores too large to rewrite on every change',
         )
+        .option(
+            '--data-writes <versioning>',
+            'Whether imports and row mutations are kept as versions by default: keep (default) or skip. ' +
+                'Schema changes are always kept.',
+        )
         .option('--json', 'Output full JSON instead of a short summary')
         .action(async (name: string, options: Record<string, unknown>) => {
             await createDataStore(program, name, options);
+        });
+
+    data.command('update <storeId>')
+        .description('Change the settings of a data store')
+        .option(
+            '--data-writes <versioning>',
+            'Whether imports and row mutations are kept as versions by default: keep or skip. ' +
+                'Schema changes are always kept.',
+        )
+        .option('--json', 'Output full JSON instead of a short summary')
+        .action(async (storeId: string, options: Record<string, unknown>) => {
+            await updateDataStore(program, storeId, options);
         });
 
     data.command('import <storeId> <tableName> [input]')
@@ -38,6 +55,12 @@ export function registerDataCommand(program: Command) {
         .option('--name [name]', 'Uploaded filename to use when reading from stdin or overriding a local filename')
         .option('--mime [mimeType]', 'MIME type for uploads from local files or stdin')
         .option('--prefix [pathPrefix]', 'Custom staging prefix in project storage for uploaded local files')
+        .option('--keep-version', "Keep this import as a version, whatever the store's default")
+        .option(
+            '--skip-version',
+            "Do not keep this import as a version, whatever the store's default: it becomes current, but once " +
+                'replaced it cannot be restored',
+        )
         .option('--json', 'Output full JSON instead of a short summary')
         .action(
             async (storeId: string, tableName: string, input: string | undefined, options: Record<string, unknown>) => {

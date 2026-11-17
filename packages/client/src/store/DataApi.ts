@@ -24,6 +24,7 @@ import {
     type QueryPayload,
     type QueryResult,
     type QueryValidationResult,
+    type UpdateDataStorePayload,
     type UpdateSchemaPayload,
 } from '@vertesia/common';
 import { withImportId } from '../idempotency-key.js';
@@ -94,6 +95,24 @@ export class DataApi extends DataServerTopic {
      */
     retrieve(id: string): Promise<DataStore> {
         return this.get(`/${id}`, { headers: this.storeHeaders(id) });
+    }
+
+    /**
+     * Change the settings of a data store. A field left out keeps its current value, and the change applies to the
+     * writes that start after it.
+     *
+     * @param id - Data store ID
+     * @param payload - The settings to change
+     * @returns The updated data store
+     *
+     * @example
+     * ```typescript
+     * // Imports and row mutations no longer keep a version unless they ask for one.
+     * await client.data.update(storeId, { versioning: { data_writes: 'skip' } });
+     * ```
+     */
+    update(id: string, payload: UpdateDataStorePayload): Promise<DataStore> {
+        return this.put(`/${id}`, { payload, headers: this.storeHeaders(id) });
     }
 
     /**

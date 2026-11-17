@@ -4,11 +4,14 @@ import { basename, resolve } from 'node:path';
 import { NodeStreamSource } from '@vertesia/client/node';
 import {
     type CreateDataStorePayload,
+    DataStoreDataWriteVersioning,
     type DataStoreItem,
     DataStoreStorageFormat,
+    type DataStoreVersioning,
     type ImportDataFormat,
     type ImportDataPayload,
     type ImportTableData,
+    type UpdateDataStorePayload,
 } from '@vertesia/common';
 import type { Command } from 'commander';
 import mime from 'mime';
@@ -27,18 +30,27 @@ export type ImportDataOptions = CliOptions<{
     prefix?: string;
     mime?: string;
     message?: string;
+    keepVersion?: boolean;
+    skipVersion?: boolean;
 }>;
 
 const STORAGE_FORMATS = new Set<string>(Object.values(DataStoreStorageFormat));
+const DATA_WRITE_VERSIONING = new Set<string>(Object.values(DataStoreDataWriteVersioning));
 
 export type CreateDataStoreOptions = CliOptions<{
     description?: string;
     tag?: string[];
     storageFormat?: string;
+    dataWrites?: string;
     json?: boolean;
 }>;
 
-/** The payload of `vertesia data create`: the format is sent only when the caller names one. */
+export type UpdateDataStoreOptions = CliOptions<{
+    dataWrites?: string;
+    json?: boolean;
+}>;
+
+/** The payload of `vertesia data create`: the format and versioning are sent only when the caller names them. */
 export function buildCreateDataStorePayload(name: string, options: CreateDataStoreOptions): CreateDataStorePayload {
     const payload: CreateDataStorePayload = { name };
     const description = getStringOption(options.description);
@@ -52,7 +64,56 @@ export function buildCreateDataStorePayload(name: string, options: CreateDataSto
         }
         payload.storage_format = format as CreateDataStorePayload['storage_format'];
     }
+    const versioning = buildVersioning(options.dataWrites);
+    if (versioning) payload.versioning = versioning;
     return payload;
+}
+
+/** The payload of `vertesia data update`: only the settings the caller names. */
+export function buildUpdateDataStorePayload(options: UpdateDataStoreOptions): UpdateDataStorePayload {
+    const versioning = buildVersioning(options.dataWrites);
+    if (!versioning) {
+        throw new Error('Nothing to update: pass --data-writes keep|skip');
+    }
+    return { versioning };
+}
+
+function buildVersioning(rawDataWrites: unknown): DataStoreVersioning | undefined {
+    const dataWrites = getStringOption(rawDataWrites);
+    if (dataWrites === undefined) return undefined;
+    if (!DATA_WRITE_VERSIONING.has(dataWrites)) {
+        throw new Error(`Invalid --data-writes '${dataWrites}': use ${[...DATA_WRITE_VERSIONING].join(' or ')}`);
+    }
+    return { data_writes: dataWrites as DataStoreDataWriteVersioning };
+}
+
+/**
+ * The `version` of an import: `--keep-version` or `--skip-version` override the store's default, and neither leaves
+ * the choice to the store, so nothing is sent.
+ */
+export function importVersionChoice(
+    options: Pick<ImportDataOptions, 'keepVersion' | 'skipVersion'>,
+): boolean | undefined {
+    if (options.keepVersion === true && options.skipVersion === true) {
+        throw new Error('Pass --keep-version or --skip-version, not both');
+    }
+    if (options.keepVersion === true) return true;
+    if (options.skipVersion === true) return false;
+    return undefined;
+}
+
+export async function updateDataStore(program: Command, storeId: string, options: UpdateDataStoreOptions) {
+    const payload = buildUpdateDataStorePayload(options);
+    const client = await getClient(program);
+    const store = await client.data.update(storeId, payload);
+    if (options.json) {
+        console.log(JSON.stringify(store, null, 2));
+        return;
+    }
+    // A server older than the field keeps every data write.
+    console.log(
+        `Updated data store ${store.id} (data writes: ${store.versioning?.data_writes ?? DataStoreDataWriteVersioning.KEEP})`,
+    );
 }
 
 export async function createDataStore(program: Command, name: string, options: CreateDataStoreOptions) {
@@ -101,6 +162,8 @@ export async function importData(
     input: string | undefined,
     options: ImportDataOptions,
 ) {
+    // Checked before anything is uploaded.
+    const version = importVersionChoice(options);
     const client = await getClient(program);
     const mode = normalizeMode(options.mode);
     const source = await resolveImportSource(client, storeId, input, options);
@@ -111,6 +174,7 @@ export async function importData(
         tables: {
             [tableName]: source.tableData,
         },
+        ...(version !== undefined ? { version } : {}),
     };
 
     const job = await client.data.import(storeId, payload);

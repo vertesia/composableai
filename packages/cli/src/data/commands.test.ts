@@ -3,8 +3,32 @@ import {
     buildCreateDataStorePayload,
     buildImportMessage,
     buildImportUploadPath,
+    buildUpdateDataStorePayload,
+    importVersionChoice,
     withoutUrlSecrets,
 } from './commands.js';
+
+describe('data write versioning options', () => {
+    it('sends the versioning of a new store only when it is named', () => {
+        expect(buildCreateDataStorePayload('sales', {})).not.toHaveProperty('versioning');
+        expect(buildCreateDataStorePayload('sales', { dataWrites: 'skip' }).versioning).toEqual({
+            data_writes: 'skip',
+        });
+        expect(() => buildCreateDataStorePayload('sales', { dataWrites: 'never' })).toThrow(/keep or skip/);
+    });
+
+    it('updates the settings it is given, and refuses an update that names none', () => {
+        expect(buildUpdateDataStorePayload({ dataWrites: 'keep' })).toEqual({ versioning: { data_writes: 'keep' } });
+        expect(() => buildUpdateDataStorePayload({})).toThrow(/Nothing to update/);
+    });
+
+    it('leaves the choice of an import to the store unless a flag makes it', () => {
+        expect(importVersionChoice({})).toBeUndefined();
+        expect(importVersionChoice({ keepVersion: true })).toBe(true);
+        expect(importVersionChoice({ skipVersion: true })).toBe(false);
+        expect(() => importVersionChoice({ keepVersion: true, skipVersion: true })).toThrow(/not both/);
+    });
+});
 
 describe('buildImportMessage', () => {
     it('names the source by the label it is given', () => {
