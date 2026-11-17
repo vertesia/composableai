@@ -4108,7 +4108,11 @@ export type InferenceProfile = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
 };
+export type InferenceProfileInvocation = 'execute' | 'decide' | 'shadow';
 export type InferenceProfileSnapshot = {
     id?: InferenceProfileId | undefined;
     name: InferenceProfileName;
@@ -4140,6 +4144,9 @@ export type CreateInferenceProfilePayload = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
 };
 export type UpdateInferenceProfilePayload = {
     name: InferenceProfileName;
@@ -4147,6 +4154,9 @@ export type UpdateInferenceProfilePayload = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
 };
 export type InferenceProfileRecord = {
     name: InferenceProfileName;
@@ -4154,6 +4164,9 @@ export type InferenceProfileRecord = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
     id: string;
     project: string;
     created_at: string;
@@ -11949,6 +11962,7 @@ export interface ApiComponentTypes {
     InferenceProfileId: InferenceProfileId;
     InferenceProfileName: InferenceProfileName;
     InferenceProfile: InferenceProfile;
+    InferenceProfileInvocation: InferenceProfileInvocation;
     InferenceProfileSnapshot: InferenceProfileSnapshot;
     ProjectInferenceProfiles: ProjectInferenceProfiles;
     InteractionStatus: InteractionStatusWire;
