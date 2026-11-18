@@ -193,7 +193,13 @@ export const CreateOAuthProviderPayloadSchema = oauthProviderPayloadSchema
         name: z.string().regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/),
         display_name: z.string().min(1),
         client_id: z.string().min(1),
-        sharepoint_permission_site: z.url().optional(),
+        sharepoint_permission_site: z
+            .url()
+            .meta({
+                description:
+                    'Immutable SharePoint site URL for a dedicated permission reader. Create a replacement provider to change its site or credential.',
+            })
+            .optional(),
     })
     .meta({
         id: 'CreateOAuthProviderPayload',

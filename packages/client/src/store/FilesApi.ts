@@ -297,8 +297,8 @@ export class FilesApi extends ApiTopic {
     }
 
     async downloadFile(location: string): Promise<ReadableStream<Uint8Array<ArrayBuffer>>> {
-        //if start with HTTPS, no download url needed - assume it's signed already
-        const needSign = !/^https?:\/\//.test(location);
+        // A supplied HTTPS URL can already be signed.
+        const needSign = !location.startsWith('https:');
         const { url } = needSign ? await this.getDownloadUrl(location) : { url: location };
 
         let res: Response;

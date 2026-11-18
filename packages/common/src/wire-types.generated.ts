@@ -2346,11 +2346,11 @@ export type BoxContentSource = {
 };
 export type ContentSourcePermissionSettings = ProjectContentSourcePermissions | SharePointContentSourcePermissions;
 export type ContentSourcePermissionStatus = {
-    state: 'activating' | 'current' | 'stale' | 'failed_closed';
+    state: string;
     version: number;
     refreshed_at?: string | undefined;
     unresolved: number;
-    reason?: 'reconciling' | 'source_refused' | 'refresh_failed' | 'verification_expired' | undefined;
+    reason?: string | undefined;
 };
 export type ProjectContentSourcePermissions = {
     mode: 'project';

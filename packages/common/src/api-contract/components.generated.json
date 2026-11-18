@@ -7415,7 +7415,8 @@
       },
       "sharepoint_permission_site": {
         "type": "string",
-        "format": "uri"
+        "format": "uri",
+        "description": "Immutable SharePoint site URL for a dedicated permission reader. Create a replacement provider to change its site or credential."
       }
     },
     "required": [
@@ -38638,7 +38639,8 @@
     },
     "required": [
       "mode"
-    ]
+    ],
+    "additionalProperties": false
   },
   "SharePointContentSourcePermissions": {
     "type": "object",
@@ -38680,7 +38682,8 @@
       "entra_tenant_id",
       "scim_connection_id",
       "permission_reader_provider_id"
-    ]
+    ],
+    "additionalProperties": false
   },
   "ContentSourcePermissionSettings": {
     "discriminator": {
@@ -38701,20 +38704,14 @@
     "type": "object",
     "required": [
       "mode"
-    ],
-    "additionalProperties": false
+    ]
   },
   "ContentSourcePermissionStatus": {
     "type": "object",
     "properties": {
       "state": {
         "type": "string",
-        "enum": [
-          "activating",
-          "current",
-          "stale",
-          "failed_closed"
-        ]
+        "description": "Permission state, currently activating, current, stale, or failed_closed."
       },
       "version": {
         "type": "integer",
@@ -38733,12 +38730,7 @@
       },
       "reason": {
         "type": "string",
-        "enum": [
-          "reconciling",
-          "source_refused",
-          "refresh_failed",
-          "verification_expired"
-        ]
+        "description": "Status reason, currently reconciling, source_refused, refresh_failed, or verification_expired."
       }
     },
     "required": [

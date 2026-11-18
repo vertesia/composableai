@@ -46,11 +46,19 @@ export const ContentSourcePermissionSettingsSchema = z
 
 export const ContentSourcePermissionStatusSchema = z
     .strictObject({
-        state: z.enum(['activating', 'current', 'stale', 'failed_closed']),
+        state: z
+            .string()
+            .meta({ description: 'Permission state, currently activating, current, stale, or failed_closed.' }),
         version: z.number().int().nonnegative(),
         refreshed_at: z.iso.datetime().optional(),
         unresolved: z.number().int().nonnegative(),
-        reason: z.enum(['reconciling', 'source_refused', 'refresh_failed', 'verification_expired']).optional(),
+        reason: z
+            .string()
+            .meta({
+                description:
+                    'Status reason, currently reconciling, source_refused, refresh_failed, or verification_expired.',
+            })
+            .optional(),
     })
     .meta({ id: 'ContentSourcePermissionStatus' });
 

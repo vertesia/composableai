@@ -2,6 +2,22 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ZenoClient } from './client.js';
 
 describe('FilesApi', () => {
+    it('resolves HTTP locations through the Store download API', async () => {
+        const location = 'http://storage.test/file';
+        const client = new ZenoClient({ serverUrl: 'https://store.test', apikey: 'test-token' });
+        const getDownloadUrl = vi.spyOn(client.files, 'getDownloadUrl').mockResolvedValue({
+            id: 'file',
+            path: location,
+            url: 'https://storage.test/signed',
+        });
+        const fetchDownloadUrl = vi.spyOn(client.files, 'fetchDownloadUrl').mockResolvedValue(new Response('content'));
+
+        await client.files.downloadFile(location);
+
+        expect(getDownloadUrl).toHaveBeenCalledWith(location);
+        expect(fetchDownloadUrl).toHaveBeenCalledWith('https://storage.test/signed');
+    });
+
     it('redeems a managed file with the Store credential and refuses redirects on that request', async () => {
         const url = 'https://store.test/api/v1/files/source-download/00000000000000000000000000000000';
         const fetch = vi.fn(async (input: RequestInfo, init?: RequestInit) => {
