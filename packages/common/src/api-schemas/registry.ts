@@ -2004,6 +2004,8 @@ const EVENT_INGEST_SCHEMAS = {
 
 const CONTENT_SOURCE_SCHEMAS = {
     ContentSourceSyncSettings: ContentSourceSchemas.ContentSourceSyncSettingsSchema,
+    ContentSourcePermissionSettings: ContentSourceSchemas.ContentSourcePermissionSettingsSchema,
+    ContentSourcePermissionStatus: ContentSourceSchemas.ContentSourcePermissionStatusSchema,
     SharePointContentSource: ContentSourceSchemas.SharePointContentSourceSchema,
     BoxContentSource: ContentSourceSchemas.BoxContentSourceSchema,
     ExternalContentSource: ContentSourceSchemas.ExternalContentSourceSchema,
@@ -2721,6 +2723,8 @@ const API_SCHEMAS: Readonly<Record<string, z.ZodType>> = mergeComponentGroups(AP
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ContentSourceSyncSettings',
+    'ContentSourcePermissionSettings',
+    'ContentSourcePermissionStatus',
     'SharePointContentSource',
     'BoxContentSource',
     'CreateSharePointContentSourcePayload',

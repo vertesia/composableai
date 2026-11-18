@@ -502,17 +502,9 @@ export async function downloadObjectContent(program: Command, objectId: string, 
         process.exit(1);
     }
 
-    // Get download URL and stream content
-    const { url } = await client.files.getDownloadUrl(contentSource.source);
-    const response = await fetch(url);
-
-    if (!response.ok || !response.body) {
-        console.error(`Failed to download: ${response.statusText}`);
-        process.exit(1);
-    }
-
+    const body = await client.files.downloadFile(contentSource.source);
     const outputPath = getStringOption(options.output) || object.name;
-    const nodeStream = Readable.fromWeb(response.body as NodeReadableStream<Uint8Array>);
+    const nodeStream = Readable.fromWeb(body as NodeReadableStream<Uint8Array>);
     const writeStream = createWriteStream(outputPath);
     await pipeline(nodeStream, writeStream);
 

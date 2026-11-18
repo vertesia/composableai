@@ -5,6 +5,7 @@ import {
     CONTENT_SOURCE_REPORT_MAX_LIMIT,
     CONTENT_SOURCE_REPORT_ROUNDS,
 } from '../content-sources.js';
+import { OBJECT_ID_PATTERN } from './schema-primitives.js';
 
 const CONTENT_SOURCE_NAME_MAX_LENGTH = 128;
 
@@ -23,6 +24,34 @@ export const ContentSourceSyncSettingsSchema = z
         description:
             'When the source syncs. A source with scheduled sync disabled still syncs on `POST /content-sources/{id}/sync`.',
     });
+
+export const ProjectContentSourcePermissionsSchema = z.strictObject({ mode: z.literal('project') }).meta({
+    id: 'ProjectContentSourcePermissions',
+});
+export const SharePointContentSourcePermissionsSchema = z
+    .strictObject({
+        mode: z.literal('source'),
+        entra_tenant_id: z.uuid(),
+        scim_connection_id: z.string().regex(OBJECT_ID_PATTERN),
+        permission_reader_provider_id: z.string().regex(OBJECT_ID_PATTERN),
+        tenant_group_id: z.string().regex(OBJECT_ID_PATTERN).optional(),
+        refresh_minutes: z.number().int().min(15).max(1440).optional(),
+        max_stale_hours: z.number().int().min(1).max(168).optional(),
+    })
+    .meta({ id: 'SharePointContentSourcePermissions' });
+export const ContentSourcePermissionSettingsSchema = z
+    .union([ProjectContentSourcePermissionsSchema, SharePointContentSourcePermissionsSchema])
+    .meta({ id: 'ContentSourcePermissionSettings' });
+
+export const ContentSourcePermissionStatusSchema = z
+    .strictObject({
+        state: z.enum(['activating', 'current', 'stale', 'failed_closed']),
+        version: z.number().int().nonnegative(),
+        refreshed_at: z.iso.datetime().optional(),
+        unresolved: z.number().int().nonnegative(),
+        reason: z.enum(['reconciling', 'source_refused', 'refresh_failed', 'verification_expired']).optional(),
+    })
+    .meta({ id: 'ContentSourcePermissionStatus' });
 
 const commonSourceFields = {
     id: z.string(),
@@ -49,6 +78,7 @@ export const SharePointContentSourceSchema = z
     .strictObject({
         ...commonSourceFields,
         type: z.literal('sharepoint'),
+        permissions: ContentSourcePermissionSettingsSchema.optional(),
         site_url: z.string().meta({ description: 'The SharePoint site URL the source was created from.' }),
         site_id: z.string().meta({ description: 'The Microsoft Graph site ID.' }),
         drive_id: z.string().meta({ description: 'The Microsoft Graph drive ID of the document library.' }),
@@ -111,6 +141,7 @@ export const CreateSharePointContentSourcePayloadSchema = z
     .strictObject({
         ...commonCreateFields,
         type: z.literal('sharepoint'),
+        permissions: ContentSourcePermissionSettingsSchema.optional(),
         site_url: z.string().min(1).meta({
             description: 'The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`.',
         }),
@@ -160,6 +191,7 @@ export const UpdateContentSourcePayloadSchema = z
         name: z.string().min(1).max(CONTENT_SOURCE_NAME_MAX_LENGTH).optional(),
         description: z.string().optional(),
         sync: ContentSourceSyncSettingsSchema.optional(),
+        permissions: ContentSourcePermissionSettingsSchema.optional(),
     })
     .meta({
         id: 'UpdateContentSourcePayload',
@@ -232,6 +264,7 @@ export const ContentSourceStatusSchema = z
                 '`waiting` between syncs, `running` during one, `stopped` when its credentials were refused or the ' +
                 'source is being deleted.',
         }),
+        permissions: ContentSourcePermissionStatusSchema.optional(),
         current_round: ContentSourceSyncRoundSchema.optional(),
         last_round: ContentSourceSyncRoundSchema.optional(),
         recent_rounds: z

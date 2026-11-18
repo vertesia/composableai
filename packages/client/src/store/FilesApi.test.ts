@@ -2,6 +2,21 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ZenoClient } from './client.js';
 
 describe('FilesApi', () => {
+    it('redeems a managed file with the Store credential and refuses redirects on that request', async () => {
+        const url = 'https://store.test/api/v1/files/source-download/00000000000000000000000000000000';
+        const fetch = vi.fn(async (request: Request) => {
+            if (request.method === 'POST') return Response.json({ url, authentication_required: true });
+            expect(request.url).toBe(url);
+            expect(request.headers.get('authorization')).toBe('Bearer test-token');
+            expect(request.redirect).toBe('error');
+            return new Response('content');
+        });
+        const client = new ZenoClient({ serverUrl: 'https://store.test', apikey: 'test-token', fetch });
+        const stream = await client.files.downloadFile('sharepoint://source/file');
+        expect(await new Response(stream).text()).toBe('content');
+        expect(fetch).toHaveBeenCalledTimes(2);
+    });
+
     it('retrieves a durable audio result through the authenticated file API', async () => {
         const bytes = new Uint8Array([82, 73, 70, 70, 1, 2, 3]);
         const sign = vi.fn(async () => Response.json({ url: 'https://signed.example/speech.wav' }));

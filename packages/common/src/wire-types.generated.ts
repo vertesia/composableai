@@ -540,6 +540,8 @@ export type AccountApiKeyArray = AccountApiKey[];
 export type CreateAccountApiKeyPayload = {
     name: string;
     expires_at?: string | undefined;
+    scim_entra_tenant_id?: string | undefined;
+    scim_entra_members_group_id?: string | undefined;
 };
 export type UpdateAccountApiKeyPayload = {
     name?: string | undefined;
@@ -2308,6 +2310,7 @@ export type SharePointContentSource = {
     created_at?: string | undefined;
     updated_at?: string | undefined;
     type: 'sharepoint';
+    permissions?: ContentSourcePermissionSettings | undefined;
     site_url: string;
     site_id: string;
     drive_id: string;
@@ -2332,6 +2335,26 @@ export type BoxContentSource = {
     folder_name: string;
     folder_path: string;
 };
+export type ContentSourcePermissionSettings = ProjectContentSourcePermissions | SharePointContentSourcePermissions;
+export type ContentSourcePermissionStatus = {
+    state: 'activating' | 'current' | 'stale' | 'failed_closed';
+    version: number;
+    refreshed_at?: string | undefined;
+    unresolved: number;
+    reason?: 'reconciling' | 'source_refused' | 'refresh_failed' | 'verification_expired' | undefined;
+};
+export type ProjectContentSourcePermissions = {
+    mode: 'project';
+};
+export type SharePointContentSourcePermissions = {
+    mode: 'source';
+    entra_tenant_id: string;
+    scim_connection_id: string;
+    permission_reader_provider_id: string;
+    tenant_group_id?: string | undefined;
+    refresh_minutes?: number | undefined;
+    max_stale_hours?: number | undefined;
+};
 export type ContentSourceSyncSettings = {
     enabled: boolean;
     interval_minutes: number;
@@ -2346,6 +2369,7 @@ export type CreateSharePointContentSourcePayload = {
     collection_id?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
     type: 'sharepoint';
+    permissions?: ContentSourcePermissionSettings | undefined;
     site_url: string;
     library_name?: string | undefined;
     folder_path?: string | undefined;
@@ -2364,6 +2388,7 @@ export type UpdateContentSourcePayload = {
     name?: string | undefined;
     description?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
+    permissions?: ContentSourcePermissionSettings | undefined;
 };
 export type SyncContentSourcePayload = {
     full?: boolean | undefined;
@@ -2371,6 +2396,7 @@ export type SyncContentSourcePayload = {
 /** A content source's sync state. */
 export type ContentSourceStatus = {
     state: 'not_started' | 'running' | 'waiting' | 'stopped';
+    permissions?: ContentSourcePermissionStatus | undefined;
     current_round?: ContentSourceSyncRound | undefined;
     last_round?: ContentSourceSyncRound | undefined;
     recent_rounds?: ContentSourceSyncRound[] | undefined;
@@ -5673,6 +5699,7 @@ export type OAuthProviderData = {
     certificate?: string | undefined;
     default_scopes?: string[] | undefined;
     allowed_scopes?: string[] | undefined;
+    sharepoint_permission_site?: string | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
@@ -5697,6 +5724,7 @@ export type OAuthProvider = {
     certificate?: string | undefined;
     default_scopes?: string[] | undefined;
     allowed_scopes?: string[] | undefined;
+    sharepoint_permission_site?: string | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
@@ -5725,6 +5753,7 @@ export type CreateOAuthProviderPayload = {
     use_pkce?: boolean | undefined;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
+    sharepoint_permission_site?: string | undefined;
 };
 /**
  * Payload for updating an OAuth Provider.
@@ -9112,6 +9141,7 @@ export type GetFileUrlResponse = {
     id: string;
     mime_type?: string | undefined;
     path: string;
+    authentication_required?: boolean | undefined;
 };
 export type EnsureBucketReadAccessPayload = {
     principal: string;
@@ -12588,6 +12618,8 @@ export interface ApiComponentTypes {
     UpdateEventIngestChannelPayload: UpdateEventIngestChannelPayload;
     EventIngestChannelArray: EventIngestChannelArray;
     ContentSourceSyncSettings: ContentSourceSyncSettings;
+    ContentSourcePermissionSettings: ContentSourcePermissionSettings;
+    ContentSourcePermissionStatus: ContentSourcePermissionStatus;
     SharePointContentSource: SharePointContentSource;
     BoxContentSource: BoxContentSource;
     ExternalContentSource: ExternalContentSource;

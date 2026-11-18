@@ -122,6 +122,7 @@ export const OAuthProviderDataSchema = z.strictObject({
         .meta({ description: 'Default scopes to request during authorization.' })
         .optional(),
     allowed_scopes: oauthProviderAllowedScopesSchema.optional(),
+    sharepoint_permission_site: z.url().optional(),
     use_pkce: z.boolean().meta({
         description:
             'Whether to use PKCE (Proof Key for Code Exchange) in the authorization flow. Only applies to authorization_code flow. Defaults to true.',
@@ -192,6 +193,7 @@ export const CreateOAuthProviderPayloadSchema = oauthProviderPayloadSchema
         name: z.string().regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/),
         display_name: z.string().min(1),
         client_id: z.string().min(1),
+        sharepoint_permission_site: z.url().optional(),
     })
     .meta({
         id: 'CreateOAuthProviderPayload',

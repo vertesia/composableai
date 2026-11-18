@@ -16,6 +16,10 @@ export type ExternalContentSource = Wire.ExternalContentSource;
 export type SharePointContentSource = Wire.SharePointContentSource;
 export type BoxContentSource = Wire.BoxContentSource;
 export type ExternalContentSourceType = ExternalContentSource['type'];
+export type ContentSourcePermissionSettings = Wire.ContentSourcePermissionSettings;
+export type ContentSourcePermissionStatus = Wire.ContentSourcePermissionStatus;
+export type ProjectContentSourcePermissions = Wire.ProjectContentSourcePermissions;
+export type SharePointContentSourcePermissions = Wire.SharePointContentSourcePermissions;
 export type ContentSourceSyncSettings = Wire.ContentSourceSyncSettings;
 
 /** Registers a content source. */

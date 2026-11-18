@@ -273,14 +273,37 @@ export class FilesApi extends ApiTopic {
      * @param location can be a relative path in the project, a reference to a cloud storage, or a accessible HTTPS URL (typically signed URL)
      * @returns ReadableStream
      */
+    async fetchDownloadUrl(url: string): Promise<Response> {
+        const endpoint = new URL(this.getUrl('/source-download'));
+        const target = new URL(url);
+        const ticket = target.pathname.slice(endpoint.pathname.length + 1);
+        if (
+            target.origin === endpoint.origin &&
+            target.pathname.startsWith(`${endpoint.pathname}/`) &&
+            /^[A-Za-z0-9_-]{32}$/.test(ticket) &&
+            !target.search &&
+            !target.hash &&
+            !target.username &&
+            !target.password
+        ) {
+            const request = await this.createRequest(target.href, {
+                method: 'GET',
+                headers: { ...this.headers },
+                redirect: 'error',
+            });
+            return this.fetch(request);
+        }
+        return fetchSignedUrl(url, { method: 'GET' });
+    }
+
     async downloadFile(location: string): Promise<ReadableStream<Uint8Array<ArrayBuffer>>> {
         //if start with HTTPS, no download url needed - assume it's signed already
-        const needSign = !location.startsWith('https:');
+        const needSign = !/^https?:\/\//.test(location);
         const { url } = needSign ? await this.getDownloadUrl(location) : { url: location };
 
         let res: Response;
         try {
-            res = await fetchSignedUrl(url, { method: 'GET' });
+            res = await this.fetchDownloadUrl(url);
         } catch (error: unknown) {
             throw new FileDownloadError(location, undefined, undefined, error);
         }
