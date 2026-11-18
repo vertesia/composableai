@@ -192,6 +192,7 @@ export function useOfficePdfConversion(objectId: string, enabled: boolean) {
             }
             if (response.status === 'found' && response.renditions?.length) {
                 setPdfUrl(response.renditions[0]);
+                setError(undefined);
             } else {
                 setError(t('store.pdfConversionFailed'));
             }

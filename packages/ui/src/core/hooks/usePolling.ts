@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { useSafeLayoutEffect } from './useSafeLayoutEffect.js';
 
 /** Largest delay `setTimeout` honours. A longer one fires at once, which would turn into a request loop. */
 const MAX_TIMER_MS = 2_147_483_647;
@@ -75,8 +76,11 @@ export function usePolling(
 ): Polling {
     const taskRef = useRef(task);
     const optionsRef = useRef(options);
-    taskRef.current = task;
-    optionsRef.current = options;
+    // Updated after commit, so a discarded render never leaves its task or options behind.
+    useSafeLayoutEffect(() => {
+        taskRef.current = task;
+        optionsRef.current = options;
+    });
     const runRef = useRef<(() => void) | undefined>(undefined);
     const enabled = options.enabled ?? true;
 
