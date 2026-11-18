@@ -38,7 +38,7 @@
         "@vertesia/api-fetch-client": "workspace:*",
         "@vertesia/common": "workspace:*",
         "@vertesia/studio-utils": "workspace:*",
-        "eventsource": "^5.1.4"
+        "eventsource": "^5.1.5"
     },
     "peerDependencies": {
         "@azure/storage-blob": "^12.34.0",

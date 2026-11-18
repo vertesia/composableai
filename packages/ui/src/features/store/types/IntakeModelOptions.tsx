@@ -1,9 +1,10 @@
-import { getOptions, type ModelOptions, Providers } from '@llumiverse/common';
+import { type ModelOptions, Providers } from '@llumiverse/common';
 import type { InteractionExecutionConfiguration } from '@vertesia/common';
 import { FormItem, useFetch } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { ModelOptionsInputs } from '../../environment/ModelOptionsInputs.js';
+import { useModelOptions } from '../../environment/useModelOptions.js';
 
 export function IntakeModelOptions({
     config,
@@ -25,6 +26,8 @@ export function IntakeModelOptions({
         data && data.projectId === project?.id && data.environment.id === config.environment
             ? data.environment
             : undefined;
+    const provider = Object.values(Providers).find((item) => item === environment?.provider);
+    const metadata = useModelOptions(config.model, provider, config.model_options, environment?.id);
     if (!environment || !config.model) {
         return error ? (
             <p role="status" className="mt-4 text-sm text-attention">
@@ -32,8 +35,6 @@ export function IntakeModelOptions({
             </p>
         ) : null;
     }
-    const provider = Object.values(Providers).find((item) => item === environment.provider);
-    const metadata = getOptions(config.model, provider, config.model_options);
     return (
         <FormItem className="mt-4" label={t('modelOptions.title')}>
             <div className="grid gap-4 md:grid-cols-2">

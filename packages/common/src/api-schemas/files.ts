@@ -86,6 +86,7 @@ export const GetFileUrlResponseSchema = z
         id: z.string(),
         mime_type: z.string().optional(),
         path: z.string(),
+        authentication_required: z.boolean().optional(),
     })
     .meta({ id: 'GetFileUrlResponse' });
 

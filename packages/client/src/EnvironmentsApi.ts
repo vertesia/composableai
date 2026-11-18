@@ -1,4 +1,4 @@
-import type { AIModel, ModelSearchPayload } from '@llumiverse/common';
+import type { AIModel, AvailableAIModel, ModelSearchPayload } from '@llumiverse/common';
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     EmbeddingBatchCapabilityRequest,
@@ -69,7 +69,7 @@ export default class EnvironmentsApi extends ApiTopic {
         });
     }
 
-    listModels(id: string, payload?: ModelSearchPayload): Promise<AIModel[]> {
+    listModels(id: string, payload?: ModelSearchPayload): Promise<AvailableAIModel[]> {
         return this.get(`/${id}/models`, {
             query: payload ? { ...payload } : undefined,
         });
