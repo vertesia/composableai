@@ -93,6 +93,8 @@ export class PayloadBuilder {
     _environment: ExecutionEnvironmentRef | undefined;
     _inference_profile: string | null | undefined;
     private _availableInferenceProfiles: readonly string[] | undefined;
+    /** Set by the editor while it waits for the selected model's option schema, before it reconciles the options. */
+    private _modelOptionsPending = false;
     _model: string = '';
     _model_options: InCodeInteraction['model_options'] | undefined;
     _tool_names: string[] = [];
@@ -131,6 +133,7 @@ export class PayloadBuilder {
         builder._environment = this._environment;
         builder._inference_profile = this._inference_profile;
         builder._availableInferenceProfiles = this._availableInferenceProfiles;
+        builder._modelOptionsPending = this._modelOptionsPending;
         builder._model = this._model;
         builder._model_options = this._model_options ? ({ ...this._model_options } as ModelOptions) : undefined;
         builder._tool_names = [...this._tool_names];
@@ -473,6 +476,19 @@ export class PayloadBuilder {
         return undefined;
     }
 
+    setModelOptionsPending(pending: boolean) {
+        if (pending !== this._modelOptionsPending) {
+            this._modelOptionsPending = pending;
+            this.onStateChanged();
+        }
+    }
+
+    /** Model options are sent only by an ad hoc configuration, so only it waits for their schema. */
+    get modelOptionsError(): string | undefined {
+        if (this._inference_profile !== null || !this._modelOptionsPending) return undefined;
+        return 'Model options are still loading for the selected profile. Try again in a moment.';
+    }
+
     get inferenceConfig() {
         if (this._inference_profile === null) {
             return {
@@ -668,6 +684,7 @@ export class PayloadBuilder {
         this._disabled_mcp_collections = undefined;
         this._preserveRunValues = false;
         this._inference_profile = undefined;
+        this._modelOptionsPending = false;
         this._model = '';
         this._model_options = undefined;
         this._environment = undefined;
