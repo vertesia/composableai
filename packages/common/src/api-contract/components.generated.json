@@ -43579,6 +43579,18 @@
           "skillDigest": {
             "type": "string"
           },
+          "resultChecks": {
+            "maxItems": 16,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          "outputSchemaCheck": {
+            "type": "string",
+            "maxLength": 64
+          },
           "approvalOrigin": {
             "$ref": "#/components/schemas/ToolApprovalOrigin"
           },
