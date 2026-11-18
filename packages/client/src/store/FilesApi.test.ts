@@ -4,7 +4,8 @@ import { ZenoClient } from './client.js';
 describe('FilesApi', () => {
     it('redeems a managed file with the Store credential and refuses redirects on that request', async () => {
         const url = 'https://store.test/api/v1/files/source-download/00000000000000000000000000000000';
-        const fetch = vi.fn(async (request: Request) => {
+        const fetch = vi.fn(async (input: RequestInfo, init?: RequestInit) => {
+            const request = new Request(input, init);
             if (request.method === 'POST') return Response.json({ url, authentication_required: true });
             expect(request.url).toBe(url);
             expect(request.headers.get('authorization')).toBe('Bearer test-token');
