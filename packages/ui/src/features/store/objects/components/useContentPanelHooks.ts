@@ -2,6 +2,7 @@ import { type DocAnalyzerProgress, MarkdownRenditionFormat, WorkflowExecutionSta
 import { usePolling } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
+import { isEqual } from 'lodash-es';
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 // Maximum text size before cropping (128K characters)
@@ -101,10 +102,6 @@ export function useObjectText(objectId: string, initialText?: string, loadOnMoun
     };
 }
 
-function sameProgress(a: DocAnalyzerProgress | undefined, b: DocAnalyzerProgress | undefined): boolean {
-    return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
-}
-
 /**
  * Hook for polling PDF/document processing status.
  */
@@ -128,11 +125,7 @@ export function usePdfProcessingStatus(objectId: string, shouldPoll: boolean) {
             const running = r.status === WorkflowExecutionStatus.RUNNING;
             runningRef.current = running;
             setState((prev) => {
-                if (
-                    prev.status === r.status &&
-                    prev.isComplete === !running &&
-                    sameProgress(prev.progress, r.progress)
-                ) {
+                if (prev.status === r.status && prev.isComplete === !running && isEqual(prev.progress, r.progress)) {
                     return prev;
                 }
                 return { progress: r.progress, status: r.status, isComplete: !running };
