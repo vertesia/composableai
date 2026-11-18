@@ -21,7 +21,8 @@ export function registerDataCommand(program: Command) {
         ])
         .option(
             '--storage-format <format>',
-            'How the store keeps its data: duckdb (default), or ducklake for stores too large to rewrite on every change',
+            'How the store keeps its data: duckdb (default), or ducklake for stores too large to rewrite on every ' +
+                'change. A ducklake store keeps no versions: no snapshots and no rollback.',
         )
         .option(
             '--data-writes <versioning>',

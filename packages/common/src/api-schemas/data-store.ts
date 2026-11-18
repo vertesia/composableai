@@ -168,7 +168,8 @@ export const DataStoreDataWriteVersioningSchema = z.enum(DataStoreDataWriteVersi
         'Whether a data write (an import or a row mutation) is kept as a version. `keep`: each data write is a ' +
         'version, kept within the version retention. `skip`: the write becomes current without being kept; once ' +
         'another write replaces it, it is neither listed nor restorable. Writes that change the schema, rollbacks ' +
-        'and snapshots are always kept.',
+        'and snapshots are always kept. A store in `ducklake` format keeps no versions at all: it always reports ' +
+        '`skip`, and `keep` is refused.',
 });
 
 export const DataStoreVersioningSchema = z
@@ -189,7 +190,8 @@ const DATA_WRITE_VERSION_FIELD = z
         description:
             "Keep this write as a version (`true`) or not (`false`). Defaults to the store's " +
             '`versioning.data_writes`. A write that is not kept becomes current, but once replaced it is neither ' +
-            'listed nor restorable. A server older than the field keeps every write.',
+            'listed nor restorable. `true` is refused on a store in `ducklake` format, which keeps no versions. ' +
+            'A server older than the field keeps every write.',
     })
     .optional();
 
@@ -250,7 +252,8 @@ export const DataStoreStorageFormatSchema = z.enum(DataStoreStorageFormat).meta(
     id: 'DataStoreStorageFormat',
     description:
         'How a data store keeps its data. `duckdb`: one DuckDB database file per version. `ducklake`: a DuckLake ' +
-        'catalog per version over Parquet files the versions share, for stores too large to rewrite on every change.',
+        'catalog over Parquet files, for stores too large to rewrite on every change. A `ducklake` store keeps ' +
+        'no versions: each write replaces the current one, and snapshots and rollback are refused.',
 });
 
 export const ImportDataFormatSchema = z

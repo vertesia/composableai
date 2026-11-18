@@ -129,7 +129,7 @@ export type DataStoreStatus = Wire.DataStoreStatus;
 export const DataStoreStorageFormat = {
     /** One DuckDB database file per version. The default. */
     DUCKDB: 'duckdb',
-    /** A DuckLake catalog per version over Parquet files the versions share, for large stores. */
+    /** A DuckLake catalog over Parquet files, for large stores. It keeps no versions: no snapshots, no rollback. */
     DUCKLAKE: 'ducklake',
 } as const;
 
