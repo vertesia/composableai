@@ -151,6 +151,28 @@ export const ToolResultChecks = {
 export type ToolResultCheck = (typeof ToolResultChecks)[keyof typeof ToolResultChecks];
 
 /**
+ * What checking a successful MCP result against the tool's declared `outputSchema` found. Recorded on every successful
+ * MCP call, so violations can be counted among the calls that were actually checked.
+ *
+ * - `valid` / `invalid`: `structuredContent` matches the schema, or does not.
+ * - `missing`: the tool declared a schema but returned no `structuredContent`.
+ * - `absent`: no output schema is known for the tool (it declared none, or the catalog predates stored schemas).
+ * - `unavailable`: the stored schema could not be read.
+ * - `unchecked`: the schema could not be compiled.
+ * - `unsupported_dialect`: the schema's `$schema` names a dialect the validator does not support (e.g. draft-04).
+ *
+ * The list may grow; readers must accept values they do not know.
+ */
+export type ToolOutputSchemaCheck =
+    | 'valid'
+    | 'invalid'
+    | 'missing'
+    | 'absent'
+    | 'unavailable'
+    | 'unchecked'
+    | 'unsupported_dialect';
+
+/**
  * How a tool call came to run, or not to run, under the tool approval policy.
  *
  * - `not_required`: the approval mode did not ask for approval of this call.
@@ -408,6 +430,11 @@ export interface ToolCallEvent extends BaseAgentEvent {
      * check fired. Typed as strings so a producer may send a code this reader does not know yet.
      */
     resultChecks?: string[];
+    /**
+     * On a successful MCP tool call: what checking its result against the declared output schema found
+     * ({@link ToolOutputSchemaCheck}). A string so a producer may send a value this reader does not know yet.
+     */
+    outputSchemaCheck?: string;
     /** How the call was approved or refused; undefined when no approval decision was recorded */
     approvalOrigin?: ToolApprovalOrigin;
     /**

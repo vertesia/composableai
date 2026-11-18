@@ -43503,6 +43503,10 @@
               "maxLength": 64
             }
           },
+          "outputSchemaCheck": {
+            "type": "string",
+            "maxLength": 64
+          },
           "approvalOrigin": {
             "$ref": "#/components/schemas/ToolApprovalOrigin"
           },
