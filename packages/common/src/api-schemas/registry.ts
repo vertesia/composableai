@@ -2014,6 +2014,8 @@ const EVENT_INGEST_SCHEMAS = {
 
 const CONTENT_SOURCE_SCHEMAS = {
     ContentSourceSyncSettings: ContentSourceSchemas.ContentSourceSyncSettingsSchema,
+    ContentSourcePermissionSettings: ContentSourceSchemas.ContentSourcePermissionSettingsSchema,
+    ContentSourcePermissionStatus: ContentSourceSchemas.ContentSourcePermissionStatusSchema,
     SharePointContentSource: ContentSourceSchemas.SharePointContentSourceSchema,
     BoxContentSource: ContentSourceSchemas.BoxContentSourceSchema,
     ExternalContentSource: ContentSourceSchemas.ExternalContentSourceSchema,
@@ -2754,6 +2756,9 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'InferenceBudgetSettings',
     'UpdateInferenceBudget',
     'ContentSourceSyncSettings',
+    'ProjectContentSourcePermissions',
+    'SharePointContentSourcePermissions',
+    'ContentSourcePermissionStatus',
     'SharePointContentSource',
     'BoxContentSource',
     'CreateSharePointContentSourcePayload',
