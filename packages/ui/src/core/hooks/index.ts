@@ -10,6 +10,7 @@ export * from './useFetch.js';
 export * from './useFlag.js';
 export * from './useIntersectionObserver.js';
 export * from './useIsFistRendering.js';
+export { type Polling, type PollingOptions, usePolling } from './usePolling.js';
 export * from './useSafeLayoutEffect.js';
 export * from './useScrollableSearch.js';
 export * from './useSharedValue.js';
