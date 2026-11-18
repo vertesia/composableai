@@ -107,6 +107,26 @@ describe('Bedrock profile tier choices', () => {
         expect(session.client.environments.listModels).toHaveBeenCalledTimes(2);
     });
 
+    it('stays pending when returning to a profile whose earlier lookup failed', async () => {
+        session.client.environments.listModels.mockRejectedValueOnce(new Error('throttled'));
+        const retry = Promise.withResolvers<AvailableAIModel[]>();
+        session.client.environments.listModels.mockReturnValueOnce(retry.promise);
+        const { result, rerender } = renderHook(
+            (model: string) => useModelOptions(model, Providers.bedrock, undefined, 'environment-id'),
+            { initialProps: HAIKU_PROFILE },
+        );
+        await waitFor(() => expect(result.current.pending).toBe(false));
+
+        rerender('us.amazon.nova-pro-v1:0');
+        rerender(HAIKU_PROFILE);
+        // The failed answer belongs to the earlier selection, so the retry is pending with the interim schema.
+        expect(result.current.pending).toBe(true);
+        retry.resolve(CATALOG);
+        await waitFor(() => expect(result.current.pending).toBe(false));
+        const tier = result.current.options.find((option) => option.name === 'service_tier');
+        expect(tier?.type === OptionType.enum && Object.values(tier.enum)).toEqual(['default']);
+    });
+
     it('fetches the catalog again once the cached copy expires', async () => {
         // Only Date is faked, so the testing library keeps polling on real timers.
         vi.useFakeTimers({ toFake: ['Date'] });

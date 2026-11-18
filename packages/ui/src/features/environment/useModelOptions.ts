@@ -96,13 +96,11 @@ export function useModelOptions(
     const projectId = project?.id;
     const profileArn =
         provider === Providers.bedrock && model && isBedrockApplicationInferenceProfile(model) ? model : undefined;
-    const [profile, setProfile] = useState<{
-        client: typeof client;
-        projectId: string | undefined;
-        environmentId: string;
-        arn: string;
-        baseModelId: string | undefined;
-    }>();
+    // A new token each time the selection changes, even back to an earlier profile: only an answer to the lookup
+    // started for this selection ends `pending`. Matching on the profile alone would reuse an earlier failed answer.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: the dependencies define the selection the token names.
+    const attempt = useMemo(() => ({}), [client, projectId, environmentId, profileArn]);
+    const [answer, setAnswer] = useState<{ attempt: object; baseModelId: string | undefined }>();
 
     const warm = profileArn && environmentId ? peekCatalog(client, projectId, environmentId)?.resolved : undefined;
     const warmHit = !!profileArn && !!warm?.has(profileArn);
@@ -111,7 +109,7 @@ export function useModelOptions(
         if (!environmentId || !profileArn || warmHit) return;
         let current = true;
         const setBaseModel = (baseModelId: string | undefined) => {
-            if (current) setProfile({ client, projectId, environmentId, arn: profileArn, baseModelId });
+            if (current) setAnswer({ attempt, baseModelId });
         };
         void lookUpBackingModel(client, projectId, environmentId, profileArn).then(setBaseModel, () =>
             setBaseModel(undefined),
@@ -119,14 +117,10 @@ export function useModelOptions(
         return () => {
             current = false;
         };
-    }, [client, projectId, environmentId, profileArn, warmHit]);
+    }, [attempt, client, projectId, environmentId, profileArn, warmHit]);
 
-    const answered =
-        profile?.client === client &&
-        profile.projectId === projectId &&
-        profile.environmentId === environmentId &&
-        profile.arn === profileArn;
-    const baseModelId = warmHit && profileArn ? warm?.get(profileArn) : answered ? profile.baseModelId : undefined;
+    const answered = answer?.attempt === attempt;
+    const baseModelId = warmHit && profileArn ? warm?.get(profileArn) : answered ? answer.baseModelId : undefined;
     const pending = !!profileArn && !!environmentId && !warmHit && !answered;
     return useMemo(
         () => ({
