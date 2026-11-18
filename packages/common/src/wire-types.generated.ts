@@ -4,6 +4,7 @@
 import type {
     AIModel,
     AIModelStatus,
+    AvailableAIModel,
     CompletionResult,
     EmbeddingOutput,
     EmbeddingResultItem,
@@ -12079,6 +12080,8 @@ export interface ApiComponentTypes {
     AIModel: AIModel;
     AIModelArray: AIModel[];
     AIModelStatus: (typeof AIModelStatus)[keyof typeof AIModelStatus];
+    AvailableAIModel: AvailableAIModel;
+    AvailableAIModelArray: AvailableAIModel[];
     ModelType: (typeof ModelType)[keyof typeof ModelType];
     ModelSearchPayload: ModelSearchPayload;
     RunAnalyticsQuery: RunAnalyticsQuery;

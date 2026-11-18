@@ -72,7 +72,7 @@ export type MediatorEnvConfig = Wire.MediatorEnvConfig;
 // Re-exported, not restated. This file carried a byte-for-byte copy of llumiverse's interface, which
 // published under the same component name — so which of the two the OpenAPI document described
 // depended on which one the scanner reached first. They agreed, so nothing ever failed.
-export type { TextFallbackOptions } from '@llumiverse/common';
+export type { AvailableAIModel, TextFallbackOptions } from '@llumiverse/common';
 
 export type ExecutionEnvironmentSettings = Wire.ExecutionEnvironmentSettings;
 

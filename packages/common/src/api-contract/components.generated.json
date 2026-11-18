@@ -9717,6 +9717,90 @@
       "$ref": "#/components/schemas/AIModel"
     }
   },
+  "AvailableAIModel": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "provider": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "version": {
+        "type": "string"
+      },
+      "type": {
+        "$ref": "#/components/schemas/ModelType"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "owner": {
+        "type": "string"
+      },
+      "status": {
+        "$ref": "#/components/schemas/AIModelStatus"
+      },
+      "can_stream": {
+        "type": "boolean"
+      },
+      "is_custom": {
+        "type": "boolean"
+      },
+      "is_multimodal": {
+        "type": "boolean"
+      },
+      "input_modalities": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "output_modalities": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "tool_support": {
+        "type": "boolean"
+      },
+      "deprecation_date": {
+        "type": "string"
+      },
+      "retirement_date": {
+        "type": "string"
+      },
+      "environment": {
+        "type": "string"
+      },
+      "base_model_id": {
+        "type": "string",
+        "description": "The provider identifier of the model behind this selectable resource. Use id for invocation."
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "provider"
+    ],
+    "additionalProperties": false
+  },
+  "AvailableAIModelArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/AvailableAIModel"
+    }
+  },
   "ModelSearchPayload": {
     "type": "object",
     "properties": {
@@ -43494,6 +43578,18 @@
           },
           "skillDigest": {
             "type": "string"
+          },
+          "resultChecks": {
+            "maxItems": 16,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          "outputSchemaCheck": {
+            "type": "string",
+            "maxLength": 64
           },
           "approvalOrigin": {
             "$ref": "#/components/schemas/ToolApprovalOrigin"

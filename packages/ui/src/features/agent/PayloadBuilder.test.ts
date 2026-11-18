@@ -156,6 +156,33 @@ it('validates profile availability across builder snapshots without blocking ad 
     expect(store.snapshot.inferenceProfileError).toBeUndefined();
 });
 
+it('refuses an ad hoc configuration while its model options are pending, across snapshots', () => {
+    const store = new PayloadBuilderStore({} as VertesiaClient);
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.snapshot.setInferenceProfile(null);
+    listener.mockClear();
+
+    store.snapshot.setModelOptionsPending(true);
+    store.snapshot.setModelOptionsPending(true);
+    expect(listener).toHaveBeenCalledOnce();
+    store.snapshot.setModel('model-id');
+    expect(store.snapshot.modelOptionsError).toContain('still loading');
+    expect(store.snapshot.clone().modelOptionsError).toContain('still loading');
+
+    // A saved profile or the defaults send no model options, so they do not wait.
+    store.snapshot.setInferenceProfile(undefined);
+    expect(store.snapshot.modelOptionsError).toBeUndefined();
+    store.snapshot.setInferenceProfile(null);
+    store.snapshot.setModelOptionsPending(false);
+    expect(store.snapshot.modelOptionsError).toBeUndefined();
+
+    store.snapshot.setModelOptionsPending(true);
+    store.snapshot.reset();
+    store.snapshot.setInferenceProfile(null);
+    expect(store.snapshot.modelOptionsError).toBeUndefined();
+});
+
 describe('run check flags', () => {
     it('defaults to no evaluation request and no final verification', () => {
         const store = new PayloadBuilderStore({} as VertesiaClient);
