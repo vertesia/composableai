@@ -433,6 +433,11 @@ const ToolCallEventSchema = z.strictObject({
     signatureHash: z.string().optional(),
     workstreamId: z.string().optional(),
     skillDigest: z.string().optional(),
+    // Strings, not an enum: a worker on a newer release may send a code this server does not know yet, and a
+    // rejected event loses the whole call. The known codes are `ToolResultChecks`.
+    resultChecks: z.array(z.string().max(64)).max(16).optional(),
+    // A string for the same reason; the known values are `ToolOutputSchemaCheck`.
+    outputSchemaCheck: z.string().max(64).optional(),
     approvalOrigin: ToolApprovalOriginSchema.optional(),
     approvalReviewerOutcome: ToolApprovalReviewerOutcomeSchema.optional(),
     approvalReviewerRiskLevel: ToolApprovalRiskLevelSchema.optional(),

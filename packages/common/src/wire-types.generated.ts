@@ -4,6 +4,7 @@
 import type {
     AIModel,
     AIModelStatus,
+    AvailableAIModel,
     CompletionResult,
     EmbeddingOutput,
     EmbeddingResultItem,
@@ -990,6 +991,11 @@ export type AppScaffoldProgress = {
  * Declared on the manifest as the app's default. May be overridden per-installation.
  */
 export type AppAccessControl = 'all' | 'ui' | 'none';
+/** The set of tools an app exposes to an external integration through the platform MCP server. */
+export type AppMcpProfile = {
+    builtin_tools: string[];
+    scopes?: string[] | undefined;
+};
 export type AppManifestData = {
     parameters?: Record<string, McpConnectionParameter> | undefined;
     oauth_scopes?: string[] | undefined;
@@ -1009,6 +1015,7 @@ export type AppManifestData = {
         | undefined;
     status: 'beta' | 'stable' | 'deprecated';
     ui?: AppUIConfig | undefined;
+    mcp_profile?: AppMcpProfile | undefined;
     tool_collections?: ToolCollectionObject[] | undefined;
     oauth_providers?: MCPOAuthConfigMap | undefined;
     interactions?: string | undefined;
@@ -1040,6 +1047,7 @@ export type UpdateAppPayload = {
         | undefined;
     status: 'beta' | 'stable' | 'deprecated';
     ui?: AppUIConfig | undefined;
+    mcp_profile?: AppMcpProfile | undefined;
     tool_collections?: ToolCollectionObject[] | undefined;
     oauth_providers?: MCPOAuthConfigMap | undefined;
     interactions?: string | undefined;
@@ -1308,6 +1316,7 @@ export type AppManifest = {
         | undefined;
     status: 'beta' | 'stable' | 'deprecated';
     ui?: AppUIConfig | undefined;
+    mcp_profile?: AppMcpProfile | undefined;
     tool_collections?: ToolCollectionObject[] | undefined;
     oauth_providers?: MCPOAuthConfigMap | undefined;
     interactions?: string | undefined;
@@ -2382,13 +2391,16 @@ export type CreateBoxContentSourcePayload = {
     collection_id?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
     type: 'box';
-    folder_id: string;
+    folder_id?: string | undefined;
 };
 export type UpdateContentSourcePayload = {
     name?: string | undefined;
     description?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
     permissions?: ContentSourcePermissionSettings | undefined;
+    root_id?: string | undefined;
+    folder_id?: string | undefined;
+    folder_path?: string | undefined;
 };
 export type SyncContentSourcePayload = {
     full?: boolean | undefined;
@@ -2445,6 +2457,157 @@ export type ContentSourceReportQuery = {
     action?: ContentSourceReportAction | undefined;
     cursor?: string | undefined;
     limit?: number | undefined;
+};
+/** The connection an inspection reads through. No content source needs to exist. */
+export type DiscoverContentSourceSitePayload = {
+    type: 'sharepoint';
+    oauth_provider_id: string;
+    site_url: string;
+};
+export type DiscoverContentSourceSchemaPayload = {
+    type: 'sharepoint';
+    oauth_provider_id: string;
+    site_url: string;
+    library_name?: string | undefined;
+};
+export type DiscoverContentSourceSamplePayload = {
+    type: 'sharepoint';
+    oauth_provider_id: string;
+    site_url: string;
+    library_name?: string | undefined;
+    folder_path?: string | undefined;
+    limit?: number | undefined;
+};
+export type DiscoverContentSourceFoldersPayload = {
+    type: 'sharepoint';
+    oauth_provider_id: string;
+    site_url: string;
+    library_name?: string | undefined;
+    folder_path?: string | undefined;
+};
+export type InspectContentSourceFoldersPayload = {
+    root_id?: string | undefined;
+    folder_id?: string | undefined;
+    folder_path?: string | undefined;
+};
+export type InspectContentSourceSchemaPayload = {
+    root_id?: string | undefined;
+};
+export type InspectContentSourceSamplePayload = {
+    root_id?: string | undefined;
+    folder_id?: string | undefined;
+    folder_path?: string | undefined;
+    limit?: number | undefined;
+};
+export type ContentSourceRoot = {
+    id: string;
+    name: string;
+    web_url?: string | undefined;
+};
+export type ContentSourceRootsDiscovery = {
+    roots: ContentSourceRoot[];
+    current_root_id?: string | undefined;
+    truncated: boolean;
+};
+/** A site and its document libraries. */
+export type ContentSourceSiteDiscovery = {
+    site_id: string;
+    name: string;
+    web_url?: string | undefined;
+    libraries: ContentSourceLibrary[];
+};
+export type ContentSourceLibrary = {
+    id: string;
+    name: string;
+    web_url?: string | undefined;
+};
+/** The direct subfolders of a folder of a library. */
+export type ContentSourceFoldersDiscovery = {
+    root_id?: string | undefined;
+    root_name?: string | undefined;
+    folder_id: string;
+    folder_path: string;
+    folders: ContentSourceFolder[];
+    truncated: boolean;
+};
+export type ContentSourceFolder = {
+    id: string;
+    name: string;
+    path: string;
+    child_count?: number | undefined;
+};
+/** The content types and columns of a document library. */
+export type ContentSourceSchemaDiscovery = {
+    root_id?: string | undefined;
+    root_name?: string | undefined;
+    content_types: ContentSourceContentType[];
+    columns: ContentSourceColumn[];
+    content_types_truncated: boolean;
+};
+export type ContentSourceContentType = {
+    id: string;
+    name: string;
+    description?: string | undefined;
+    group?: string | undefined;
+    columns: ContentSourceColumn[];
+};
+export type ContentSourceColumn = {
+    name: string;
+    display_name: string;
+    description?: string | undefined;
+    type: ContentSourceColumnType;
+    required: boolean;
+    read_only: boolean;
+    multiple: boolean;
+    choices?: string[] | undefined;
+};
+export type ContentSourceColumnType =
+    | 'text'
+    | 'number'
+    | 'boolean'
+    | 'currency'
+    | 'date'
+    | 'date_time'
+    | 'choice'
+    | 'lookup'
+    | 'person'
+    | 'managed_metadata'
+    | 'url'
+    | 'calculated'
+    | 'location'
+    | 'image'
+    | 'approval_status'
+    | 'unknown';
+/** A bounded sample of the files under a folder. */
+export type ContentSourceSampleDiscovery = {
+    root_id?: string | undefined;
+    root_name?: string | undefined;
+    files: ContentSourceSampleFile[];
+    content_type_counts: ContentSourceContentTypeCount[];
+    folders_read: number;
+    truncated: boolean;
+};
+export type ContentSourceSampleFile = {
+    id: string;
+    name: string;
+    folder_path: string;
+    size?: number | undefined;
+    mime_type?: string | undefined;
+    web_url?: string | undefined;
+    modified_at?: string | undefined;
+    content_type?: string | undefined;
+    fields: Record<string, unknown>;
+};
+export type ContentSourceContentTypeCount = {
+    name: string;
+    count: number;
+};
+export type InferenceBudgetSettings = {
+    daily_limit_usd: number | null;
+    available: boolean;
+};
+export type UpdateInferenceBudget = {
+    daily_limit_usd: number;
 };
 export type CostAnalyticsQuery = {
     from?: string | number | undefined;
@@ -4129,7 +4292,11 @@ export type InferenceProfile = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
 };
+export type InferenceProfileInvocation = 'execute' | 'decide' | 'shadow';
 export type InferenceProfileSnapshot = {
     id?: InferenceProfileId | undefined;
     name: InferenceProfileName;
@@ -4161,6 +4328,9 @@ export type CreateInferenceProfilePayload = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
 };
 export type UpdateInferenceProfilePayload = {
     name: InferenceProfileName;
@@ -4168,6 +4338,9 @@ export type UpdateInferenceProfilePayload = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
 };
 export type InferenceProfileRecord = {
     name: InferenceProfileName;
@@ -4175,6 +4348,9 @@ export type InferenceProfileRecord = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
     id: string;
     project: string;
     created_at: string;
@@ -5187,8 +5363,9 @@ export type NotificationKind =
     | 'agent.finished'
     | 'agent.turn_finished'
     | 'task.assigned'
-    | 'intake.finished';
-export type NotificationCategory = 'actions' | 'failures' | 'results';
+    | 'intake.finished'
+    | 'inference_budget.exceeded';
+export type NotificationCategory = 'actions' | 'failures' | 'results' | 'billing';
 export type NotificationChannel = 'in_app';
 /** A typed reference to the item a notification is about (`{ type: 'task', id }`, ...). */
 export type NotificationRef = {
@@ -5261,6 +5438,7 @@ export type NotificationChannelPreferences = {
 export type NotificationPreferences = {
     categories: Record<string, NotificationChannelPreferences>;
     kinds: Record<string, NotificationChannelPreferences>;
+    budget_alerts_enabled?: boolean | undefined;
 };
 export type NotificationStreamEvent = {
     type: 'changed' | 'heartbeat';
@@ -11906,6 +12084,8 @@ export interface ApiComponentTypes {
     AIModel: AIModel;
     AIModelArray: AIModel[];
     AIModelStatus: (typeof AIModelStatus)[keyof typeof AIModelStatus];
+    AvailableAIModel: AvailableAIModel;
+    AvailableAIModelArray: AvailableAIModel[];
     ModelType: (typeof ModelType)[keyof typeof ModelType];
     ModelSearchPayload: ModelSearchPayload;
     RunAnalyticsQuery: RunAnalyticsQuery;
@@ -11974,6 +12154,7 @@ export interface ApiComponentTypes {
     InferenceProfileId: InferenceProfileId;
     InferenceProfileName: InferenceProfileName;
     InferenceProfile: InferenceProfile;
+    InferenceProfileInvocation: InferenceProfileInvocation;
     InferenceProfileSnapshot: InferenceProfileSnapshot;
     ProjectInferenceProfiles: ProjectInferenceProfiles;
     InteractionStatus: InteractionStatusWire;
@@ -12308,6 +12489,8 @@ export interface ApiComponentTypes {
     DataSchemaForAI: DataSchemaForAI;
     DataStoreSchemaResponse: DataStoreSchemaResponse;
     CostAnalyticsQuery: CostAnalyticsQuery;
+    InferenceBudgetSettings: InferenceBudgetSettings;
+    UpdateInferenceBudget: UpdateInferenceBudget;
     CostRunPriceQuery: CostRunPriceQuery;
     CostModelPricesQuery: CostModelPricesQuery;
     CostExportQuery: CostExportQuery;
@@ -12636,6 +12819,26 @@ export interface ApiComponentTypes {
     ContentSourceReportEntry: ContentSourceReportEntry;
     ContentSourceReportQuery: ContentSourceReportQuery;
     ContentSourceReport: ContentSourceReport;
+    DiscoverContentSourceSitePayload: DiscoverContentSourceSitePayload;
+    DiscoverContentSourceSchemaPayload: DiscoverContentSourceSchemaPayload;
+    DiscoverContentSourceSamplePayload: DiscoverContentSourceSamplePayload;
+    DiscoverContentSourceFoldersPayload: DiscoverContentSourceFoldersPayload;
+    InspectContentSourceFoldersPayload: InspectContentSourceFoldersPayload;
+    InspectContentSourceSchemaPayload: InspectContentSourceSchemaPayload;
+    InspectContentSourceSamplePayload: InspectContentSourceSamplePayload;
+    ContentSourceRoot: ContentSourceRoot;
+    ContentSourceRootsDiscovery: ContentSourceRootsDiscovery;
+    ContentSourceFolder: ContentSourceFolder;
+    ContentSourceFoldersDiscovery: ContentSourceFoldersDiscovery;
+    ContentSourceLibrary: ContentSourceLibrary;
+    ContentSourceSiteDiscovery: ContentSourceSiteDiscovery;
+    ContentSourceColumnType: ContentSourceColumnType;
+    ContentSourceColumn: ContentSourceColumn;
+    ContentSourceContentType: ContentSourceContentType;
+    ContentSourceSchemaDiscovery: ContentSourceSchemaDiscovery;
+    ContentSourceSampleFile: ContentSourceSampleFile;
+    ContentSourceContentTypeCount: ContentSourceContentTypeCount;
+    ContentSourceSampleDiscovery: ContentSourceSampleDiscovery;
     CollectionSecuritySettingsResponse: CollectionSecuritySettingsResponse;
     CollectionMembersUpdateResult: CollectionMembersUpdateResult;
     CollectionMembersUpdatePayload: CollectionMembersUpdatePayload;
@@ -13063,6 +13266,7 @@ export interface ApiComponentTypes {
     AppWidgetInfo: AppWidgetInfo;
     AppDashboardDefinition: AppDashboardDefinition;
     AppOAuthClientConfig: AppOAuthClientConfig;
+    AppMcpProfile: AppMcpProfile;
     AppManifestData: AppManifestData;
     UpdateAppPayload: UpdateAppPayload;
     AppManifest: AppManifest;

@@ -107,7 +107,9 @@ for await (const event of stream) {
 
 ## Custom Response Readers
 
-Provide a custom reader function for non-JSON responses:
+Without a reader, the response body is parsed as JSON. An empty body resolves to `undefined`. A 2xx
+body that is not JSON rejects with a `ResponseReadError` (`status` 0, the 2xx on `responseStatus`, the
+body text on `error.payload.text`). Provide a custom reader function for non-JSON responses:
 
 ```typescript
 // Read as text
@@ -310,12 +312,12 @@ The main client class for making HTTP requests.
 
 ### Error Classes
 
-| Class               | Description                                                           |
-| ------------------- | --------------------------------------------------------------------- |
-| `RequestError`      | Base class for all request errors                                     |
-| `ServerError`       | HTTP error responses (4xx, 5xx)                                       |
-| `ConnectionError`   | Network/connection failures                                           |
-| `ResponseReadError` | Body read failed after the server answered; extends `ConnectionError` |
+| Class               | Description                                                        |
+| ------------------- | ------------------------------------------------------------------ |
+| `RequestError`      | Base class for all request errors                                  |
+| `ServerError`       | HTTP error responses (4xx, 5xx)                                    |
+| `ConnectionError`   | Network/connection failures                                        |
+| `ResponseReadError` | Body unreadable, or a 2xx body not JSON; extends `ConnectionError` |
 
 ## License
 

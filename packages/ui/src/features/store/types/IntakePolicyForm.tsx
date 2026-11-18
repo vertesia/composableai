@@ -1147,9 +1147,6 @@ function InteractionField({
     );
 }
 
-function options<T extends string>(
-    t: (key: string, values?: Record<string, unknown>) => string,
-    values: readonly T[],
-): SelectOption<T>[] {
+function options<T extends string>(t: (key: string) => string, values: readonly T[]): SelectOption<T>[] {
     return values.map((value) => ({ value, label: t(`intakePolicy.option.${value}`) }));
 }

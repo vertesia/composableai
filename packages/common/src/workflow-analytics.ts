@@ -129,6 +129,50 @@ export type ToolErrorClass =
     | 'other';
 
 /**
+ * Reason codes recorded on a successful tool call whose result looks suspicious. They only measure: none of them
+ * proves the result wrong, and the model sees the result unchanged.
+ *
+ * - `empty_success`: no content and no files.
+ * - `error_shaped_success`: a body shaped like an error (`{"error": …}`, `success: false`, an HTTP error page).
+ * - `empty_collection`: an empty list, or an object whose only collections are empty.
+ * - `schema_invalid`: an MCP tool's `structuredContent` does not match the `outputSchema` it declared.
+ * - `schema_missing_structured`: an MCP tool declared an `outputSchema` but returned no `structuredContent`.
+ *
+ * The list may grow; readers must accept codes they do not know.
+ */
+export const ToolResultChecks = {
+    empty_success: 'empty_success',
+    error_shaped_success: 'error_shaped_success',
+    empty_collection: 'empty_collection',
+    schema_invalid: 'schema_invalid',
+    schema_missing_structured: 'schema_missing_structured',
+} as const;
+
+export type ToolResultCheck = (typeof ToolResultChecks)[keyof typeof ToolResultChecks];
+
+/**
+ * What checking a successful MCP result against the tool's declared `outputSchema` found. Recorded on every successful
+ * MCP call, so violations can be counted among the calls that were actually checked.
+ *
+ * - `valid` / `invalid`: `structuredContent` matches the schema, or does not.
+ * - `missing`: the tool declared a schema but returned no `structuredContent`.
+ * - `absent`: no output schema is known for the tool (it declared none, or the catalog predates stored schemas).
+ * - `unavailable`: the stored schema could not be read.
+ * - `unchecked`: the schema could not be compiled.
+ * - `unsupported_dialect`: the schema's `$schema` names a dialect the validator does not support (e.g. draft-04).
+ *
+ * The list may grow; readers must accept values they do not know.
+ */
+export type ToolOutputSchemaCheck =
+    | 'valid'
+    | 'invalid'
+    | 'missing'
+    | 'absent'
+    | 'unavailable'
+    | 'unchecked'
+    | 'unsupported_dialect';
+
+/**
  * How a tool call came to run, or not to run, under the tool approval policy.
  *
  * - `not_required`: the approval mode did not ask for approval of this call.
@@ -381,6 +425,16 @@ export interface ToolCallEvent extends BaseAgentEvent {
     workstreamId?: string;
     /** On a skill load: digest of the instructions the skill returned, to tell skill versions apart */
     skillDigest?: string;
+    /**
+     * On a successful remote tool call: why its result looks suspicious ({@link ToolResultChecks}). Omitted when no
+     * check fired. Typed as strings so a producer may send a code this reader does not know yet.
+     */
+    resultChecks?: string[];
+    /**
+     * On a successful MCP tool call: what checking its result against the declared output schema found
+     * ({@link ToolOutputSchemaCheck}). A string so a producer may send a value this reader does not know yet.
+     */
+    outputSchemaCheck?: string;
     /** How the call was approved or refused; undefined when no approval decision was recorded */
     approvalOrigin?: ToolApprovalOrigin;
     /**

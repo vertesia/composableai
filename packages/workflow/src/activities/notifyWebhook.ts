@@ -13,6 +13,9 @@ import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { WorkflowParamNotFoundError } from '../errors.js';
 import { safeFetch, URLValidationError } from '../security/ssrf.js';
 import { getVertesiaClientOptions } from '../utils/client.js';
+import { webhookLogTarget } from '../utils/webhookLogTarget.js';
+
+export { webhookLogTarget };
 
 export interface NotifyWebhookParams {
     webhook: string | WebHookSpec; //URL to send the notification to
@@ -77,15 +80,6 @@ function describeFetchFailure(err: unknown): { error: string; cause?: string } {
     return typeof detail === 'string' ? { error, cause: detail } : { error };
 }
 
-export function webhookLogTarget(url: string): string {
-    try {
-        const parsed = new URL(url);
-        return `${parsed.origin}${parsed.pathname === '/' ? '' : parsed.pathname}`;
-    } catch {
-        return '[invalid webhook URL]';
-    }
-}
-
 function validationStatusCode(error: unknown): number | undefined {
     if (typeof error !== 'object' || error === null) {
         return undefined;
@@ -95,10 +89,20 @@ function validationStatusCode(error: unknown): number | undefined {
     return typeof status === 'number' ? status : undefined;
 }
 
+/** 4xx answers that mean "try again later": 408 Request Timeout, 425 Too Early, 429 Too Many Requests. */
+const RETRYABLE_CLIENT_ERROR_STATUSES: ReadonlySet<number> = new Set([408, 425, 429]);
+
+/**
+ * Receiver answers that a retry won't change: 404 Not Found and 410 Gone (no endpoint) and 409 Conflict.
+ * Other 4xx answers, such as 401 and 403, often succeed on a later attempt, so they are retried.
+ */
+const PERMANENT_RECEIVER_STATUSES: ReadonlySet<number> = new Set([404, 409, 410]);
+
 function isNonRetryableUrlValidationError(error: unknown): boolean {
     const status = validationStatusCode(error);
     if (status !== undefined) {
-        return status >= 400 && status < 500;
+        // A 4xx from validation rejects the URL itself, unless it asks to try again later.
+        return status >= 400 && status < 500 && !RETRYABLE_CLIENT_ERROR_STATUSES.has(status);
     }
     const message = error instanceof Error ? error.message : String(error);
     return /blocked|not allowed|forbidden|invalid url|internal hosts|private network|metadata/i.test(message);
@@ -234,7 +238,11 @@ export async function notifyWebhook(
             log.debug('Could not read response body for error', { readError });
         }
 
-        throw ApplicationFailure.create({ message: errorMessage, type: WEBHOOK_ENDPOINT_ERROR });
+        throw ApplicationFailure.create({
+            message: errorMessage,
+            type: WEBHOOK_ENDPOINT_ERROR,
+            nonRetryable: PERMANENT_RECEIVER_STATUSES.has(res.status),
+        });
     }
 
     return { status: res.status, message: res.statusText, url: res.url };

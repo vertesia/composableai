@@ -118,7 +118,8 @@ export class ConnectionError extends RequestError {
 }
 
 /**
- * The server answered, but the response body could not be read, e.g. the timeout fired mid-download.
+ * The server answered, but the response body could not be read, e.g. the timeout fired mid-download,
+ * or a 2xx body was not JSON (its text is then on `payload.text`).
  * It stays a ConnectionError with status 0, since the caller received no usable response; the message
  * and `responseStatus` record that the request did reach the server.
  */

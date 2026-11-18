@@ -202,6 +202,8 @@
     "agent.resourceShowLess": "간략히 보기",
     "agent.resourceViewAll": "{{total}}개 변경사항 모두 보기",
     "agent.resourcesChanged": "변경된 리소스",
+    "agent.restartFailed": "실행을 다시 시작할 수 없습니다",
+    "agent.restartRun": "다시 시작",
     "agent.retry": "재시도",
     "agent.rewind.exportFixture": "리플레이 픽스처 내보내기",
     "agent.rewind.fixtureExported": "리플레이 픽스처를 내보냈습니다",

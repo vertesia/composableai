@@ -39,19 +39,39 @@ async function nodeReadable(parts: PartsBody): Promise<import('node:stream').Rea
     return counted;
 }
 
+/**
+ * The SDK's ceiling on retrying, counted from the start of the upload. A session URI expires a week after it is
+ * created, so a later retry could not succeed. The retry count is what normally ends the retries, within minutes.
+ * See https://cloud.google.com/storage/docs/resumable-uploads
+ */
+const GCS_SESSION_LIFETIME_SECONDS = 7 * 24 * 60 * 60;
+/** Retries of failed chunks across the whole upload: the SDK does not reset its count after a chunk succeeds. */
+const GCS_SESSION_MAX_RETRIES = 10;
+
 /** Writes the content to a GCS resumable session. Returns the object's MD5 in hex, the ETag a single PUT gives. */
 export async function uploadGcsResumable(
     session: GcsResumableUploadSession,
     parts: PartsBody,
 ): Promise<string | undefined> {
-    const [{ Storage }, { PassThroughClient }] = await Promise.all([
+    const [{ IdempotencyStrategy, Storage }, { PassThroughClient }] = await Promise.all([
         import(/* webpackIgnore: true */ '@google-cloud/storage').catch(missingPackage('@google-cloud/storage')),
         import(/* webpackIgnore: true */ 'google-auth-library').catch(missingPackage('google-auth-library')),
     ]);
     const { pipeline } = await import('node:stream/promises');
     const slash = session.path.indexOf('/');
     // The session URI is the only credential the upload needs, so requests carry no other.
-    const file = new Storage({ authClient: new PassThroughClient() })
+    const file = new Storage({
+        authClient: new PassThroughClient(),
+        retryOptions: {
+            // The default strategy retries only uploads with a precondition, which leaves a session with no retries.
+            // Resending a chunk is safe: the SDK first asks the session for the offset it persisted.
+            idempotencyStrategy: IdempotencyStrategy.RetryAlways,
+            // Both limits count from the start of the upload, not per chunk, so the defaults (3 retries within 600
+            // seconds) would leave a long upload with none.
+            maxRetries: GCS_SESSION_MAX_RETRIES,
+            totalTimeout: GCS_SESSION_LIFETIME_SECONDS,
+        },
+    })
         .bucket(session.path.slice(0, slash))
         .file(session.path.slice(slash + 1));
     const writable = file.createWriteStream({

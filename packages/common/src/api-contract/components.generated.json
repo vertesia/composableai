@@ -748,6 +748,7 @@
       "content:delete",
       "content:admin",
       "content:superadmin",
+      "content_source:manage",
       "workflow:read",
       "workflow:run",
       "workflow:admin",
@@ -798,7 +799,7 @@
         "description": "Roles whose permissions are inherited, in addition to permissions below. Use built-in system role names or c:<name> references in this account. Cycles and ABAC roles are not allowed. Changes to a base role apply to newly minted tokens."
       },
       "permissions": {
-        "maxItems": 49,
+        "maxItems": 50,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/Permission"
@@ -841,7 +842,7 @@
         "description": "Roles whose permissions are inherited, in addition to permissions below. Use built-in system role names or c:<name> references in this account. Cycles and ABAC roles are not allowed. Changes to a base role apply to newly minted tokens."
       },
       "permissions": {
-        "maxItems": 49,
+        "maxItems": 50,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/Permission"
@@ -9734,6 +9735,90 @@
       "$ref": "#/components/schemas/AIModel"
     }
   },
+  "AvailableAIModel": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "provider": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "version": {
+        "type": "string"
+      },
+      "type": {
+        "$ref": "#/components/schemas/ModelType"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "owner": {
+        "type": "string"
+      },
+      "status": {
+        "$ref": "#/components/schemas/AIModelStatus"
+      },
+      "can_stream": {
+        "type": "boolean"
+      },
+      "is_custom": {
+        "type": "boolean"
+      },
+      "is_multimodal": {
+        "type": "boolean"
+      },
+      "input_modalities": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "output_modalities": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "tool_support": {
+        "type": "boolean"
+      },
+      "deprecation_date": {
+        "type": "string"
+      },
+      "retirement_date": {
+        "type": "string"
+      },
+      "environment": {
+        "type": "string"
+      },
+      "base_model_id": {
+        "type": "string",
+        "description": "The provider identifier of the model behind this selectable resource. Use id for invocation."
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "provider"
+    ],
+    "additionalProperties": false
+  },
+  "AvailableAIModelArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/AvailableAIModel"
+    }
+  },
   "ModelSearchPayload": {
     "type": "object",
     "properties": {
@@ -10747,6 +10832,15 @@
     "pattern": "\\S",
     "description": "Editable display name, independent of the stable profile ID."
   },
+  "InferenceProfileInvocation": {
+    "type": "string",
+    "enum": [
+      "execute",
+      "decide",
+      "shadow"
+    ],
+    "description": "How runs that select this profile call its model. `execute` (the default) runs regular inference. `decide` answers interactions that declare a decision with the model's decisions endpoint, and uses regular inference below the confidence threshold or when the run cannot use a decision. `shadow` answers with regular inference and calls the decisions endpoint alongside, for comparison only. With `decide` or `shadow`, regular inference uses the environment and model the run would select without this profile."
+  },
   "CreateInferenceProfilePayload": {
     "type": "object",
     "properties": {
@@ -10767,6 +10861,21 @@
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
+      },
+      "invocation": {
+        "$ref": "#/components/schemas/InferenceProfileInvocation"
+      },
+      "decision_threshold": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 1,
+        "description": "Minimum confidence a decision answer needs to be used, overriding the interaction's own threshold. Confidence means different things per provider, so set it per profile."
+      },
+      "audit_sample_rate": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "With invocation `decide`: the share of runs that also run regular inference, to compare the two after the switch. Absent means none."
       }
     },
     "required": [
@@ -10796,6 +10905,21 @@
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
+      },
+      "invocation": {
+        "$ref": "#/components/schemas/InferenceProfileInvocation"
+      },
+      "decision_threshold": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 1,
+        "description": "Minimum confidence a decision answer needs to be used, overriding the interaction's own threshold. Confidence means different things per provider, so set it per profile."
+      },
+      "audit_sample_rate": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "With invocation `decide`: the share of runs that also run regular inference, to compare the two after the switch. Absent means none."
       }
     },
     "required": [
@@ -10825,6 +10949,21 @@
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
+      },
+      "invocation": {
+        "$ref": "#/components/schemas/InferenceProfileInvocation"
+      },
+      "decision_threshold": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 1,
+        "description": "Minimum confidence a decision answer needs to be used, overriding the interaction's own threshold. Confidence means different things per provider, so set it per profile."
+      },
+      "audit_sample_rate": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "With invocation `decide`: the share of runs that also run regular inference, to compare the two after the switch. Absent means none."
       },
       "id": {
         "type": "string",
@@ -10968,6 +11107,21 @@
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
+      },
+      "invocation": {
+        "$ref": "#/components/schemas/InferenceProfileInvocation"
+      },
+      "decision_threshold": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 1,
+        "description": "Minimum confidence a decision answer needs to be used, overriding the interaction's own threshold. Confidence means different things per provider, so set it per profile."
+      },
+      "audit_sample_rate": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "With invocation `decide`: the share of runs that also run regular inference, to compare the two after the switch. Absent means none."
       }
     },
     "required": [
@@ -25123,6 +25277,10 @@
         "type": "boolean",
         "description": "When true, this item is excluded from the Composite App dashboard cards"
       },
+      "openInAppPortal": {
+        "type": "boolean",
+        "description": "When true, this item navigates to the App Portal form of the URL (`/apps/<appName><route>`) instead of the Composite App form (`/app/<appName><route>`), so the app is opened standalone rather than inside the Composite App shell."
+      },
       "permissions": {
         "$ref": "#/components/schemas/CompositeAppNavItemPermissions",
         "description": "Optional access control settings for this nav item"
@@ -25820,6 +25978,33 @@
     "additionalProperties": false,
     "description": "Standalone public PKCE OAuth. The publisher manifest provisions one app-managed registration with these exact callback URLs."
   },
+  "AppMcpProfile": {
+    "type": "object",
+    "properties": {
+      "builtin_tools": {
+        "minItems": 1,
+        "maxItems": 50,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Names of the platform MCP server tools the profile lists, e.g. `search_documents`. A name the server does not know is ignored."
+      },
+      "scopes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "The permission scopes the listed tools need. Register the integration’s OAuth client with these scopes and no more: they, not the tool list, limit what its tokens can do."
+      }
+    },
+    "required": [
+      "builtin_tools"
+    ],
+    "additionalProperties": false,
+    "description": "An MCP profile: the set of tools the app exposes to an external integration, such as an assistant in another product. The platform MCP server serves it at `/apps/<app name>` for the projects where the app is installed, and lists only the tools declared here."
+  },
   "AppManifestData": {
     "type": "object",
     "properties": {
@@ -25905,6 +26090,9 @@
       "ui": {
         "$ref": "#/components/schemas/AppUIConfig",
         "description": "The UI configuration of the app. If not specified and the app \"ui\" is in the app capabilities then the ui configuration will be fetched from the endpoint property."
+      },
+      "mcp_profile": {
+        "$ref": "#/components/schemas/AppMcpProfile"
       },
       "tool_collections": {
         "type": "array",
@@ -26059,6 +26247,9 @@
       "ui": {
         "$ref": "#/components/schemas/AppUIConfig",
         "description": "The UI configuration of the app. If not specified and the app \"ui\" is in the app capabilities then the ui configuration will be fetched from the endpoint property."
+      },
+      "mcp_profile": {
+        "$ref": "#/components/schemas/AppMcpProfile"
       },
       "tool_collections": {
         "type": "array",
@@ -26222,6 +26413,9 @@
       "ui": {
         "$ref": "#/components/schemas/AppUIConfig",
         "description": "The UI configuration of the app. If not specified and the app \"ui\" is in the app capabilities then the ui configuration will be fetched from the endpoint property."
+      },
+      "mcp_profile": {
+        "$ref": "#/components/schemas/AppMcpProfile"
       },
       "tool_collections": {
         "type": "array",
@@ -30448,7 +30642,8 @@
       "agent.finished",
       "agent.turn_finished",
       "task.assigned",
-      "intake.finished"
+      "intake.finished",
+      "inference_budget.exceeded"
     ],
     "description": "What a notification is about. Each kind belongs to one category."
   },
@@ -30457,9 +30652,10 @@
     "enum": [
       "actions",
       "failures",
-      "results"
+      "results",
+      "billing"
     ],
-    "description": "Preference group of a notification: `actions` need the user (questions, approvals, tasks), `failures` report failed runs or intakes, `results` report successful ones."
+    "description": "Preference group of a notification: `actions` need the user (questions, approvals, tasks), `failures` report failed runs or intakes, `results` report successful ones, and `billing` reports budget alerts."
   },
   "NotificationChannel": {
     "type": "string",
@@ -30771,7 +30967,7 @@
         "additionalProperties": {
           "$ref": "#/components/schemas/NotificationChannelPreferences"
         },
-        "description": "Per category (`actions`, `failures`, `results`), the channels it is delivered to."
+        "description": "Per-category inbox preferences for `actions`, `failures`, `results`, and `billing`."
       },
       "kinds": {
         "type": "object",
@@ -30779,6 +30975,10 @@
           "$ref": "#/components/schemas/NotificationChannelPreferences"
         },
         "description": "Per kind, an override of its category. Today only `agent.turn_finished` is offered."
+      },
+      "budget_alerts_enabled": {
+        "type": "boolean",
+        "description": "Master switch for inference budget alerts in the inbox and by email. Omit when updating to keep the saved choice."
       }
     },
     "required": [
@@ -38834,14 +39034,13 @@
       "folder_id": {
         "type": "string",
         "minLength": 1,
-        "description": "The Box folder ID, shared with the Box app's service account."
+        "description": "The Box folder ID, shared with the Box app's service account. Defaults to `0`, every folder shared with the app, to narrow before the first sync with an update."
       }
     },
     "required": [
       "name",
       "oauth_provider_id",
-      "type",
-      "folder_id"
+      "type"
     ],
     "additionalProperties": false,
     "description": "Registers a Box source. The OAuth provider uses Box's client credentials grant, with the token parameters `box_subject_type` and `box_subject_id`."
@@ -38866,7 +39065,7 @@
     "required": [
       "type"
     ],
-    "description": "Registers a content source. The server checks the folder with the system before saving, answers 409 when the name is already used in the project, then starts the first sync."
+    "description": "Registers a content source. The server checks the folder with the system before saving, answers 409 when the name is already used in the project. Nothing is imported until a sync is requested."
   },
   "UpdateContentSourcePayload": {
     "type": "object",
@@ -38884,10 +39083,24 @@
       },
       "permissions": {
         "$ref": "#/components/schemas/ContentSourcePermissionSettings"
+      },
+      "root_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Only before the first sync: the root to sync, as `discover/roots` returned it (a SharePoint document library; for Box, a folder shared with the app). Answers 409 once the source has synced."
+      },
+      "folder_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Only before the first sync: the folder to sync, as a folder listing returned its `id`. Answers 409 once the source has synced."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "SharePoint only, and only before the first sync: the folder to sync inside the library, e.g. `Contracts/2026`; empty for the whole library. Answers 409 once the source has synced."
       }
     },
     "additionalProperties": false,
-    "description": "Changes the name, description or sync settings. Saving sync settings also hands the sync your credentials, which restarts a sync stopped because its previous credentials were refused."
+    "description": "Changes the name, description or sync settings, and, before the first sync, the root and folder to sync. Saving sync settings also hands the sync your credentials, which restarts a sync stopped because its previous credentials were refused."
   },
   "SyncContentSourcePayload": {
     "type": "object",
@@ -39163,6 +39376,607 @@
     ],
     "additionalProperties": false,
     "description": "A page of the files a sync round created, updated, deleted, skipped or failed. Unchanged files are only counted, in the round's `counts`. A round still running has a partial report."
+  },
+  "DiscoverContentSourceSitePayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "sharepoint",
+        "description": "The system to inspect. Only SharePoint can be inspected."
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+      },
+      "site_url": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`."
+      }
+    },
+    "required": [
+      "type",
+      "oauth_provider_id",
+      "site_url"
+    ],
+    "additionalProperties": false,
+    "description": "The connection to inspect: an OAuth provider and a site. No content source needs to exist."
+  },
+  "DiscoverContentSourceSchemaPayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "sharepoint",
+        "description": "The system to inspect. Only SharePoint can be inspected."
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+      },
+      "site_url": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`."
+      },
+      "library_name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The document library name. Defaults to the site’s default library."
+      }
+    },
+    "required": [
+      "type",
+      "oauth_provider_id",
+      "site_url"
+    ],
+    "additionalProperties": false,
+    "description": "The document library to read the schema of."
+  },
+  "DiscoverContentSourceSamplePayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "sharepoint",
+        "description": "The system to inspect. Only SharePoint can be inspected."
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+      },
+      "site_url": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`."
+      },
+      "library_name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The document library name. Defaults to the site’s default library."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "A folder inside the library, e.g. `Contracts/2026`. Defaults to the whole library."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 500,
+        "description": "The most files to return. Defaults to 100."
+      }
+    },
+    "required": [
+      "type",
+      "oauth_provider_id",
+      "site_url"
+    ],
+    "additionalProperties": false,
+    "description": "The folder to read a sample of files from."
+  },
+  "DiscoverContentSourceFoldersPayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "sharepoint",
+        "description": "The system to inspect. Only SharePoint can be inspected."
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+      },
+      "site_url": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`."
+      },
+      "library_name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The document library name. Defaults to the site’s default library."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The folder to list, e.g. `Contracts/2026`. Defaults to the library’s root."
+      }
+    },
+    "required": [
+      "type",
+      "oauth_provider_id",
+      "site_url"
+    ],
+    "additionalProperties": false,
+    "description": "The folder to list the subfolders of."
+  },
+  "InspectContentSourceFoldersPayload": {
+    "type": "object",
+    "properties": {
+      "root_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Another root the source’s connection reaches, as `discover/roots` returned it. Defaults to the source’s own root."
+      },
+      "folder_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "A folder, as a listing returned its `id`. Takes precedence over `folder_path`."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "SharePoint only: a folder inside the library, e.g. `Contracts/2026`; empty for the library’s root."
+      }
+    },
+    "additionalProperties": false,
+    "description": "The folder to list the subfolders of, through a content source’s connection. Defaults to the top of the root."
+  },
+  "InspectContentSourceSchemaPayload": {
+    "type": "object",
+    "properties": {
+      "root_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Another root the source’s connection reaches, as `discover/roots` returned it. Defaults to the source’s own root."
+      }
+    },
+    "additionalProperties": false,
+    "description": "The root to read the schema of, through a content source’s connection."
+  },
+  "InspectContentSourceSamplePayload": {
+    "type": "object",
+    "properties": {
+      "root_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Another root the source’s connection reaches, as `discover/roots` returned it. Defaults to the source’s own root."
+      },
+      "folder_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "A folder, as a listing returned its `id`. Takes precedence over `folder_path`."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "SharePoint only: a folder inside the library, e.g. `Contracts/2026`; empty for the library’s root."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 500,
+        "description": "The most files to return. Defaults to 100."
+      }
+    },
+    "additionalProperties": false,
+    "description": "The folder to read a sample of files from, through a content source’s connection. Defaults to what the source syncs in its own root, and to the top of another root."
+  },
+  "ContentSourceRoot": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The identifier to pass as `root_id`."
+      },
+      "name": {
+        "type": "string"
+      },
+      "web_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name"
+    ],
+    "additionalProperties": false,
+    "description": "What a source can sync from: a SharePoint document library, or a Box folder shared with the app."
+  },
+  "ContentSourceRootsDiscovery": {
+    "type": "object",
+    "properties": {
+      "roots": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceRoot"
+        }
+      },
+      "current_root_id": {
+        "type": "string",
+        "description": "The root the source syncs from now."
+      },
+      "truncated": {
+        "type": "boolean",
+        "description": "True when there are more roots than were read."
+      }
+    },
+    "required": [
+      "roots",
+      "truncated"
+    ],
+    "additionalProperties": false,
+    "description": "The roots a content source’s connection reaches."
+  },
+  "ContentSourceFolder": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The identifier of the folder in its system."
+      },
+      "name": {
+        "type": "string"
+      },
+      "path": {
+        "type": "string",
+        "description": "The path inside the library (SharePoint), or below All Files (Box). Pass `id` to go deeper."
+      },
+      "child_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "How many files and folders it holds directly."
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "path"
+    ],
+    "additionalProperties": false,
+    "description": "A folder a content source can reach."
+  },
+  "ContentSourceFoldersDiscovery": {
+    "type": "object",
+    "properties": {
+      "root_id": {
+        "type": "string",
+        "description": "The root read: a SharePoint library. Absent for Box, whose paths start at All Files."
+      },
+      "root_name": {
+        "type": "string"
+      },
+      "folder_id": {
+        "type": "string",
+        "description": "The folder listed."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The folder listed. Empty for the top of the root."
+      },
+      "folders": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceFolder"
+        },
+        "description": "Its direct subfolders, by name."
+      },
+      "truncated": {
+        "type": "boolean",
+        "description": "True when the folder holds more subfolders than were read."
+      }
+    },
+    "required": [
+      "folder_id",
+      "folder_path",
+      "folders",
+      "truncated"
+    ],
+    "additionalProperties": false,
+    "description": "The direct subfolders of a folder."
+  },
+  "ContentSourceLibrary": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The identifier of the library in its system."
+      },
+      "name": {
+        "type": "string",
+        "description": "The name to pass as `library_name`."
+      },
+      "web_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name"
+    ],
+    "additionalProperties": false,
+    "description": "A document library of a site."
+  },
+  "ContentSourceSiteDiscovery": {
+    "type": "object",
+    "properties": {
+      "site_id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "web_url": {
+        "type": "string"
+      },
+      "libraries": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceLibrary"
+        }
+      }
+    },
+    "required": [
+      "site_id",
+      "name",
+      "libraries"
+    ],
+    "additionalProperties": false,
+    "description": "A site and its document libraries."
+  },
+  "ContentSourceColumnType": {
+    "type": "string",
+    "enum": [
+      "text",
+      "number",
+      "boolean",
+      "currency",
+      "date",
+      "date_time",
+      "choice",
+      "lookup",
+      "person",
+      "managed_metadata",
+      "url",
+      "calculated",
+      "location",
+      "image",
+      "approval_status",
+      "unknown"
+    ],
+    "description": "The kind of value a library column holds."
+  },
+  "ContentSourceColumn": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The internal name: the key of the column in a file’s `fields`."
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "type": {
+        "$ref": "#/components/schemas/ContentSourceColumnType"
+      },
+      "required": {
+        "type": "boolean"
+      },
+      "read_only": {
+        "type": "boolean"
+      },
+      "multiple": {
+        "type": "boolean",
+        "description": "Whether a file can hold several values."
+      },
+      "choices": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "The allowed values of a `choice` column."
+      }
+    },
+    "required": [
+      "name",
+      "display_name",
+      "type",
+      "required",
+      "read_only",
+      "multiple"
+    ],
+    "additionalProperties": false,
+    "description": "A metadata column of a document library."
+  },
+  "ContentSourceContentType": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "group": {
+        "type": "string"
+      },
+      "columns": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceColumn"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "columns"
+    ],
+    "additionalProperties": false,
+    "description": "A kind of document a library defines, with the columns its documents carry."
+  },
+  "ContentSourceSchemaDiscovery": {
+    "type": "object",
+    "properties": {
+      "root_id": {
+        "type": "string",
+        "description": "The root read: a SharePoint library. Absent for Box, whose paths start at All Files."
+      },
+      "root_name": {
+        "type": "string"
+      },
+      "content_types": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceContentType"
+        },
+        "description": "The kinds of document the system defines, each with its columns: the document content types of a SharePoint library (folder and hidden ones left out), or the metadata templates of a Box enterprise."
+      },
+      "columns": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceColumn"
+        },
+        "description": "Every visible column of a SharePoint library, whichever content type uses it. Empty for Box, whose fields are on its templates."
+      },
+      "content_types_truncated": {
+        "type": "boolean",
+        "description": "True when there are more content types than were read."
+      }
+    },
+    "required": [
+      "content_types",
+      "columns",
+      "content_types_truncated"
+    ],
+    "additionalProperties": false,
+    "description": "How a system describes its documents: content types or metadata templates, and their columns."
+  },
+  "ContentSourceSampleFile": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The folder of the file, inside the library (SharePoint) or below All Files (Box)."
+      },
+      "size": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "mime_type": {
+        "type": "string"
+      },
+      "web_url": {
+        "type": "string"
+      },
+      "modified_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "content_type": {
+        "type": "string",
+        "description": "The name of the file’s content type."
+      },
+      "fields": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "The values of the file’s own columns, keyed by internal name. System fields are left out."
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "folder_path",
+      "fields"
+    ],
+    "additionalProperties": false,
+    "description": "A file of a sample, with its metadata."
+  },
+  "ContentSourceContentTypeCount": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "name",
+      "count"
+    ],
+    "additionalProperties": false
+  },
+  "ContentSourceSampleDiscovery": {
+    "type": "object",
+    "properties": {
+      "root_id": {
+        "type": "string",
+        "description": "The root read: a SharePoint library. Absent for Box, whose paths start at All Files."
+      },
+      "root_name": {
+        "type": "string"
+      },
+      "files": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceSampleFile"
+        }
+      },
+      "content_type_counts": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceContentTypeCount"
+        },
+        "description": "How many sampled files have each content type, most frequent first."
+      },
+      "folders_read": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "truncated": {
+        "type": "boolean",
+        "description": "True when the folder holds more than was read: the counts describe a sample, not the whole."
+      }
+    },
+    "required": [
+      "files",
+      "content_type_counts",
+      "folders_read",
+      "truncated"
+    ],
+    "additionalProperties": false,
+    "description": "A bounded sample of the files under a folder, spread over its subfolders."
   },
   "CollectionSecuritySettingsResponse": {
     "type": "object",
@@ -42917,6 +43731,18 @@
           },
           "skillDigest": {
             "type": "string"
+          },
+          "resultChecks": {
+            "maxItems": 16,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          "outputSchemaCheck": {
+            "type": "string",
+            "maxLength": 64
           },
           "approvalOrigin": {
             "$ref": "#/components/schemas/ToolApprovalOrigin"
@@ -49272,6 +50098,48 @@
     },
     "additionalProperties": false,
     "description": "`from` and `to` are ISO 8601 date-times or epoch milliseconds, within years 1 to 9999. The window from `from` to `to` (now when absent) may span at most 366 days."
+  },
+  "InferenceBudgetSettings": {
+    "type": "object",
+    "properties": {
+      "daily_limit_usd": {
+        "anyOf": [
+          {
+            "type": "number",
+            "minimum": 0.01,
+            "maximum": 1000000
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "The daily project inference alert threshold in USD. Null means the alert is disabled."
+      },
+      "available": {
+        "type": "boolean",
+        "description": "Whether inference budget alerts are available for the project."
+      }
+    },
+    "required": [
+      "daily_limit_usd",
+      "available"
+    ],
+    "additionalProperties": false
+  },
+  "UpdateInferenceBudget": {
+    "type": "object",
+    "properties": {
+      "daily_limit_usd": {
+        "type": "number",
+        "minimum": 0.01,
+        "maximum": 1000000,
+        "description": "The daily project inference alert threshold in USD."
+      }
+    },
+    "required": [
+      "daily_limit_usd"
+    ],
+    "additionalProperties": false
   },
   "CostRunPriceQuery": {
     "type": "object",

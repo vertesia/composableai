@@ -28,7 +28,7 @@
         "@google-cloud/storage": "^8.4.0",
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
-        "google-auth-library": "^11.3.2",
+        "google-auth-library": "^11.3.4",
         "rolldown": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:"
@@ -38,12 +38,12 @@
         "@vertesia/api-fetch-client": "workspace:*",
         "@vertesia/common": "workspace:*",
         "@vertesia/studio-utils": "workspace:*",
-        "eventsource": "^5.1.4"
+        "eventsource": "^5.1.5"
     },
     "peerDependencies": {
         "@azure/storage-blob": "^12.34.0",
         "@google-cloud/storage": ">=8.4.0",
-        "google-auth-library": ">=11.3.2"
+        "google-auth-library": ">=11.3.4"
     },
     "peerDependenciesMeta": {
         "@azure/storage-blob": {
