@@ -6003,6 +6003,14 @@ interface Checks {
         W.ApiComponentTypes['AIModelStatus'],
         z.infer<typeof import('@llumiverse/common/schemas').AIModelStatusSchema>
     >;
+    'component:AvailableAIModel': Same<
+        W.ApiComponentTypes['AvailableAIModel'],
+        z.infer<typeof import('@llumiverse/common/schemas').AvailableAIModelSchema>
+    >;
+    'component:AvailableAIModelArray': Same<
+        W.ApiComponentTypes['AvailableAIModelArray'],
+        z.infer<typeof import('@llumiverse/common/schemas').AvailableAIModelArraySchema>
+    >;
     'component:ModelType': Same<
         W.ApiComponentTypes['ModelType'],
         z.infer<typeof import('@llumiverse/common/schemas').ModelTypeSchema>
@@ -12597,6 +12605,8 @@ const checks: Checks = {
     'component:AIModel': true,
     'component:AIModelArray': true,
     'component:AIModelStatus': true,
+    'component:AvailableAIModel': true,
+    'component:AvailableAIModelArray': true,
     'component:ModelType': true,
     'component:ModelSearchPayload': true,
     'component:RunAnalyticsQuery': true,
@@ -13842,6 +13852,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2873);
+        expect(Object.keys(checks)).toHaveLength(2875);
     });
 });

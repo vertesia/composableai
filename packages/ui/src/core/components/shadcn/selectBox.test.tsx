@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { SelectBox } from './selectBox';
 
 interface Group {
@@ -51,5 +51,14 @@ describe('SelectBox', () => {
         fireEvent.change(screen.getByPlaceholderText('Search...'), { target: { value: 'ADMINS' } });
         expect(screen.getByText('DEV_ADMINS')).toBeTruthy();
         expect(screen.queryByText('testers')).toBeNull();
+    });
+
+    it('shows and clears a saved value that is no longer offered', () => {
+        const onChange = vi.fn();
+        render(<SelectBox options={['default', 'reserved']} value="flex" onChange={onChange} isClearable />);
+
+        expect(screen.getByRole('button', { name: 'flex' }).getAttribute('aria-invalid')).toBe('true');
+        fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
+        expect(onChange).toHaveBeenCalledWith(undefined);
     });
 });

@@ -44,6 +44,37 @@ const animatedRenditionCases = [
     { sourceFormat: 'WebP', sourceFile: 'animated.webp' },
 ] as const;
 const outputFormats = ['jpeg', 'png', 'webp'] as const;
+// The `jpeg:size` hint must fit the stored aspect ratio: a square hint on a wide image enlarges the decode instead of
+// shrinking it. No hint when the long side is already within 3 * max_hw. Resized with max_hw = 100.
+const shrinkOnLoadCases = [
+    { name: 'a wide JPEG', source: '3000x100.jpg', hint: 'jpeg:size=300x10', output: '100 3' },
+    { name: 'a tall JPEG', source: '100x3000.jpg', hint: 'jpeg:size=10x300', output: '3 100' },
+    { name: 'a JPEG with an uneven short side', source: '2400x100.jpg', hint: 'jpeg:size=300x12', output: '100 4' },
+    { name: 'a square JPEG', source: '1000x1000.jpg', hint: 'jpeg:size=300x300', output: '100 100' },
+    { name: 'a JPEG just over 3 * max_hw', source: '301x200.jpg', hint: 'jpeg:size=300x199', output: '100 66' },
+    { name: 'a JPEG at 3 * max_hw', source: '300x200.jpg', hint: undefined, output: '100 67' },
+    { name: 'a JPEG smaller than max_hw', source: '50x40.jpg', hint: undefined, output: '50 40' },
+    // The hint applies to the stored pixels, before -auto-orient turns them upright.
+    {
+        name: 'a wide JPEG rotated by EXIF',
+        source: '3000x100.jpg',
+        rotated: true,
+        hint: 'jpeg:size=300x10',
+        output: '3 100',
+    },
+] as const;
+
+function shrinkOnLoadFile(testCase: (typeof shrinkOnLoadCases)[number]): string {
+    return 'rotated' in testCase ? `rotated-${testCase.source}` : testCase.source;
+}
+
+function restoreEnv(name: string, value: string | undefined): void {
+    if (value === undefined) {
+        delete process.env[name];
+    } else {
+        process.env[name] = value;
+    }
+}
 
 let animatedFixturesDir: string;
 let cleanupAnimatedFixtures: (() => Promise<void>) | undefined;
@@ -78,6 +109,18 @@ beforeAll(async () => {
         path.join(animatedFixturesDir, 'optimized.gif'),
     ]);
     await fs.promises.writeFile(path.join(animatedFixturesDir, 'not-an-image.xml'), '<document />');
+    await Promise.all(
+        shrinkOnLoadCases.map((testCase) => {
+            const size = path.parse(testCase.source).name;
+            const outputPath = path.join(animatedFixturesDir, shrinkOnLoadFile(testCase));
+            // Stretching the EXIF fixture keeps its Orientation=6 tag.
+            const source =
+                'rotated' in testCase
+                    ? [path.join(__dirname, '../../fixtures', 'synthetic-exif-righttop.jpg'), '-resize', `${size}!`]
+                    : ['-size', size, 'gradient:red-blue'];
+            return execFileAsync('convert', [...source, outputPath]);
+        }),
+    );
 });
 
 afterAll(async () => {
@@ -300,6 +343,36 @@ describe('ImageMagick image resizing', () => {
             await fs.promises.unlink(resizedImagePath);
         }
     });
+
+    test.each(shrinkOnLoadCases)(
+        'should size the shrink-on-load hint of $name to its aspect ratio',
+        async (testCase) => {
+            // Below the 6000x200 decode that a square 300x300 hint causes on a 3000x100 image, either way round.
+            const originalLimits = { width: process.env.MAGICK_WIDTH_LIMIT, height: process.env.MAGICK_HEIGHT_LIMIT };
+            process.env.MAGICK_WIDTH_LIMIT = '4000';
+            process.env.MAGICK_HEIGHT_LIMIT = '4000';
+            convertCalls.length = 0;
+
+            try {
+                const inputImagePath = path.join(animatedFixturesDir, shrinkOnLoadFile(testCase));
+                const resizedImagePath = await imageResizer(inputImagePath, 100, 'jpeg');
+                try {
+                    const resizeArgs = convertCalls.find((args) => args.includes(resizedImagePath));
+                    expect(resizeArgs?.filter((arg) => arg.startsWith('jpeg:size='))).toEqual(
+                        testCase.hint ? [testCase.hint] : [],
+                    );
+
+                    const { stdout } = await execFileAsync('identify', ['-format', '%w %h', resizedImagePath]);
+                    expect(stdout.trim()).toBe(testCase.output);
+                } finally {
+                    await fs.promises.unlink(resizedImagePath);
+                }
+            } finally {
+                restoreEnv('MAGICK_WIDTH_LIMIT', originalLimits.width);
+                restoreEnv('MAGICK_HEIGHT_LIMIT', originalLimits.height);
+            }
+        },
+    );
 
     test('should preserve a retryable process failure when ImageMagick cannot start', async () => {
         const originalPath = process.env.PATH;
