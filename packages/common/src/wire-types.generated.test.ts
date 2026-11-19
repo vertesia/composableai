@@ -1027,6 +1027,22 @@ interface Checks {
         W.BoxContentSource,
         z.infer<typeof import('./api-schemas/content-sources.js').BoxContentSourceSchema>
     >;
+    ContentSourcePermissionSettings: Same<
+        W.ContentSourcePermissionSettings,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourcePermissionSettingsSchema>
+    >;
+    ContentSourcePermissionStatus: Same<
+        W.ContentSourcePermissionStatus,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourcePermissionStatusSchema>
+    >;
+    ProjectContentSourcePermissions: Same<
+        W.ProjectContentSourcePermissions,
+        z.infer<typeof import('./api-schemas/content-sources.js').ProjectContentSourcePermissionsSchema>
+    >;
+    SharePointContentSourcePermissions: Same<
+        W.SharePointContentSourcePermissions,
+        z.infer<typeof import('./api-schemas/content-sources.js').SharePointContentSourcePermissionsSchema>
+    >;
     ContentSourceSyncSettings: Same<
         W.ContentSourceSyncSettings,
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncSettingsSchema>
@@ -8820,6 +8836,14 @@ interface Checks {
         W.ApiComponentTypes['ContentSourceSyncSettings'],
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncSettingsSchema>
     >;
+    'component:ContentSourcePermissionSettings': Same<
+        W.ApiComponentTypes['ContentSourcePermissionSettings'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourcePermissionSettingsSchema>
+    >;
+    'component:ContentSourcePermissionStatus': Same<
+        W.ApiComponentTypes['ContentSourcePermissionStatus'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourcePermissionStatusSchema>
+    >;
     'component:SharePointContentSource': Same<
         W.ApiComponentTypes['SharePointContentSource'],
         z.infer<typeof import('./api-schemas/content-sources.js').SharePointContentSourceSchema>
@@ -11288,6 +11312,10 @@ const checks: Checks = {
     ExternalContentSource: true,
     SharePointContentSource: true,
     BoxContentSource: true,
+    ContentSourcePermissionSettings: true,
+    ContentSourcePermissionStatus: true,
+    ProjectContentSourcePermissions: true,
+    SharePointContentSourcePermissions: true,
     ContentSourceSyncSettings: true,
     CreateContentSourcePayload: true,
     CreateSharePointContentSourcePayload: true,
@@ -13342,6 +13370,8 @@ const checks: Checks = {
     'component:UpdateEventIngestChannelPayload': true,
     'component:EventIngestChannelArray': true,
     'component:ContentSourceSyncSettings': true,
+    'component:ContentSourcePermissionSettings': true,
+    'component:ContentSourcePermissionStatus': true,
     'component:SharePointContentSource': true,
     'component:BoxContentSource': true,
     'component:ExternalContentSource': true,
@@ -13892,6 +13922,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2883);
+        expect(Object.keys(checks)).toHaveLength(2889);
     });
 });
