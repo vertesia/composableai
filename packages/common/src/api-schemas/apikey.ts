@@ -266,6 +266,10 @@ export const AccountApiKeyWithValueSchema = AccountApiKeySchema.extend({ value: 
 });
 export const AccountApiKeyArraySchema = z.array(AccountApiKeySchema).meta({ id: 'AccountApiKeyArray' });
 export const CreateAccountApiKeyPayloadSchema = AccountApiKeySchema.pick({ name: true, expires_at: true })
+    .extend({
+        scim_entra_tenant_id: z.uuid().optional(),
+        scim_entra_members_group_id: z.uuid().optional(),
+    })
     .extend({ name: z.string().trim().min(1).regex(/\S/) })
     .meta({ id: 'CreateAccountApiKeyPayload' });
 export const UpdateAccountApiKeyPayloadSchema = AccountApiKeySchema.pick({ name: true, enabled: true })

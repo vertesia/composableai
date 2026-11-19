@@ -748,6 +748,7 @@
       "content:delete",
       "content:admin",
       "content:superadmin",
+      "content_source:manage",
       "workflow:read",
       "workflow:run",
       "workflow:admin",
@@ -798,7 +799,7 @@
         "description": "Roles whose permissions are inherited, in addition to permissions below. Use built-in system role names or c:<name> references in this account. Cycles and ABAC roles are not allowed. Changes to a base role apply to newly minted tokens."
       },
       "permissions": {
-        "maxItems": 49,
+        "maxItems": 50,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/Permission"
@@ -841,7 +842,7 @@
         "description": "Roles whose permissions are inherited, in addition to permissions below. Use built-in system role names or c:<name> references in this account. Cycles and ABAC roles are not allowed. Changes to a base role apply to newly minted tokens."
       },
       "permissions": {
-        "maxItems": 49,
+        "maxItems": 50,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/Permission"
@@ -2462,6 +2463,16 @@
       "expires_at": {
         "type": "string",
         "format": "date-time"
+      },
+      "scim_entra_tenant_id": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+      },
+      "scim_entra_members_group_id": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
       }
     },
     "required": [
@@ -7228,6 +7239,18 @@
         },
         "description": "Default scopes to request during authorization."
       },
+      "allowed_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Scopes a token request may ask for instead of default_scopes (POST /oauth-providers/{id}/token with a scope), in addition to default_scopes, which are always allowed. Only used for the client_credentials grant. Set by the provider admin: a caller cannot request a scope outside this list and default_scopes. On update, an empty array clears it."
+      },
+      "sharepoint_permission_site": {
+        "type": "string",
+        "format": "uri"
+      },
       "use_pkce": {
         "type": "boolean",
         "description": "Whether to use PKCE (Proof Key for Code Exchange) in the authorization flow. Only applies to authorization_code flow. Defaults to true."
@@ -7335,6 +7358,14 @@
           "type": "string"
         }
       },
+      "allowed_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Scopes a token request may ask for instead of default_scopes (POST /oauth-providers/{id}/token with a scope), in addition to default_scopes, which are always allowed. Only used for the client_credentials grant. Set by the provider admin: a caller cannot request a scope outside this list and default_scopes. On update, an empty array clears it."
+      },
       "use_pkce": {
         "type": "boolean"
       },
@@ -7347,6 +7378,11 @@
           "type": "string"
         },
         "description": "Extra parameters added to the URL-encoded body of every client_credentials token request for this provider, after the standard ones (e.g. Box's box_subject_type and box_subject_id). Only used for the client_credentials grant. At most 10 entries; keys match ^[A-Za-z][A-Za-z0-9_.-]{0,63}$; values are at most 512 characters; grant_type, client_id, client_secret, scope, client_assertion and client_assertion_type are reserved. Not secret: returned as stored. On update, an empty object clears them."
+      },
+      "sharepoint_permission_site": {
+        "type": "string",
+        "format": "uri",
+        "description": "Immutable SharePoint site URL for a dedicated permission reader. Create a replacement provider to change its site or credential."
       }
     },
     "required": [
@@ -7419,6 +7455,14 @@
         "items": {
           "type": "string"
         }
+      },
+      "allowed_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Scopes a token request may ask for instead of default_scopes (POST /oauth-providers/{id}/token with a scope), in addition to default_scopes, which are always allowed. Only used for the client_credentials grant. Set by the provider admin: a caller cannot request a scope outside this list and default_scopes. On update, an empty array clears it."
       },
       "use_pkce": {
         "type": "boolean"
@@ -7507,6 +7551,18 @@
       "state"
     ],
     "additionalProperties": false
+  },
+  "OAuthProviderTokenRequest": {
+    "type": "object",
+    "properties": {
+      "scope": {
+        "type": "string",
+        "pattern": "\\S",
+        "description": "Space-separated scopes to request instead of default_scopes (RFC 6749 §3.3), for example a second resource of the same client. Each scope must be in the provider's default_scopes or allowed_scopes, otherwise the request fails with 400. client_credentials providers only. Omit it for the default scopes."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Optional body of the provider token request."
   },
   "OAuthClientType": {
     "type": "string",
@@ -25650,6 +25706,33 @@
     "additionalProperties": false,
     "description": "Standalone public PKCE OAuth. The publisher manifest provisions one app-managed registration with these exact callback URLs."
   },
+  "AppMcpProfile": {
+    "type": "object",
+    "properties": {
+      "builtin_tools": {
+        "minItems": 1,
+        "maxItems": 50,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Names of the platform MCP server tools the profile lists, e.g. `search_documents`. A name the server does not know is ignored."
+      },
+      "scopes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "The permission scopes the listed tools need. Register the integration’s OAuth client with these scopes and no more: they, not the tool list, limit what its tokens can do."
+      }
+    },
+    "required": [
+      "builtin_tools"
+    ],
+    "additionalProperties": false,
+    "description": "An MCP profile: the set of tools the app exposes to an external integration, such as an assistant in another product. The platform MCP server serves it at `/apps/<app name>` for the projects where the app is installed, and lists only the tools declared here."
+  },
   "AppManifestData": {
     "type": "object",
     "properties": {
@@ -25735,6 +25818,9 @@
       "ui": {
         "$ref": "#/components/schemas/AppUIConfig",
         "description": "The UI configuration of the app. If not specified and the app \"ui\" is in the app capabilities then the ui configuration will be fetched from the endpoint property."
+      },
+      "mcp_profile": {
+        "$ref": "#/components/schemas/AppMcpProfile"
       },
       "tool_collections": {
         "type": "array",
@@ -25889,6 +25975,9 @@
       "ui": {
         "$ref": "#/components/schemas/AppUIConfig",
         "description": "The UI configuration of the app. If not specified and the app \"ui\" is in the app capabilities then the ui configuration will be fetched from the endpoint property."
+      },
+      "mcp_profile": {
+        "$ref": "#/components/schemas/AppMcpProfile"
       },
       "tool_collections": {
         "type": "array",
@@ -26052,6 +26141,9 @@
       "ui": {
         "$ref": "#/components/schemas/AppUIConfig",
         "description": "The UI configuration of the app. If not specified and the app \"ui\" is in the app capabilities then the ui configuration will be fetched from the endpoint property."
+      },
+      "mcp_profile": {
+        "$ref": "#/components/schemas/AppMcpProfile"
       },
       "tool_collections": {
         "type": "array",
@@ -29208,6 +29300,9 @@
       },
       "path": {
         "type": "string"
+      },
+      "authentication_required": {
+        "type": "boolean"
       }
     },
     "required": [
@@ -38254,6 +38349,117 @@
     "additionalProperties": false,
     "description": "When the source syncs. A source with scheduled sync disabled still syncs on `POST /content-sources/{id}/sync`."
   },
+  "ProjectContentSourcePermissions": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "const": "project"
+      }
+    },
+    "required": [
+      "mode"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointContentSourcePermissions": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "const": "source"
+      },
+      "entra_tenant_id": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+      },
+      "scim_connection_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "permission_reader_provider_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "tenant_group_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "refresh_minutes": {
+        "type": "integer",
+        "minimum": 15,
+        "maximum": 1440
+      },
+      "max_stale_hours": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 168
+      }
+    },
+    "required": [
+      "mode",
+      "entra_tenant_id",
+      "scim_connection_id",
+      "permission_reader_provider_id"
+    ],
+    "additionalProperties": false
+  },
+  "ContentSourcePermissionSettings": {
+    "discriminator": {
+      "propertyName": "mode",
+      "mapping": {
+        "project": "#/components/schemas/ProjectContentSourcePermissions",
+        "source": "#/components/schemas/SharePointContentSourcePermissions"
+      }
+    },
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ProjectContentSourcePermissions"
+      },
+      {
+        "$ref": "#/components/schemas/SharePointContentSourcePermissions"
+      }
+    ],
+    "type": "object",
+    "required": [
+      "mode"
+    ]
+  },
+  "ContentSourcePermissionStatus": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "type": "string",
+        "description": "Permission state, currently activating, current, stale, or failed_closed."
+      },
+      "version": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "refreshed_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      },
+      "unresolved": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "reason": {
+        "type": "string",
+        "description": "Status reason, currently reconciling, source_refused, refresh_failed, or verification_expired."
+      }
+    },
+    "required": [
+      "state",
+      "version",
+      "unresolved"
+    ],
+    "additionalProperties": false
+  },
   "SharePointContentSource": {
     "type": "object",
     "properties": {
@@ -38298,6 +38504,9 @@
       "type": {
         "type": "string",
         "const": "sharepoint"
+      },
+      "permissions": {
+        "$ref": "#/components/schemas/ContentSourcePermissionSettings"
       },
       "site_url": {
         "type": "string",
@@ -38474,6 +38683,9 @@
         "type": "string",
         "const": "sharepoint"
       },
+      "permissions": {
+        "$ref": "#/components/schemas/ContentSourcePermissionSettings"
+      },
       "site_url": {
         "type": "string",
         "minLength": 1,
@@ -38534,14 +38746,13 @@
       "folder_id": {
         "type": "string",
         "minLength": 1,
-        "description": "The Box folder ID, shared with the Box app's service account."
+        "description": "The Box folder ID, shared with the Box app's service account. Defaults to `0`, every folder shared with the app, to narrow before the first sync with an update."
       }
     },
     "required": [
       "name",
       "oauth_provider_id",
-      "type",
-      "folder_id"
+      "type"
     ],
     "additionalProperties": false,
     "description": "Registers a Box source. The OAuth provider uses Box's client credentials grant, with the token parameters `box_subject_type` and `box_subject_id`."
@@ -38566,7 +38777,7 @@
     "required": [
       "type"
     ],
-    "description": "Registers a content source. The server checks the folder with the system before saving, answers 409 when the name is already used in the project, then starts the first sync."
+    "description": "Registers a content source. The server checks the folder with the system before saving, answers 409 when the name is already used in the project. Nothing is imported until a sync is requested."
   },
   "UpdateContentSourcePayload": {
     "type": "object",
@@ -38581,10 +38792,27 @@
       },
       "sync": {
         "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      },
+      "permissions": {
+        "$ref": "#/components/schemas/ContentSourcePermissionSettings"
+      },
+      "root_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Only before the first sync: the root to sync, as `discover/roots` returned it (a SharePoint document library; for Box, a folder shared with the app). Answers 409 once the source has synced."
+      },
+      "folder_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Only before the first sync: the folder to sync, as a folder listing returned its `id`. Answers 409 once the source has synced."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "SharePoint only, and only before the first sync: the folder to sync inside the library, e.g. `Contracts/2026`; empty for the whole library. Answers 409 once the source has synced."
       }
     },
     "additionalProperties": false,
-    "description": "Changes the name, description or sync settings. Saving sync settings also hands the sync your credentials, which restarts a sync stopped because its previous credentials were refused."
+    "description": "Changes the name, description or sync settings, and, before the first sync, the root and folder to sync. Saving sync settings also hands the sync your credentials, which restarts a sync stopped because its previous credentials were refused."
   },
   "SyncContentSourcePayload": {
     "type": "object",
@@ -38710,6 +38938,9 @@
           "stopped"
         ],
         "description": "`waiting` between syncs, `running` during one, `stopped` when its credentials were refused or the source is being deleted."
+      },
+      "permissions": {
+        "$ref": "#/components/schemas/ContentSourcePermissionStatus"
       },
       "current_round": {
         "$ref": "#/components/schemas/ContentSourceSyncRound"
@@ -38857,6 +39088,607 @@
     ],
     "additionalProperties": false,
     "description": "A page of the files a sync round created, updated, deleted, skipped or failed. Unchanged files are only counted, in the round's `counts`. A round still running has a partial report."
+  },
+  "DiscoverContentSourceSitePayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "sharepoint",
+        "description": "The system to inspect. Only SharePoint can be inspected."
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+      },
+      "site_url": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`."
+      }
+    },
+    "required": [
+      "type",
+      "oauth_provider_id",
+      "site_url"
+    ],
+    "additionalProperties": false,
+    "description": "The connection to inspect: an OAuth provider and a site. No content source needs to exist."
+  },
+  "DiscoverContentSourceSchemaPayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "sharepoint",
+        "description": "The system to inspect. Only SharePoint can be inspected."
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+      },
+      "site_url": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`."
+      },
+      "library_name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The document library name. Defaults to the site’s default library."
+      }
+    },
+    "required": [
+      "type",
+      "oauth_provider_id",
+      "site_url"
+    ],
+    "additionalProperties": false,
+    "description": "The document library to read the schema of."
+  },
+  "DiscoverContentSourceSamplePayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "sharepoint",
+        "description": "The system to inspect. Only SharePoint can be inspected."
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+      },
+      "site_url": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`."
+      },
+      "library_name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The document library name. Defaults to the site’s default library."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "A folder inside the library, e.g. `Contracts/2026`. Defaults to the whole library."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 500,
+        "description": "The most files to return. Defaults to 100."
+      }
+    },
+    "required": [
+      "type",
+      "oauth_provider_id",
+      "site_url"
+    ],
+    "additionalProperties": false,
+    "description": "The folder to read a sample of files from."
+  },
+  "DiscoverContentSourceFoldersPayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "sharepoint",
+        "description": "The system to inspect. Only SharePoint can be inspected."
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+      },
+      "site_url": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`."
+      },
+      "library_name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The document library name. Defaults to the site’s default library."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The folder to list, e.g. `Contracts/2026`. Defaults to the library’s root."
+      }
+    },
+    "required": [
+      "type",
+      "oauth_provider_id",
+      "site_url"
+    ],
+    "additionalProperties": false,
+    "description": "The folder to list the subfolders of."
+  },
+  "InspectContentSourceFoldersPayload": {
+    "type": "object",
+    "properties": {
+      "root_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Another root the source’s connection reaches, as `discover/roots` returned it. Defaults to the source’s own root."
+      },
+      "folder_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "A folder, as a listing returned its `id`. Takes precedence over `folder_path`."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "SharePoint only: a folder inside the library, e.g. `Contracts/2026`; empty for the library’s root."
+      }
+    },
+    "additionalProperties": false,
+    "description": "The folder to list the subfolders of, through a content source’s connection. Defaults to the top of the root."
+  },
+  "InspectContentSourceSchemaPayload": {
+    "type": "object",
+    "properties": {
+      "root_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Another root the source’s connection reaches, as `discover/roots` returned it. Defaults to the source’s own root."
+      }
+    },
+    "additionalProperties": false,
+    "description": "The root to read the schema of, through a content source’s connection."
+  },
+  "InspectContentSourceSamplePayload": {
+    "type": "object",
+    "properties": {
+      "root_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Another root the source’s connection reaches, as `discover/roots` returned it. Defaults to the source’s own root."
+      },
+      "folder_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "A folder, as a listing returned its `id`. Takes precedence over `folder_path`."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "SharePoint only: a folder inside the library, e.g. `Contracts/2026`; empty for the library’s root."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 500,
+        "description": "The most files to return. Defaults to 100."
+      }
+    },
+    "additionalProperties": false,
+    "description": "The folder to read a sample of files from, through a content source’s connection. Defaults to what the source syncs in its own root, and to the top of another root."
+  },
+  "ContentSourceRoot": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The identifier to pass as `root_id`."
+      },
+      "name": {
+        "type": "string"
+      },
+      "web_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name"
+    ],
+    "additionalProperties": false,
+    "description": "What a source can sync from: a SharePoint document library, or a Box folder shared with the app."
+  },
+  "ContentSourceRootsDiscovery": {
+    "type": "object",
+    "properties": {
+      "roots": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceRoot"
+        }
+      },
+      "current_root_id": {
+        "type": "string",
+        "description": "The root the source syncs from now."
+      },
+      "truncated": {
+        "type": "boolean",
+        "description": "True when there are more roots than were read."
+      }
+    },
+    "required": [
+      "roots",
+      "truncated"
+    ],
+    "additionalProperties": false,
+    "description": "The roots a content source’s connection reaches."
+  },
+  "ContentSourceFolder": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The identifier of the folder in its system."
+      },
+      "name": {
+        "type": "string"
+      },
+      "path": {
+        "type": "string",
+        "description": "The path inside the library (SharePoint), or below All Files (Box). Pass `id` to go deeper."
+      },
+      "child_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "How many files and folders it holds directly."
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "path"
+    ],
+    "additionalProperties": false,
+    "description": "A folder a content source can reach."
+  },
+  "ContentSourceFoldersDiscovery": {
+    "type": "object",
+    "properties": {
+      "root_id": {
+        "type": "string",
+        "description": "The root read: a SharePoint library. Absent for Box, whose paths start at All Files."
+      },
+      "root_name": {
+        "type": "string"
+      },
+      "folder_id": {
+        "type": "string",
+        "description": "The folder listed."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The folder listed. Empty for the top of the root."
+      },
+      "folders": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceFolder"
+        },
+        "description": "Its direct subfolders, by name."
+      },
+      "truncated": {
+        "type": "boolean",
+        "description": "True when the folder holds more subfolders than were read."
+      }
+    },
+    "required": [
+      "folder_id",
+      "folder_path",
+      "folders",
+      "truncated"
+    ],
+    "additionalProperties": false,
+    "description": "The direct subfolders of a folder."
+  },
+  "ContentSourceLibrary": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The identifier of the library in its system."
+      },
+      "name": {
+        "type": "string",
+        "description": "The name to pass as `library_name`."
+      },
+      "web_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name"
+    ],
+    "additionalProperties": false,
+    "description": "A document library of a site."
+  },
+  "ContentSourceSiteDiscovery": {
+    "type": "object",
+    "properties": {
+      "site_id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "web_url": {
+        "type": "string"
+      },
+      "libraries": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceLibrary"
+        }
+      }
+    },
+    "required": [
+      "site_id",
+      "name",
+      "libraries"
+    ],
+    "additionalProperties": false,
+    "description": "A site and its document libraries."
+  },
+  "ContentSourceColumnType": {
+    "type": "string",
+    "enum": [
+      "text",
+      "number",
+      "boolean",
+      "currency",
+      "date",
+      "date_time",
+      "choice",
+      "lookup",
+      "person",
+      "managed_metadata",
+      "url",
+      "calculated",
+      "location",
+      "image",
+      "approval_status",
+      "unknown"
+    ],
+    "description": "The kind of value a library column holds."
+  },
+  "ContentSourceColumn": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The internal name: the key of the column in a file’s `fields`."
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "type": {
+        "$ref": "#/components/schemas/ContentSourceColumnType"
+      },
+      "required": {
+        "type": "boolean"
+      },
+      "read_only": {
+        "type": "boolean"
+      },
+      "multiple": {
+        "type": "boolean",
+        "description": "Whether a file can hold several values."
+      },
+      "choices": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "The allowed values of a `choice` column."
+      }
+    },
+    "required": [
+      "name",
+      "display_name",
+      "type",
+      "required",
+      "read_only",
+      "multiple"
+    ],
+    "additionalProperties": false,
+    "description": "A metadata column of a document library."
+  },
+  "ContentSourceContentType": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "group": {
+        "type": "string"
+      },
+      "columns": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceColumn"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "columns"
+    ],
+    "additionalProperties": false,
+    "description": "A kind of document a library defines, with the columns its documents carry."
+  },
+  "ContentSourceSchemaDiscovery": {
+    "type": "object",
+    "properties": {
+      "root_id": {
+        "type": "string",
+        "description": "The root read: a SharePoint library. Absent for Box, whose paths start at All Files."
+      },
+      "root_name": {
+        "type": "string"
+      },
+      "content_types": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceContentType"
+        },
+        "description": "The kinds of document the system defines, each with its columns: the document content types of a SharePoint library (folder and hidden ones left out), or the metadata templates of a Box enterprise."
+      },
+      "columns": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceColumn"
+        },
+        "description": "Every visible column of a SharePoint library, whichever content type uses it. Empty for Box, whose fields are on its templates."
+      },
+      "content_types_truncated": {
+        "type": "boolean",
+        "description": "True when there are more content types than were read."
+      }
+    },
+    "required": [
+      "content_types",
+      "columns",
+      "content_types_truncated"
+    ],
+    "additionalProperties": false,
+    "description": "How a system describes its documents: content types or metadata templates, and their columns."
+  },
+  "ContentSourceSampleFile": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The folder of the file, inside the library (SharePoint) or below All Files (Box)."
+      },
+      "size": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "mime_type": {
+        "type": "string"
+      },
+      "web_url": {
+        "type": "string"
+      },
+      "modified_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "content_type": {
+        "type": "string",
+        "description": "The name of the file’s content type."
+      },
+      "fields": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "The values of the file’s own columns, keyed by internal name. System fields are left out."
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "folder_path",
+      "fields"
+    ],
+    "additionalProperties": false,
+    "description": "A file of a sample, with its metadata."
+  },
+  "ContentSourceContentTypeCount": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "name",
+      "count"
+    ],
+    "additionalProperties": false
+  },
+  "ContentSourceSampleDiscovery": {
+    "type": "object",
+    "properties": {
+      "root_id": {
+        "type": "string",
+        "description": "The root read: a SharePoint library. Absent for Box, whose paths start at All Files."
+      },
+      "root_name": {
+        "type": "string"
+      },
+      "files": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceSampleFile"
+        }
+      },
+      "content_type_counts": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceContentTypeCount"
+        },
+        "description": "How many sampled files have each content type, most frequent first."
+      },
+      "folders_read": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "truncated": {
+        "type": "boolean",
+        "description": "True when the folder holds more than was read: the counts describe a sample, not the whole."
+      }
+    },
+    "required": [
+      "files",
+      "content_type_counts",
+      "folders_read",
+      "truncated"
+    ],
+    "additionalProperties": false,
+    "description": "A bounded sample of the files under a folder, spread over its subfolders."
   },
   "CollectionSecuritySettingsResponse": {
     "type": "object",
