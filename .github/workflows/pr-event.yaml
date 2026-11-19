@@ -12,18 +12,18 @@ on:
 
 permissions: {}
 
-# One signal per PR at a time. A newer signal replaces a pending one, and nothing is lost: the gate
-# evaluates the PR as it is when it runs, after either completion.
-concurrency:
-  group: pr-event-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
-
 jobs:
   signal:
     name: Signal a pull request change
     # The gate never reads the title or the description: of all edits, only a new base can change
     # its verdict. The skipped run still completes, and the gate ignores a skipped run.
     if: github.event.action != 'edited' || github.event.changes.base != null
+    # One signal per PR at a time. A newer signal replaces a pending one, and nothing is lost: the
+    # gate evaluates the PR as it is when it runs. The concurrency is on the job, so that a skipped
+    # edit never replaces a pending signal.
+    concurrency:
+      group: pr-event-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
     runs-on: ubuntu-slim
     timeout-minutes: 2
     steps:
@@ -31,4 +31,5 @@ jobs:
         env:
           ACTION: ${{ github.event.action }}
           NUMBER: ${{ github.event.pull_request.number }}
-        run: echo "PR #$NUMBER: $ACTION"
+        run: |
+          echo "PR #$NUMBER: $ACTION"
