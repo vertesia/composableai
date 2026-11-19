@@ -73,7 +73,17 @@ export function DocumentIcon({
             return;
         }
 
-        void retrieveRendition(client, document, setRenditionUrl, setRenditionAlt, setRenditionStatus);
+        // Unmounting cancels the pending rendition checks, so a scrolled-away icon stops asking the server.
+        const controller = new AbortController();
+        void retrieveRendition(
+            client,
+            document,
+            setRenditionUrl,
+            setRenditionAlt,
+            setRenditionStatus,
+            controller.signal,
+        );
+        return () => controller.abort();
     }, [client, document]);
 
     const isHighlighted = highlightRow?.(document);
