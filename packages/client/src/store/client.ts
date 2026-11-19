@@ -8,6 +8,7 @@ import {
 } from '@vertesia/api-fetch-client';
 import { APP_VERSION_HEADER, type BulkOperationPayload, type BulkOperationResponse } from '@vertesia/common';
 import { warnUnknownOptions } from '../unknown-options.js';
+import { clientUserAgentHeaders } from '../user-agent.js';
 import { AgentsApi } from './AgentsApi.js';
 import { CollectionsApi } from './CollectionsApi.js';
 import { ContentApi } from './ContentApi.js';
@@ -134,6 +135,7 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     get initialHeaders() {
         return {
             ...super.initialHeaders,
+            ...clientUserAgentHeaders(),
             [VERSION_HEADER]: VERSION,
         };
     }
