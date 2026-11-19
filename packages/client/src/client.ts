@@ -45,6 +45,7 @@ import ToolsApi from './ToolsApi.js';
 import TrainingApi from './TrainingApi.js';
 import UsersApi from './UsersApi.js';
 import { warnUnknownOptions } from './unknown-options.js';
+import { clientUserAgentHeaders } from './user-agent.js';
 import ViewsApi from './ViewsApi.js';
 
 /**
@@ -505,6 +506,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     get initialHeaders() {
         return {
             ...super.initialHeaders,
+            ...clientUserAgentHeaders(),
             [VERSION_HEADER]: VERSION,
         };
     }
