@@ -19,6 +19,7 @@ export async function retrieveRendition(
     setRenditionUrl: (url: string) => void,
     setRenditionAlt: (alt: string) => void,
     setRenditionStatus: (status: string) => void,
+    signal?: AbortSignal,
 ) {
     if (!doc?.content?.type || !(isImage(doc.content.type) || isVideo(doc.content.type) || isPdf(doc.content.type))) {
         setRenditionStatus('No preview available');
@@ -42,14 +43,16 @@ export async function retrieveRendition(
     client.objects
         .getRendition(doc.id, RENDITION_OPTIONS)
         .then((response) => {
+            if (signal?.aborted) return;
             if (response.status === 'generating') {
                 setRenditionStatus('Preparing preview...');
                 setRenditionUrl('');
                 setRenditionAlt('');
-                setTimeout(
-                    () => retrieveRendition(client, doc, setRenditionUrl, setRenditionAlt, setRenditionStatus),
-                    60000,
-                );
+                // Check again in a minute. Once the caller has gone away, the check is skipped.
+                setTimeout(() => {
+                    if (signal?.aborted) return;
+                    void retrieveRendition(client, doc, setRenditionUrl, setRenditionAlt, setRenditionStatus, signal);
+                }, 60000);
             } else if (response.status === 'failed') {
                 setRenditionStatus('No preview available');
                 setRenditionUrl('');
@@ -76,6 +79,7 @@ export async function retrieveRendition(
             }
         })
         .catch((error) => {
+            if (signal?.aborted) return;
             setRenditionStatus('No preview available');
             console.warn('Failed to retrieve rendition:', error);
             setRenditionUrl('');

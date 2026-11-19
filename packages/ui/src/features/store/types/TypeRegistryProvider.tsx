@@ -9,6 +9,7 @@ import {
     useRef,
     useState,
 } from 'react';
+import { retryAfterHintMs } from '../../../core/hooks/usePolling.js';
 import { TypeRegistry } from './TypeRegistry.js';
 
 /** Delay before the first automatic retry after a failed load. It doubles after each further failure. */
@@ -25,12 +26,6 @@ const MAX_TIMER_MS = 2_147_483_647;
 function retryDelayMs(failures: number, retryAfterMs?: number): number {
     const backoff = Math.min(RETRY_MAX_MS, RETRY_BASE_MS * 2 ** Math.max(0, failures - 1));
     return Math.min(MAX_TIMER_MS, Math.max(backoff, retryAfterMs ?? 0));
-}
-
-/** Reads the `retryAfterMs` hint that the API client attaches to its request errors. */
-function retryAfterHintMs(err: unknown): number | undefined {
-    const hint = (err as { retryAfterMs?: unknown } | null)?.retryAfterMs;
-    return typeof hint === 'number' && Number.isFinite(hint) && hint >= 0 ? hint : undefined;
 }
 
 interface TypeRegistryContextValue {

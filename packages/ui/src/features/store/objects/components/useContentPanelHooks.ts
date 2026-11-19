@@ -1,7 +1,9 @@
 import { type DocAnalyzerProgress, MarkdownRenditionFormat, WorkflowExecutionStatus } from '@vertesia/common';
+import { usePolling } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { isEqual } from 'lodash-es';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 // Maximum text size before cropping (128K characters)
 const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
@@ -112,71 +114,35 @@ export function usePdfProcessingStatus(objectId: string, shouldPoll: boolean) {
         isComplete: boolean;
     }>({ isComplete: false });
 
-    useEffect(() => {
-        if (!shouldPoll) return;
-
-        let interrupted = false;
-        let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-        const updateStateIfChanged = (
-            nextProgress: DocAnalyzerProgress | undefined,
-            nextStatus: WorkflowExecutionStatus | undefined,
-            nextIsComplete: boolean,
-        ) => {
+    // Progress is read every 2 seconds while the workflow runs. Before it exists, the request fails with 404,
+    // which is expected, so that is checked every 10 seconds. Other failures are retried at the same cadence,
+    // and a permanent one stops the poll. A completed or failed workflow ends it.
+    const runningRef = useRef(false);
+    usePolling(
+        async (signal) => {
+            const r = await client.objects.analyze(objectId).getStatus();
+            if (signal.aborted) return false;
+            const running = r.status === WorkflowExecutionStatus.RUNNING;
+            runningRef.current = running;
             setState((prev) => {
-                const prevProgress = JSON.stringify(prev.progress ?? null);
-                const nextProgressSignature = JSON.stringify(nextProgress ?? null);
-
-                if (
-                    prev.status === nextStatus &&
-                    prev.isComplete === nextIsComplete &&
-                    prevProgress === nextProgressSignature
-                ) {
+                if (prev.status === r.status && prev.isComplete === !running && isEqual(prev.progress, r.progress)) {
                     return prev;
                 }
-
-                return {
-                    progress: nextProgress,
-                    status: nextStatus,
-                    isComplete: nextIsComplete,
-                };
+                return { progress: r.progress, status: r.status, isComplete: !running };
             });
-        };
-
-        function poll() {
-            if (interrupted) return;
-
-            client.objects
-                .analyze(objectId)
-                .getStatus()
-                .then((r) => {
-                    if (r.status === WorkflowExecutionStatus.RUNNING) {
-                        updateStateIfChanged(r.progress, r.status, false);
-                        // Workflow is running, poll every 2 seconds for progress
-                        if (!interrupted) {
-                            timeoutId = setTimeout(poll, 2000);
-                        }
-                    } else {
-                        // Workflow completed or terminal state
-                        updateStateIfChanged(r.progress, r.status, true);
-                    }
-                })
-                .catch(() => {
-                    // No workflow found yet, poll every 10 seconds to check if one starts
-                    if (!interrupted) {
-                        timeoutId = setTimeout(poll, 10000);
-                    }
-                });
-        }
-
-        poll();
-        return () => {
-            interrupted = true;
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-            }
-        };
-    }, [shouldPoll, objectId, client]);
+            return !running;
+        },
+        {
+            enabled: shouldPoll,
+            intervalMs: () => (runningRef.current ? 2_000 : 10_000),
+            // 404 is expected until the workflow exists, so it is retried; other 4xx still end the poll.
+            retryStatuses: [404],
+            onError: () => {
+                runningRef.current = false;
+            },
+        },
+        [objectId, client],
+    );
 
     return {
         progress: state.progress,
@@ -190,46 +156,62 @@ export function usePdfProcessingStatus(objectId: string, shouldPoll: boolean) {
  */
 export function useOfficePdfConversion(objectId: string, enabled: boolean) {
     const { client } = useUserSession();
-    const t = i18nInstance.getFixedT(null, NAMESPACE);
+    // `getFixedT` returns a new function on every call; memoised so the poll below is not restarted each render.
+    const t = useMemo(() => i18nInstance.getFixedT(null, NAMESPACE), []);
 
     const [pdfUrl, setPdfUrl] = useState<string | undefined>();
     const [isConverting, setIsConverting] = useState(false);
     const [error, setError] = useState<string | undefined>();
 
-    const triggerConversion = useCallback(async () => {
-        if (!enabled || isConverting) return;
+    // Only the first request asks the server to generate the PDF. It stays set until a request gets an answer,
+    // so a failed first request does not lose the conversion.
+    const generateRef = useRef(false);
 
+    // Checks every 5 seconds while the PDF is generating. A permanent error ends the conversion with a message;
+    // a transient one is retried.
+    usePolling(
+        async (signal) => {
+            const response = await client.objects.getRendition(objectId, {
+                format: MarkdownRenditionFormat.pdf,
+                generate_if_missing: generateRef.current,
+                sign_url: true,
+                block_on_generation: false,
+            });
+            if (signal.aborted) return false;
+            generateRef.current = false;
+            if (response.status === 'generating') {
+                setError(undefined);
+                return false;
+            }
+            if (response.status === 'found' && response.renditions?.length) {
+                setPdfUrl(response.renditions[0]);
+                setError(undefined);
+            } else {
+                setError(t('store.pdfConversionFailed'));
+            }
+            setIsConverting(false);
+            return true;
+        },
+        {
+            enabled: isConverting,
+            intervalMs: 5_000,
+            onError: (err, permanent) => {
+                // A transient failure keeps the conversion going, but the user is told it is failing.
+                setError(t('store.failedToConvertToPdf'));
+                if (!permanent) return;
+                console.error('Failed to convert Office document to PDF:', err);
+                setIsConverting(false);
+            },
+        },
+        [objectId, client, t],
+    );
+
+    const triggerConversion = useCallback(() => {
+        if (!enabled || isConverting) return;
+        generateRef.current = true;
         setIsConverting(true);
         setError(undefined);
-
-        const pollForPdf = async (isFirstCall: boolean) => {
-            try {
-                const response = await client.objects.getRendition(objectId, {
-                    format: MarkdownRenditionFormat.pdf,
-                    generate_if_missing: isFirstCall,
-                    sign_url: true,
-                    block_on_generation: false,
-                });
-
-                if (response.status === 'generating') {
-                    // Poll every 5 seconds
-                    setTimeout(() => pollForPdf(false), 5000);
-                } else if (response.status === 'found' && response.renditions?.length) {
-                    setPdfUrl(response.renditions[0]);
-                    setIsConverting(false);
-                } else if (response.status === 'failed') {
-                    setError(t('store.pdfConversionFailed'));
-                    setIsConverting(false);
-                }
-            } catch (err) {
-                console.error('Failed to convert Office document to PDF:', err);
-                setError(t('store.failedToConvertToPdf'));
-                setIsConverting(false);
-            }
-        };
-
-        await pollForPdf(true);
-    }, [objectId, enabled, isConverting, client, t]);
+    }, [enabled, isConverting]);
 
     return {
         pdfUrl,
