@@ -188,6 +188,7 @@ import {
     McpApiKeyStatusSchema,
     McpOAuthConnectResponseSchema,
     McpOAuthDisconnectResponseSchema,
+    McpOAuthExchangePayloadSchema,
     McpOAuthTokenRequestSchema,
     McpOAuthTokenResponseSchema,
     OAuthAuthorizeResponseSchema,
@@ -2279,6 +2280,7 @@ const REMOTE_MCP_SCHEMAS = {
     OAuthMetadataResponse: OAuthMetadataResponseSchema,
     McpOAuthDisconnectResponse: McpOAuthDisconnectResponseSchema,
     McpOAuthConnectResponse: McpOAuthConnectResponseSchema,
+    McpOAuthExchangePayload: McpOAuthExchangePayloadSchema,
     OAuthAuthorizeResponse: OAuthAuthorizeResponseSchema,
     OAuthAuthStatusArray: OAuthAuthStatusArraySchema,
     // The static-key alternative to that handshake: the key itself is write-only, so only the
@@ -3670,6 +3672,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'OAuthMetadataResponse',
     'McpOAuthDisconnectResponse',
     'McpOAuthConnectResponse',
+    'McpOAuthExchangePayload',
     'OAuthAuthorizeResponse',
     'SetMcpApiKeyRequest',
     'McpApiKeyStatus',

@@ -18089,6 +18089,27 @@
     ],
     "additionalProperties": false
   },
+  "McpOAuthExchangePayload": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string"
+      },
+      "iss": {
+        "type": "string",
+        "description": "The `iss` parameter of the authorization response (RFC 9207), when the authorization server sent one. It is checked against the issuer the server discovered, to detect an authorization server mix-up."
+      }
+    },
+    "required": [
+      "code",
+      "state"
+    ],
+    "additionalProperties": false,
+    "description": "The authorization response parameters of a remote MCP OAuth callback."
+  },
   "OAuthAuthorizeResponse": {
     "type": "object",
     "properties": {
