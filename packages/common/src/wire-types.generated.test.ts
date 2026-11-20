@@ -1344,6 +1344,22 @@ interface Checks {
         W.DataStoreStatus,
         z.infer<typeof import('./api-schemas/data-store.js').DataStoreStatusSchema>
     >;
+    DataStoreStorageFormat: Same<
+        W.DataStoreStorageFormat,
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreStorageFormatSchema>
+    >;
+    DataStoreDataWriteVersioning: Same<
+        W.DataStoreDataWriteVersioning,
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreDataWriteVersioningSchema>
+    >;
+    DataStoreVersioning: Same<
+        W.DataStoreVersioning,
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreVersioningSchema>
+    >;
+    UpdateDataStorePayload: Same<
+        W.UpdateDataStorePayload,
+        z.infer<typeof import('./api-schemas/data-store.js').UpdateDataStorePayloadSchema>
+    >;
     DataStoreItem: Same<W.DataStoreItem, z.infer<typeof import('./api-schemas/data-store.js').DataStoreItemSchema>>;
     DataStore: Same<W.DataStore, z.infer<typeof import('./api-schemas/data-store.js').DataStoreSchema>>;
     DataStoreVersionTableState: Same<
@@ -7376,6 +7392,18 @@ interface Checks {
         W.ApiComponentTypes['DataStoreStatus'],
         z.infer<typeof import('./api-schemas/data-store.js').DataStoreStatusSchema>
     >;
+    'component:DataStoreStorageFormat': Same<
+        W.ApiComponentTypes['DataStoreStorageFormat'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreStorageFormatSchema>
+    >;
+    'component:DataStoreDataWriteVersioning': Same<
+        W.ApiComponentTypes['DataStoreDataWriteVersioning'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreDataWriteVersioningSchema>
+    >;
+    'component:DataStoreVersioning': Same<
+        W.ApiComponentTypes['DataStoreVersioning'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreVersioningSchema>
+    >;
     'component:ImportDataFormat': Same<
         W.ApiComponentTypes['ImportDataFormat'],
         z.infer<typeof import('./api-schemas/data-store.js').ImportDataFormatSchema>
@@ -7419,6 +7447,10 @@ interface Checks {
     'component:CreateDataStorePayload': Same<
         W.ApiComponentTypes['CreateDataStorePayload'],
         z.infer<typeof import('./api-schemas/data-store.js').CreateDataStorePayloadSchema>
+    >;
+    'component:UpdateDataStorePayload': Same<
+        W.ApiComponentTypes['UpdateDataStorePayload'],
+        z.infer<typeof import('./api-schemas/data-store.js').UpdateDataStorePayloadSchema>
     >;
     'component:QueryValidationResult': Same<
         W.ApiComponentTypes['QueryValidationResult'],
@@ -11398,6 +11430,10 @@ const checks: Checks = {
     DataSchema: true,
     DataStoreFullSchemaResponse: true,
     DataStoreStatus: true,
+    DataStoreStorageFormat: true,
+    DataStoreDataWriteVersioning: true,
+    DataStoreVersioning: true,
+    UpdateDataStorePayload: true,
     DataStoreItem: true,
     DataStore: true,
     DataStoreVersionTableState: true,
@@ -13005,6 +13041,9 @@ const checks: Checks = {
     'component:DataTableSummary': true,
     'component:DataStoreVersionTableState': true,
     'component:DataStoreStatus': true,
+    'component:DataStoreStorageFormat': true,
+    'component:DataStoreDataWriteVersioning': true,
+    'component:DataStoreVersioning': true,
     'component:ImportDataFormat': true,
     'component:ImportDataSource': true,
     'component:DataRelationshipForAI': true,
@@ -13016,6 +13055,7 @@ const checks: Checks = {
     'component:CreateSnapshotPayload': true,
     'component:DataStoreDownloadInfo': true,
     'component:CreateDataStorePayload': true,
+    'component:UpdateDataStorePayload': true,
     'component:QueryValidationResult': true,
     'component:DataColumn': true,
     'component:AlterTableAddColumnOperation': true,
