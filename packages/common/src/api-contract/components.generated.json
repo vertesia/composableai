@@ -39319,6 +39319,121 @@
     "additionalProperties": false,
     "description": "A content source's sync state."
   },
+  "ContentSourceRoundSummary": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "import",
+          "update"
+        ],
+        "description": "`import` lists the whole folder; `update` reads the changes since the previous sync."
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "finished_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "outcome": {
+        "type": "string",
+        "enum": [
+          "succeeded",
+          "failed"
+        ],
+        "description": "Whether the round finished without an error."
+      }
+    },
+    "required": [
+      "kind",
+      "started_at",
+      "outcome"
+    ],
+    "additionalProperties": false,
+    "description": "When a finished sync round ran, and how it ended."
+  },
+  "ContentSourceSummary": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "type": {
+        "type": "string",
+        "enum": [
+          "sharepoint",
+          "box"
+        ]
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` under which the source folder's tree is reproduced, e.g. `/sharepoint/legal`."
+      },
+      "site_url": {
+        "type": "string",
+        "description": "SharePoint only: the site URL."
+      },
+      "library_name": {
+        "type": "string",
+        "description": "SharePoint only: the document library name."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The folder synced: relative to the library root for SharePoint (empty for the whole library), the folder path below All Files for Box."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "not_started",
+          "running",
+          "waiting",
+          "stopped"
+        ],
+        "description": "`waiting` between syncs, `running` during one, `stopped` when its credentials were refused or the source is being deleted."
+      },
+      "next_sync_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "last_success_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the last round that finished without an error ended. Absent when none has."
+      },
+      "last_round": {
+        "$ref": "#/components/schemas/ContentSourceRoundSummary"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "type",
+      "location_root",
+      "folder_path",
+      "sync",
+      "state"
+    ],
+    "additionalProperties": false,
+    "description": "What a content source syncs into the project and how its sync stands, readable by every member who can read content. Holds no connection, credential or permission settings."
+  },
+  "ContentSourceSummaryArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/ContentSourceSummary"
+    }
+  },
   "ContentSourceReportAction": {
     "type": "string",
     "enum": [
