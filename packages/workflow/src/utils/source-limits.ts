@@ -11,6 +11,8 @@ const MiB = 1024 * 1024;
 export const CONVERTER_MAX_SOURCE_MB_ENV = 'WORKFLOW_CONVERTER_MAX_SOURCE_MB';
 /** Most bytes of a DOCX or PPTX the markitdown converter is given to parse, counted once decompressed. */
 export const OFFICE_MAX_PARSED_MB_ENV = 'WORKFLOW_OFFICE_MAX_PARSED_MB';
+/** Most bytes a DOCX or PPTX given to the markitdown converter may decompress to, all parts counted. */
+export const OFFICE_MAX_UNPACKED_MB_ENV = 'WORKFLOW_OFFICE_MAX_UNPACKED_MB';
 /** Largest audio or video source downloaded for transcoding, thumbnails and metadata. */
 export const MEDIA_MAX_SOURCE_MB_ENV = 'WORKFLOW_MEDIA_MAX_SOURCE_MB';
 
@@ -21,6 +23,9 @@ const DEFAULT_CONVERTER_MAX_SOURCE_MB = 1024;
 // worker should allow about that much memory per concurrent conversion. A small zip can decompress to far more than
 // that, so the size of the download alone does not bound it.
 const DEFAULT_OFFICE_MAX_PARSED_MB = 100;
+// The PPTX reader also decompresses every other part (images, video, embedded files) into memory, at about their own
+// size. Within both limits a document peaks near 1.1 GiB (100 MiB of XML, 412 MiB of media).
+const DEFAULT_OFFICE_MAX_UNPACKED_MB = 512;
 // Media is transcoded from a copy on disk too, next to its renditions: a source this large leaves room for them on a
 // worker with a few GiB more disk, and a larger one could never be processed there.
 const DEFAULT_MEDIA_MAX_SOURCE_MB = 8192;
@@ -30,6 +35,8 @@ export interface SourceLimits {
     converterMaxBytes: number;
     /** Most decompressed bytes of a DOCX or PPTX handed to markitdown to parse. */
     officeMaxParsedBytes: number;
+    /** Most bytes a DOCX or PPTX handed to markitdown may decompress to, all parts counted. */
+    officeMaxUnpackedBytes: number;
     /** Largest audio or video source processed, in bytes. */
     mediaMaxBytes: number;
 }
@@ -39,11 +46,11 @@ export const SOURCE_LIMIT_EXCEEDED_MESSAGE = 'Source over size limit';
 
 /**
  * The limit a source went over:
- * - `converter`, `office_parsed`, `media`: the limits of {@link getSourceLimits};
+ * - `converter`, `office_parsed`, `office_unpacked`, `media`: the limits of {@link getSourceLimits};
  * - `download`: the `maxBytes` of a download that names no other limit;
  * - any other name: a limit of the activity that logs it, such as a provider's own maximum.
  */
-export type SourceLimitName = 'converter' | 'office_parsed' | 'media' | 'download' | (string & {});
+export type SourceLimitName = 'converter' | 'office_parsed' | 'office_unpacked' | 'media' | 'download' | (string & {});
 
 export interface SourceLimitExceeded {
     /** The source over the limit: a blob URI or a URL. */
@@ -80,6 +87,7 @@ export function getSourceLimits(): SourceLimits {
     return {
         converterMaxBytes: readMegabytes(CONVERTER_MAX_SOURCE_MB_ENV, DEFAULT_CONVERTER_MAX_SOURCE_MB) * MiB,
         officeMaxParsedBytes: readMegabytes(OFFICE_MAX_PARSED_MB_ENV, DEFAULT_OFFICE_MAX_PARSED_MB) * MiB,
+        officeMaxUnpackedBytes: readMegabytes(OFFICE_MAX_UNPACKED_MB_ENV, DEFAULT_OFFICE_MAX_UNPACKED_MB) * MiB,
         mediaMaxBytes: readMegabytes(MEDIA_MAX_SOURCE_MB_ENV, DEFAULT_MEDIA_MAX_SOURCE_MB) * MiB,
     };
 }

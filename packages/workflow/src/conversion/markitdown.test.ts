@@ -29,8 +29,8 @@ vi.mock('./office-zip.js', async (importOriginal) => ({
 
 import { execActivityFile } from '../activities/media/exec.js';
 import { DocumentConversionError, SourceTooLargeError } from '../errors.js';
-import { OFFICE_MAX_PARSED_MB_ENV } from '../utils/source-limits.js';
-import { markdownWithMarkitdown, parsedSize, rejectionReason } from './markitdown.js';
+import { OFFICE_MAX_PARSED_MB_ENV, OFFICE_MAX_UNPACKED_MB_ENV } from '../utils/source-limits.js';
+import { markdownWithMarkitdown, officeSize, rejectionReason } from './markitdown.js';
 import { InvalidZipError, readZipEntries } from './office-zip.js';
 
 const MiB = 1024 * 1024;
@@ -49,6 +49,16 @@ const STDERR_0_1 = `Traceback (most recent call last):
 markitdown._exceptions.FileConversionException: File conversion failed after 1 attempts:
  - DocxConverter threw BadZipFile with message: File is not a zip file
 `;
+
+/** stderr of markitdown 0.1 when a converter raised `cause`. */
+function stderrWrapping(cause: string, message: string): string {
+    return `Traceback (most recent call last):
+  File "/opt/markitdown/lib/python3.13/site-packages/markitdown/_markitdown.py", line 612, in _convert
+    raise FileConversionException(attempts=failed_attempts)
+markitdown._exceptions.FileConversionException: File conversion failed after 1 attempts:
+ - PptxConverter threw ${cause} with message: ${message}
+`;
+}
 
 /** stderr of markitdown 0.0, which chains the underlying traceback. */
 const STDERR_0_0 = `Traceback (most recent call last):
@@ -121,6 +131,20 @@ describe('markdownWithMarkitdown', () => {
         expect(execActivityFile).not.toHaveBeenCalled();
     });
 
+    it('should refuse a PPTX whose media unpack over the limit without running markitdown', async () => {
+        vi.stubEnv(OFFICE_MAX_UNPACKED_MB_ENV, '1');
+        zip.entries = [
+            { name: 'ppt/slides/slide1.xml', uncompressedSize: 1000 },
+            { name: 'ppt/media/video1.mp4', uncompressedSize: 2 * MiB },
+        ];
+
+        const result = markdownWithMarkitdown(input, 'pptx', { source: 'gs://bucket/deck.pptx' });
+
+        await expect(result).rejects.toBeInstanceOf(SourceTooLargeError);
+        await expect(result).rejects.toMatchObject({ maxBytes: MiB, size: 2 * MiB + 1000 });
+        expect(execActivityFile).not.toHaveBeenCalled();
+    });
+
     it('should refuse a file that is not a zip without running markitdown, and not retry it', async () => {
         vi.mocked(readZipEntries).mockRejectedValueOnce(new InvalidZipError('No zip end of central directory record'));
 
@@ -148,6 +172,8 @@ describe('markdownWithMarkitdown', () => {
         { name: 'killed', error: execError('', null, 'SIGKILL') },
         { name: 'crashed', error: execError('Segmentation fault', 139) },
         { name: 'failed on its own bug', error: execError('Traceback ...\nKeyError: x', 1) },
+        { name: 'out of memory in a converter', error: execError(stderrWrapping('MemoryError', ''), 1) },
+        { name: 'failing to read a file', error: execError(stderrWrapping('OSError', '[Errno 5] I/O error'), 1) },
     ])('should let a retry run when markitdown is $name', async ({ error }) => {
         tool.error = error;
 
@@ -155,7 +181,7 @@ describe('markdownWithMarkitdown', () => {
     });
 });
 
-describe('parsedSize', () => {
+describe('officeSize', () => {
     const entries = [
         { name: '[Content_Types].xml', uncompressedSize: 1 },
         { name: 'word/_rels/document.xml.rels', uncompressedSize: 10 },
@@ -163,12 +189,12 @@ describe('parsedSize', () => {
         { name: 'word/media/image1.png', uncompressedSize: 1000 },
     ];
 
-    it('should count every part of a DOCX, whose images mammoth inlines', () => {
-        expect(parsedSize('docx', entries)).toBe(1111);
+    it('should count every part of a DOCX as parsed, since mammoth inlines its images', () => {
+        expect(officeSize('docx', entries)).toEqual({ parsed: 1111, unpacked: 1111 });
     });
 
-    it('should count only the XML parts of a PPTX', () => {
-        expect(parsedSize('pptx', entries)).toBe(111);
+    it('should count only the XML parts of a PPTX as parsed, and every part as unpacked', () => {
+        expect(officeSize('pptx', entries)).toEqual({ parsed: 111, unpacked: 1111 });
     });
 });
 
@@ -187,6 +213,18 @@ describe('rejectionReason', () => {
         );
     });
 
+    it.each(['XMLSyntaxError', 'PackageNotFoundError'])('should recognize a converter that raised %s', (cause) => {
+        expect(rejectionReason(execError(stderrWrapping(cause, 'bad'), 1))).toContain(`threw ${cause} with message`);
+    });
+
+    it('should not reject a document when one of the converters failed for another cause', () => {
+        const stderr = stderrWrapping('BadZipFile', 'Bad CRC-32').replace(
+            ' - PptxConverter',
+            ' - DocxConverter threw MemoryError with message: \n - PptxConverter',
+        );
+        expect(rejectionReason(execError(stderr, 1))).toBeUndefined();
+    });
+
     it('should recognize an unsupported format', () => {
         expect(
             rejectionReason(execError('markitdown._exceptions.UnsupportedFormatException: No converter for .docx', 1)),
@@ -197,6 +235,8 @@ describe('rejectionReason', () => {
         { name: 'another exit code', error: execError(STDERR_0_1, 2) },
         { name: 'a kill', error: execError(STDERR_0_1, null, 'SIGKILL') },
         { name: 'another exception', error: execError('MemoryError', 1) },
+        { name: 'a wrapped MemoryError', error: execError(stderrWrapping('MemoryError', ''), 1) },
+        { name: 'a wrapped OSError', error: execError(stderrWrapping('OSError', '[Errno 28] No space left'), 1) },
         { name: 'an error without stderr', error: new Error('spawn markitdown ENOENT') },
         { name: 'a non-error', error: 'markitdown failed' },
     ])('should not classify $name as a rejection', ({ error }) => {

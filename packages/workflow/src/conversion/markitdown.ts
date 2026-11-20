@@ -12,10 +12,23 @@ export interface MarkitdownOptions extends Pick<ConvertOptions, 'maxOutputBytes'
 }
 
 /**
- * markitdown's own exceptions for a document it cannot read. Its command-line tool does not catch them, so they end
- * the process with exit code 1 and a traceback on stderr.
+ * markitdown's own exceptions. Its command-line tool does not catch them, so they end the process with exit code 1
+ * and a traceback on stderr.
  */
-const REJECTION_PATTERN = /\b(?:FileConversionException|UnsupportedFormatException)\b/;
+const MARKITDOWN_EXCEPTION = /\b(FileConversionException|UnsupportedFormatException)\b/;
+
+/**
+ * Errors a converter raises on a malformed document, which fail the same way at every attempt. markitdown wraps
+ * whatever a converter raises in a FileConversionException, `MemoryError` and `OSError` included, so only these
+ * causes make the failure permanent; any other cause lets a retry run.
+ */
+const INPUT_ERRORS = new Set(['BadZipFile', 'XMLSyntaxError', 'PackageNotFoundError']);
+
+/** A converter's failure as markitdown 0.1 lists it: ` - DocxConverter threw BadZipFile with message: ...`. */
+const FAILED_ATTEMPT = /\bthrew ([\w.]+) with message:/;
+
+/** The exception line Python prints last: `zipfile.BadZipFile: File is not a zip file`. */
+const EXCEPTION_LINE = /^([\w.]+):/;
 
 /** Characters of markitdown's error quoted in a {@link DocumentConversionError}. */
 const MAX_REASON_CHARS = 1000;
@@ -26,15 +39,15 @@ const MAX_REASON_CHARS = 1000;
  */
 const ENV_ALLOWLIST = ['PATH', 'HOME', 'TMPDIR', 'LANG', 'LC_ALL', 'LC_CTYPE', 'TZ'];
 
-/** Parts of a PPTX that python-pptx parses; it leaves media as bytes, which cost about their own size. */
+/** Parts of a PPTX that python-pptx parses as XML; it also loads every other part, as bytes of about their own size. */
 const PPTX_PARSED_PART = /\.(?:xml|rels)$/i;
 
 /**
  * Convert a DOCX or PPTX file to Markdown with markitdown.
  *
- * The document is checked before it is converted: markitdown holds all of it in memory several times over, and a
- * small zip can decompress to gigabytes, so a document over the `officeMaxParsedBytes` limit of
- * {@link getSourceLimits} is refused.
+ * The document is checked before it is converted: markitdown holds all of it in memory, the parts it parses several
+ * times over, and a small zip can decompress to gigabytes. A document over the `officeMaxParsedBytes` or the
+ * `officeMaxUnpackedBytes` limit of {@link getSourceLimits} is refused.
  *
  * @param file path of the document; markitdown picks its converter from the extension, so it must end with `.docx`
  *   or `.pptx`
@@ -48,7 +61,7 @@ export async function markdownWithMarkitdown(
     options: MarkitdownOptions = {},
 ): Promise<string> {
     const source = options.source ?? file;
-    await checkParsedSize(file, format, source);
+    await checkSize(file, format, source);
     try {
         return await convertWithTool(
             'markitdown',
@@ -74,19 +87,26 @@ export async function markdownWithMarkitdown(
     }
 }
 
-/** Bytes of the document markitdown parses, counted decompressed. */
-export function parsedSize(format: MarkitdownFormat, entries: ZipEntry[]): number {
-    let size = 0;
-    for (const entry of entries) {
-        // mammoth also turns every DOCX image into a base64 data URI, which costs as much memory as XML does.
-        if (format === 'docx' || PPTX_PARSED_PART.test(entry.name)) {
-            size += entry.uncompressedSize;
-        }
-    }
-    return size;
+/** Decompressed sizes of a document's parts: those markitdown parses, and all of them. */
+export interface OfficeSize {
+    parsed: number;
+    unpacked: number;
 }
 
-async function checkParsedSize(file: string, format: MarkitdownFormat, source: string): Promise<void> {
+export function officeSize(format: MarkitdownFormat, entries: ZipEntry[]): OfficeSize {
+    let parsed = 0;
+    let unpacked = 0;
+    for (const entry of entries) {
+        unpacked += entry.uncompressedSize;
+        // mammoth also turns every DOCX image into a base64 data URI, which costs as much memory as XML does.
+        if (format === 'docx' || PPTX_PARSED_PART.test(entry.name)) {
+            parsed += entry.uncompressedSize;
+        }
+    }
+    return { parsed, unpacked };
+}
+
+async function checkSize(file: string, format: MarkitdownFormat, source: string): Promise<void> {
     let entries: ZipEntry[];
     try {
         entries = await readZipEntries(file);
@@ -100,11 +120,17 @@ async function checkParsedSize(file: string, format: MarkitdownFormat, source: s
         }
         throw err;
     }
-    const size = parsedSize(format, entries);
-    const maxBytes = getSourceLimits().officeMaxParsedBytes;
-    if (size > maxBytes) {
-        logSourceLimitExceeded({ source, limit: 'office_parsed', max_bytes: maxBytes, size, outcome: 'rejected' });
-        throw new SourceTooLargeError(source, maxBytes, size);
+    const size = officeSize(format, entries);
+    const limits = getSourceLimits();
+    const checks = [
+        { limit: 'office_parsed', size: size.parsed, maxBytes: limits.officeMaxParsedBytes },
+        { limit: 'office_unpacked', size: size.unpacked, maxBytes: limits.officeMaxUnpackedBytes },
+    ];
+    for (const { limit, size, maxBytes } of checks) {
+        if (size > maxBytes) {
+            logSourceLimitExceeded({ source, limit, max_bytes: maxBytes, size, outcome: 'rejected' });
+            throw new SourceTooLargeError(source, maxBytes, size);
+        }
     }
 }
 
@@ -120,8 +146,9 @@ function markitdownEnv(): NodeJS.ProcessEnv {
 }
 
 /**
- * Why markitdown rejected the document, when the failure is one of its exceptions for an unreadable document: the
- * line that names the exception, and the last line of stderr, which states the underlying error (such as
+ * Why markitdown rejected the document, when it failed in a way no retry can change: it has no converter for the
+ * format, or every converter it tried raised one of {@link INPUT_ERRORS}. The reason is the line that names
+ * markitdown's exception and the last line of stderr, which states the underlying error (such as
  * `BadZipFile: File is not a zip file`). Undefined for any other failure.
  */
 export function rejectionReason(err: unknown): string | undefined {
@@ -137,11 +164,27 @@ export function rejectionReason(err: unknown): string | undefined {
         .map((line) => line.trim())
         .filter((line) => line.length > 0);
     // The raised exception is printed after the traceback lines that also name it, so take the last mention.
-    const exceptionLine = lines.findLast((line) => REJECTION_PATTERN.test(line));
+    const exceptionLine = lines.findLast((line) => MARKITDOWN_EXCEPTION.test(line));
     if (exceptionLine === undefined) {
+        return undefined;
+    }
+    if (MARKITDOWN_EXCEPTION.exec(exceptionLine)?.[1] === 'FileConversionException' && !causedByInput(lines)) {
         return undefined;
     }
     const lastLine = lines[lines.length - 1];
     const reason = lastLine === exceptionLine ? exceptionLine : `${exceptionLine} ${lastLine}`;
     return reason.slice(0, MAX_REASON_CHARS);
+}
+
+/**
+ * Whether every converter failure in markitdown's stderr is an input error. markitdown 0.1 lists one line per
+ * converter it tried; markitdown 0.0 chains the converter's traceback, whose last line names the error.
+ */
+function causedByInput(lines: string[]): boolean {
+    let causes = lines.flatMap((line) => FAILED_ATTEMPT.exec(line)?.[1] ?? []);
+    if (causes.length === 0) {
+        const last = EXCEPTION_LINE.exec(lines[lines.length - 1] ?? '')?.[1];
+        causes = last === undefined ? [] : [last];
+    }
+    return causes.length > 0 && causes.every((cause) => INPUT_ERRORS.has(cause.split('.').pop() ?? cause));
 }

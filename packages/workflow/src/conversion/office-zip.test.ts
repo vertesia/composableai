@@ -138,6 +138,18 @@ describe('readZipEntries', () => {
         await expect(readZipEntries(write(zip))).rejects.toBeInstanceOf(InvalidZipError);
     });
 
+    it('should reject an end record that counts fewer entries than the directory holds', async () => {
+        // zipfile reads the directory to its declared length, so it would decompress the uncounted entry.
+        const zip = buildZip([
+            { name: 'word/document.xml', data: Buffer.from('x') },
+            { name: 'word/media/huge.bin', data: Buffer.from('y'), declaredSize: 3 * 1024 ** 3 },
+        ]);
+        zip.writeUInt16LE(1, zip.length - 22 + 8);
+        zip.writeUInt16LE(1, zip.length - 22 + 10);
+
+        await expect(readZipEntries(write(zip))).rejects.toThrow('holds 2 entries, its end record says 1');
+    });
+
     it('should reject a directory that points outside the file', async () => {
         const zip = buildZip([{ name: 'word/document.xml', data: Buffer.from('x') }]);
         // Directory size of the end record.

@@ -38,6 +38,9 @@ export class InvalidZipError extends Error {
  * produces more than the declared size of an entry, so their sum bounds what it decompresses even when the data lies.
  *
  * The directory is located from its end record, as `zipfile` does, so data prepended to the archive does not hide it.
+ * `zipfile` reads entries until it has consumed the directory's declared length, whatever entry count the end record
+ * states, so the whole directory is read here too, and a count that disagrees with it is refused: otherwise entries
+ * past the count would decompress without being counted.
  *
  * @throws InvalidZipError when the file has no readable central directory
  */
@@ -109,7 +112,7 @@ function findEndRecord(tail: Buffer): number {
 function parseCentralDirectory(directory: Buffer, entryCount: number): ZipEntry[] {
     const entries: ZipEntry[] = [];
     let offset = 0;
-    for (let i = 0; i < entryCount; i++) {
+    while (offset < directory.length) {
         if (offset + CENTRAL_HEADER_SIZE > directory.length) {
             throw new InvalidZipError('Zip central directory ended early');
         }
@@ -135,6 +138,9 @@ function parseCentralDirectory(directory: Buffer, entryCount: number): ZipEntry[
             uncompressedSize,
         });
         offset = next;
+    }
+    if (entries.length !== entryCount) {
+        throw new InvalidZipError(`Zip directory holds ${entries.length} entries, its end record says ${entryCount}`);
     }
     return entries;
 }
