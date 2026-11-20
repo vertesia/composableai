@@ -3,20 +3,26 @@ import os from 'node:os';
 import path from 'node:path';
 import { log } from '@temporalio/activity';
 import { removeTempFiles } from '../utils/blobs.js';
-import { convertWithTool, runTool } from './convert-with-tool.js';
+import { type ConvertOptions, convertWithTool, runTool } from './convert-with-tool.js';
 
 /**
  * Convert a pdf file to text
  *
  * @param file the PDF, or the path of a PDF file, which keeps a large PDF out of memory
+ * @param options bound on the text read back
  */
-export function mutoolPdfToText(file: Buffer | string): Promise<string> {
-    return convertWithTool('mutool', file, 'pdf', 'txt', (inputFile, outputFile) => [
-        'convert',
-        '-o',
-        outputFile,
-        inputFile,
-    ]);
+export function mutoolPdfToText(
+    file: Buffer | string,
+    options?: Pick<ConvertOptions, 'maxOutputBytes'>,
+): Promise<string> {
+    return convertWithTool(
+        'mutool',
+        file,
+        'pdf',
+        'txt',
+        (inputFile, outputFile) => ['convert', '-o', outputFile, inputFile],
+        options,
+    );
 }
 
 /**

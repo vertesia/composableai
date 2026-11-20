@@ -9,7 +9,7 @@ vi.mock('@temporalio/activity', () => ({
 
 const toolExitCode = vi.hoisted(() => ({ value: 0 }));
 
-// Stand-in for mutool and markitdown: write the `-o` target, or fail like execFile does for a non-zero exit.
+// Stand-in for mutool and pandoc: write the `-o` target, or fail like execFile does for a non-zero exit.
 vi.mock('../activities/media/exec.js', () => ({
     execActivityFile: vi.fn(async (tool: string, args: string[]) => {
         if (toolExitCode.value !== 0) {
@@ -21,8 +21,8 @@ vi.mock('../activities/media/exec.js', () => ({
 }));
 
 import { execActivityFile } from '../activities/media/exec.js';
-import { markdownWithMarkitdown } from './markitdown.js';
 import { mutoolPdfToText, pdfExtractPages } from './mutool.js';
+import { markdownWithPandoc } from './pandoc.js';
 
 function openDescriptorCount(): number {
     // /dev/fd lists this process's open descriptors on both Linux and macOS.
@@ -31,7 +31,7 @@ function openDescriptorCount(): number {
 
 describe.each([
     { name: 'mutoolPdfToText', convert: (buffer: Buffer) => mutoolPdfToText(buffer) },
-    { name: 'markdownWithMarkitdown', convert: (buffer: Buffer) => markdownWithMarkitdown(buffer, 'docx') },
+    { name: 'markdownWithPandoc', convert: (buffer: Buffer) => markdownWithPandoc(buffer, 'odt') },
 ])('$name temporary files', ({ convert }) => {
     let tempDir: string;
 
@@ -82,11 +82,11 @@ describe('conversion temporary files', () => {
         fs.rmSync(tempDir, { recursive: true, force: true });
     });
 
-    it('should give markitdown an input file with a dotted extension', async () => {
-        await markdownWithMarkitdown(Buffer.from('input'), 'docx');
+    it('should give the tool an input file with a dotted extension', async () => {
+        await markdownWithPandoc(Buffer.from('input'), 'odt');
 
         const [, args] = vi.mocked(execActivityFile).mock.calls.at(-1) ?? [];
-        expect(args?.[0]).toMatch(/[^.]\.docx$/);
+        expect(args?.at(-1)).toMatch(/[^.]\.odt$/);
     });
 
     it('should remove the pdfExtractPages work directory when mutool fails', async () => {
@@ -114,7 +114,7 @@ describe('conversion of a file given by path', () => {
 
     it.each([
         { name: 'mutoolPdfToText', convert: (file: string) => mutoolPdfToText(file) },
-        { name: 'markdownWithMarkitdown', convert: (file: string) => markdownWithMarkitdown(file) },
+        { name: 'markdownWithPandoc', convert: (file: string) => markdownWithPandoc(file, 'odt') },
     ])('$name hands the path to the tool and leaves the file in place', async ({ convert }) => {
         const input = path.join(tempDir, 'input.docx');
         fs.writeFileSync(input, 'input');
