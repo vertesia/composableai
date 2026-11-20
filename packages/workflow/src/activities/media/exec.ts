@@ -90,6 +90,14 @@ export function initializeActivityCommandDeadline(): number {
     return deadlineMs;
 }
 
+/**
+ * What bounds a step of the current Activity: its cancellation signal, which also fires when Temporal stops it, and
+ * the time left for commands before its deadline.
+ */
+export function activityCommandWindow(): { signal: AbortSignal; timeoutMs: number } {
+    return { signal: Context.current().cancellationSignal, timeoutMs: getActivityCommandTimeoutMs() };
+}
+
 function getActivityCommandTimeoutMs(): number {
     const context = Context.current();
     const { startToCloseTimeoutMs } = context.info;

@@ -16,7 +16,7 @@
     },
     "devDependencies": {
         "@biomejs/biome": "2.6.6",
-        "@tsconfig/node-lts": "^24.0.1",
+        "@tsconfig/node-lts": "^26.0.1",
         "@types/bun": "^1.4.4",
         "@types/node": "^24.19.2",
         "globals": "^17.14.0",
