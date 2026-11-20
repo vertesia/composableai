@@ -92,6 +92,12 @@ export interface GenerateOrAssignContentTypeParams extends InteractionExecutionP
      * project; falls back to sys:GenericDocument if unset or unresolvable.
      */
     fallbackTypeId?: string;
+
+    /**
+     * Type ids the object may already carry and still have its type selected again, typically the fallback type it
+     * received when no type matched. Any other type on the object makes the activity skip.
+     */
+    replaceableTypeIds?: string[];
 }
 
 export interface GenerateOrAssignContentType extends DSLActivitySpec<GenerateOrAssignContentTypeParams> {
@@ -144,7 +150,7 @@ export async function generateOrAssignContentType(
     //User initiated Content Type change via the Composable UI,
     //sets object.type to null when they let Composable choose for them.
     //sets object.type to chosen type (thus non-null) when user picks a type.
-    if (object.type) {
+    if (object.type && !params.replaceableTypeIds?.includes(object.type.id)) {
         log.warn(`Object ${objectId} has already a type. Skipping type creation.`);
         return {
             status: 'skipped',
