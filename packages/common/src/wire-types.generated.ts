@@ -1591,6 +1591,11 @@ export type McpOAuthTokenResponse = {
 export type McpOAuthConnectResponse = {
     success: boolean;
 };
+export type McpOAuthExchangePayload = {
+    code: string;
+    state: string;
+    iss?: string | undefined;
+};
 export type McpOAuthDisconnectResponse = {
     success: boolean;
     message: string;
@@ -13011,6 +13016,7 @@ export interface ApiComponentTypes {
     OAuthMetadataResponse: OAuthMetadataResponse;
     McpOAuthDisconnectResponse: McpOAuthDisconnectResponse;
     McpOAuthConnectResponse: McpOAuthConnectResponse;
+    McpOAuthExchangePayload: McpOAuthExchangePayload;
     OAuthAuthorizeResponse: OAuthAuthorizeResponse;
     OAuthAuthStatusArray: OAuthAuthStatusArray;
     SetMcpApiKeyRequest: SetMcpApiKeyRequest;

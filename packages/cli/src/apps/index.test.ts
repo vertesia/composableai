@@ -340,6 +340,15 @@ describe('installation-scoped credentials', () => {
         expect(await payload()).toEqual({ code: 'secret-code', state: 'state-eu' });
         expect(vi.mocked(console.log).mock.calls.flat().join('\n')).not.toContain('secret-code');
     });
+    it('forwards the RFC 9207 iss of a callback response file', async () => {
+        await command(
+            'connections',
+            'exchange',
+            '--response-file',
+            await inputFile({ code: 'secret-code', state: 'state-eu', iss: 'https://auth.example.com' }),
+        );
+        expect(await payload()).toEqual({ code: 'secret-code', state: 'state-eu', iss: 'https://auth.example.com' });
+    });
     it.each(['connect', 'disconnect', 'exchange'])(
         'does not report a failed OAuth %s as success',
         async (operation) => {
@@ -355,6 +364,17 @@ describe('installation-scoped credentials', () => {
     it('rejects an invalid OAuth callback before requesting an exchange', async () => {
         await expect(
             command('connections', 'exchange', '--response-file', await inputFile({ code: 'secret-code' })),
+        ).rejects.toThrow('code and state');
+        expect(mocks.getClient).not.toHaveBeenCalled();
+    });
+    it('rejects a callback response file whose iss is not a nonempty string', async () => {
+        await expect(
+            command(
+                'connections',
+                'exchange',
+                '--response-file',
+                await inputFile({ code: 'secret-code', state: 'state-eu', iss: '' }),
+            ),
         ).rejects.toThrow('code and state');
         expect(mocks.getClient).not.toHaveBeenCalled();
     });

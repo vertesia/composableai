@@ -16,6 +16,7 @@ import {
     type RequestInputMessageWithUx,
     sendRequestInputResponse,
 } from './ModernAgentOutput/requestInputMessages';
+import { toolApprovalEditActionFor } from './ToolApprovalEditAction';
 
 export interface AgentRequestInputOverlayProps {
     message?: RequestInputMessageWithUx;
@@ -176,6 +177,7 @@ function PendingRequestInputOverlay({
                     onSelect={(optionId) => send(optionId, getToolApprovalResponseMetadata(message, optionId))}
                     onMultiSelect={(optionIds) => send(optionIds.join(', '))}
                     onSubmit={(value) => send(value, freeResponse?.metadata)}
+                    extraActions={toolApprovalEditActionFor(message, send, isDisabled)}
                     isLoading={isDisabled}
                     headerAction={collapseButton}
                     responseControlsId={contentId}
