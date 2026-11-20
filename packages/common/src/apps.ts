@@ -585,6 +585,8 @@ export type McpOAuthTokenResponse = Wire.McpOAuthTokenResponse;
 
 export type McpOAuthConnectResponse = Wire.McpOAuthConnectResponse;
 
+export type McpOAuthExchangePayload = Wire.McpOAuthExchangePayload;
+
 export type McpOAuthDisconnectResponse = Wire.McpOAuthDisconnectResponse;
 
 /**
