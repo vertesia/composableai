@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import {
+    CONTENT_SOURCE_MAX_SAMPLE_PERCENT,
     CONTENT_SOURCE_MAX_SYNC_INTERVAL_MINUTES,
+    CONTENT_SOURCE_MIN_SAMPLE_PERCENT,
     CONTENT_SOURCE_MIN_SYNC_INTERVAL_MINUTES,
     CONTENT_SOURCE_REPORT_MAX_LIMIT,
     CONTENT_SOURCE_REPORT_ROUNDS,
@@ -62,6 +64,13 @@ export const ContentSourcePermissionStatusSchema = z
     })
     .meta({ id: 'ContentSourcePermissionStatus' });
 
+const SAMPLE_PERCENT_DESCRIPTION =
+    'Sample mode: syncs only about this percentage of the files, to look at real documents before importing them ' +
+    'all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, ' +
+    'spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one.';
+
+const samplePercent = z.number().int().min(CONTENT_SOURCE_MIN_SAMPLE_PERCENT).max(CONTENT_SOURCE_MAX_SAMPLE_PERCENT);
+
 const commonSourceFields = {
     id: z.string(),
     name: z.string(),
@@ -77,6 +86,9 @@ const commonSourceFields = {
         .meta({ description: 'Collection that synced documents are added to, if any.' })
         .optional(),
     sync: ContentSourceSyncSettingsSchema,
+    sample_percent: samplePercent
+        .meta({ description: `${SAMPLE_PERCENT_DESCRIPTION} Absent when the source syncs every file.` })
+        .optional(),
     created_by: z.string().optional(),
     updated_by: z.string().optional(),
     created_at: z.string().meta({ format: 'date-time' }).optional(),
@@ -144,6 +156,9 @@ const commonCreateFields = {
     sync: ContentSourceSyncSettingsSchema.optional().meta({
         description: 'Defaults to scheduled sync disabled, every 60 minutes once enabled.',
     }),
+    sample_percent: samplePercent
+        .meta({ description: `${SAMPLE_PERCENT_DESCRIPTION} Leave out to sync every file.` })
+        .optional(),
 };
 
 export const CreateSharePointContentSourcePayloadSchema = z
@@ -206,6 +221,16 @@ export const UpdateContentSourcePayloadSchema = z
         name: z.string().min(1).max(CONTENT_SOURCE_NAME_MAX_LENGTH).optional(),
         description: z.string().optional(),
         sync: ContentSourceSyncSettingsSchema.optional(),
+        sample_percent: samplePercent
+            .nullable()
+            .meta({
+                description:
+                    `${SAMPLE_PERCENT_DESCRIPTION} \`null\` removes the sample, so that every file is synced. A ` +
+                    'change, before or after the first sync, makes the next sync an import that lists the whole ' +
+                    'folder: it imports the files that entered the sample and deletes the documents of those that ' +
+                    'left it.',
+            })
+            .optional(),
         permissions: ContentSourcePermissionSettingsSchema.optional(),
         root_id: z
             .string()
@@ -237,8 +262,8 @@ export const UpdateContentSourcePayloadSchema = z
     .meta({
         id: 'UpdateContentSourcePayload',
         description:
-            'Changes the name, description or sync settings, and, before the first sync, the root and folder ' +
-            'to sync. Saving sync settings also hands the sync your credentials, which restarts a sync stopped ' +
+            'Changes the name, description, sync settings or sample, and, before the first sync, the root and ' +
+            'folder to sync. Saving sync settings also hands the sync your credentials, which restarts a sync stopped ' +
             'because its previous credentials were refused.',
     });
 
@@ -262,7 +287,9 @@ export const ContentSourceSyncCountsSchema = z
         updated: z.number().int(),
         unchanged: z.number().int(),
         deleted: z.number().int(),
-        skipped: z.number().int().meta({ description: 'Files that are not synced (unsupported types, packages).' }),
+        skipped: z.number().int().meta({
+            description: 'Files that are not synced (unsupported types, packages, files outside the sample).',
+        }),
         failed: z.number().int(),
     })
     .meta({ id: 'ContentSourceSyncCounts' });
@@ -287,8 +314,9 @@ export const ContentSourceSyncRoundSchema = z
             .record(z.string(), z.number().int())
             .meta({
                 description:
-                    'The skipped files by reason: `package`, `not_a_file`, `too_large`, `unsupported_type`, or ' +
-                    'another reason a system reports.',
+                    'The skipped files by reason: `package`, `not_a_file`, `too_large`, `unsupported_type`, ' +
+                    "`not_sampled` (outside the source's `sample_percent`; counted only, not listed in the report), " +
+                    'or another reason a system reports.',
             })
             .optional(),
         swept: z
@@ -350,7 +378,8 @@ export const ContentSourceReportEntrySchema = z
             .meta({
                 description:
                     '`skipped`: why the file is not synced (`package`, `not_a_file`, `too_large`, `unsupported_type`). ' +
-                    '`deleted`: `file_deleted` (deleted, moved out or no longer synced) or `duplicate`.',
+                    '`deleted`: `file_deleted` (deleted, moved out or no longer synced), `duplicate`, or ' +
+                    "`not_sampled` (outside the source's `sample_percent`).",
             })
             .optional(),
         error: z.string().meta({ description: '`failed`: why.' }).optional(),

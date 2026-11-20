@@ -2319,6 +2319,7 @@ export type SharePointContentSource = {
     location_root: string;
     collection_id?: string | undefined;
     sync: ContentSourceSyncSettings;
+    sample_percent?: number | undefined;
     created_by?: string | undefined;
     updated_by?: string | undefined;
     created_at?: string | undefined;
@@ -2340,6 +2341,7 @@ export type BoxContentSource = {
     location_root: string;
     collection_id?: string | undefined;
     sync: ContentSourceSyncSettings;
+    sample_percent?: number | undefined;
     created_by?: string | undefined;
     updated_by?: string | undefined;
     created_at?: string | undefined;
@@ -2382,6 +2384,7 @@ export type CreateSharePointContentSourcePayload = {
     location_root?: string | undefined;
     collection_id?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
+    sample_percent?: number | undefined;
     type: 'sharepoint';
     permissions?: ContentSourcePermissionSettings | undefined;
     site_url: string;
@@ -2395,6 +2398,7 @@ export type CreateBoxContentSourcePayload = {
     location_root?: string | undefined;
     collection_id?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
+    sample_percent?: number | undefined;
     type: 'box';
     folder_id?: string | undefined;
 };
@@ -2402,6 +2406,7 @@ export type UpdateContentSourcePayload = {
     name?: string | undefined;
     description?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
+    sample_percent?: number | null | undefined;
     permissions?: ContentSourcePermissionSettings | undefined;
     root_id?: string | undefined;
     folder_id?: string | undefined;
