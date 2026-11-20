@@ -131,6 +131,8 @@ function describeProblem(problem: ToolApprovalEditProblem, t: ReturnType<typeof 
             return t('agent.toolApprovalEdit.errorLockedArray', { path: problem.path });
         case 'redacted_changed':
             return t('agent.toolApprovalEdit.errorRedactedChanged', { path: problem.path });
+        case 'secret_changed':
+            return t('agent.toolApprovalEdit.errorSecretChanged', { path: problem.path });
         case 'secret_added':
             return t('agent.toolApprovalEdit.errorSecretAdded', { path: problem.path });
         case 'placeholder_added':

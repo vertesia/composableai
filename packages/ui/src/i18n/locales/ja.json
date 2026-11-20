@@ -261,6 +261,7 @@
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} に [REDACTED] が含まれています。編集でシークレットを追加することはできません。",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} は秘匿化されているため変更できません。[REDACTED] のままにするか削除してください。",
     "agent.toolApprovalEdit.errorSecretAdded": "{{path}} はシークレットを指定しています。このフィールドを削除してください。編集時にシークレットのフィールドを追加することはできません。",
+    "agent.toolApprovalEdit.errorSecretChanged": "{{path}} には認証情報が含まれるため、編集で変更することはできません。元の値のままにするか、削除してください。",
     "agent.toolApprovalEdit.lockedFields": "秘匿化された値は非表示のままで、変更できません：{{fields}}",
     "agent.toolApprovalEdit.response": "編集した引数でこの操作を実行してください。",
     "agent.toolApprovalEdit.submit": "編集した呼び出しを実行",

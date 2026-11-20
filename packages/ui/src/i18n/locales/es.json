@@ -263,6 +263,7 @@
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} contiene [REDACTED]. No se pueden añadir secretos en una edición.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} está censurado y no se puede cambiar. Déjelo como [REDACTED] o elimínelo.",
     "agent.toolApprovalEdit.errorSecretAdded": "{{path}} identifica un secreto. Elimine este campo; no se pueden añadir campos secretos al editar.",
+    "agent.toolApprovalEdit.errorSecretChanged": "{{path}} contiene una credencial, por lo que no se puede cambiar en una edición. Conserve su valor original o elimínela.",
     "agent.toolApprovalEdit.lockedFields": "Los valores censurados permanecen ocultos y no se pueden cambiar: {{fields}}",
     "agent.toolApprovalEdit.response": "Ejecuta esta acción con los argumentos que he editado.",
     "agent.toolApprovalEdit.submit": "Ejecutar la llamada editada",

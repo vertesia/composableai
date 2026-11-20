@@ -387,6 +387,7 @@ export type ToolApprovalEditProblem =
     | { code: 'not_object' }
     | { code: 'redacted_changed'; path: string }
     | { code: 'secret_added'; path: string }
+    | { code: 'secret_changed'; path: string }
     | { code: 'locked_array_changed'; path: string }
     | { code: 'placeholder_added'; path: string };
 
@@ -447,6 +448,21 @@ function findLockedEditProblem(shown: unknown, edited: unknown, path: string): T
     return undefined;
 }
 
+/** Same comparison as the workflow: a primitive the schema may coerce (`123` and `'123'`) is the same credential. */
+function sameSecretValue(shown: unknown, edited: unknown): boolean {
+    const a = decodeJsonText(shown);
+    const b = decodeJsonText(edited);
+    if ((a !== null && typeof a === 'object') || (b !== null && typeof b === 'object')) {
+        return canonicalJson(a) === canonicalJson(b);
+    }
+    return String(a) === String(b);
+}
+
+/**
+ * Credentials the edit adds or changes. A credential inside JSON text reaches the client unredacted (redaction works
+ * on keys, not on string contents), so its value is compared here too: the workflow refuses a changed one, but only
+ * after the new value has been sent.
+ */
 function findAddedSecret(original: unknown, edited: unknown, path: string): ToolApprovalEditProblem | undefined {
     const shown = decodeJsonText(original);
     const decoded = decodeJsonText(edited);
@@ -463,8 +479,14 @@ function findAddedSecret(original: unknown, edited: unknown, path: string): Tool
     const originalRecord = getRecord(shown);
     for (const [key, child] of Object.entries(record)) {
         const childPath = path ? `${path}.${key}` : key;
-        if (SECRET_INPUT_KEY.test(key) && !(originalRecord && Object.hasOwn(originalRecord, key))) {
-            return { code: 'secret_added', path: childPath };
+        if (SECRET_INPUT_KEY.test(key)) {
+            if (!originalRecord || !Object.hasOwn(originalRecord, key)) {
+                return { code: 'secret_added', path: childPath };
+            }
+            if (!sameSecretValue(originalRecord[key], child)) {
+                return { code: 'secret_changed', path: childPath };
+            }
+            continue;
         }
         const problem = findAddedSecret(originalRecord?.[key], child, childPath);
         if (problem) return problem;

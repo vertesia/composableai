@@ -376,6 +376,26 @@ describe('"Edit and run" on a tool approval prompt', () => {
         expect(check(shown)).toHaveProperty('input');
     });
 
+    it('refuses a changed credential inside JSON text, which reaches the client unredacted', () => {
+        const shown = { name: 'call', headers: '{"authorization":"Bearer original","trace":"one"}' };
+        const config = getToolApprovalEditConfig(makeEditableRequest(true, shown));
+        if (!config) throw new Error('expected an edit config');
+        expect(config.redactedPaths).toEqual([]);
+        const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
+
+        expect(check({ ...shown, headers: '{"authorization":"Bearer replaced","trace":"one"}' })).toEqual({
+            problem: { code: 'secret_changed', path: 'headers.authorization' },
+        });
+        expect(check({ ...shown, headers: { authorization: 'Bearer replaced', trace: 'one' } })).toEqual({
+            problem: { code: 'secret_changed', path: 'headers.authorization' },
+        });
+        // Keeping the credential, or removing it, is allowed.
+        expect(check({ ...shown, headers: '{"authorization":"Bearer original","trace":"two"}' })).toHaveProperty(
+            'input',
+        );
+        expect(check({ ...shown, headers: '{"trace":"two"}' })).toHaveProperty('input');
+    });
+
     it('marks the prompt answered once the edit is sent', () => {
         const request = makeEditableRequest();
         const metadata = getToolApprovalEditResponseMetadata(request, SHOWN_INPUT);

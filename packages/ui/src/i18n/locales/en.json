@@ -334,6 +334,7 @@
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} contains [REDACTED]. Secrets cannot be added in an edit.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} is redacted and cannot be changed. Keep it as [REDACTED] or remove it.",
     "agent.toolApprovalEdit.errorSecretAdded": "{{path}} names a secret. Remove it; secret fields cannot be added in an edit.",
+    "agent.toolApprovalEdit.errorSecretChanged": "{{path}} holds a credential, so it cannot be changed in an edit. Keep its original value or remove it.",
     "agent.toolApprovalEdit.lockedFields": "Redacted values stay hidden and cannot be changed: {{fields}}",
     "agent.toolApprovalEdit.response": "Run this action with my edited arguments.",
     "agent.toolApprovalEdit.submit": "Run edited call",

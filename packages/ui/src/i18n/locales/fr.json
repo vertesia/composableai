@@ -263,6 +263,7 @@
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} contient [REDACTED]. Une modification ne peut pas ajouter de secret.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} est masqué et ne peut pas être modifié. Laissez [REDACTED] ou supprimez-le.",
     "agent.toolApprovalEdit.errorSecretAdded": "{{path}} désigne un secret. Supprimez ce champ ; les champs secrets ne peuvent pas être ajoutés lors d’une modification.",
+    "agent.toolApprovalEdit.errorSecretChanged": "{{path}} contient un identifiant : il ne peut pas être modifié lors d’une modification. Conservez sa valeur d’origine ou supprimez-le.",
     "agent.toolApprovalEdit.lockedFields": "Les valeurs masquées restent cachées et ne peuvent pas être modifiées : {{fields}}",
     "agent.toolApprovalEdit.response": "Exécute cette action avec les arguments que j'ai modifiés.",
     "agent.toolApprovalEdit.submit": "Exécuter l'appel modifié",
