@@ -33,6 +33,7 @@ import { AgentRunFeedback, agentMessageFeedbackId, isAgentMessageRatable } from 
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget, isAskUserOptions } from '../AskUserWidget';
 import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
+import { toolApprovalEditActionFor } from '../ToolApprovalEditAction';
 import { ThinkingMessages } from '../WaitingMessages';
 import {
     formatWorkstreamName,
@@ -617,6 +618,12 @@ function SummaryMessage({
                     onSubmit={(value) =>
                         sendRequestInputResponse(onSendMessage, message, value, uxConfig.free_response?.metadata)
                     }
+                    extraActions={toolApprovalEditActionFor(
+                        message,
+                        onSendMessage
+                            ? (text, metadata) => sendRequestInputResponse(onSendMessage, message, text, metadata)
+                            : undefined,
+                    )}
                     hideBorder
                     compact
                     answered={requestInputAnswered}
@@ -2174,6 +2181,18 @@ function SummaryActivityRow({
                                                         uxConfig.free_response?.metadata,
                                                     )
                                                 }
+                                                extraActions={toolApprovalEditActionFor(
+                                                    message,
+                                                    onSendMessage
+                                                        ? (text, metadata) =>
+                                                              sendRequestInputResponse(
+                                                                  onSendMessage,
+                                                                  message,
+                                                                  text,
+                                                                  metadata,
+                                                              )
+                                                        : undefined,
+                                                )}
                                                 hideBorder
                                                 compact
                                                 className="my-0"
