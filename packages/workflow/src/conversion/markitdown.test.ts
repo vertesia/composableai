@@ -7,11 +7,19 @@ vi.mock('@temporalio/activity', () => ({
     log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-/** What the stand-in markitdown does when it runs: write this output, or fail with this error. */
-const tool = vi.hoisted(() => ({ output: 'converted text', error: undefined as Error | undefined }));
+/**
+ * What the stand-in markitdown does when it runs: wait for `gate` if set, then write this output, or fail with this
+ * error.
+ */
+const tool = vi.hoisted(() => ({
+    output: 'converted text',
+    error: undefined as Error | undefined,
+    gate: undefined as Promise<void> | undefined,
+}));
 
 vi.mock('../activities/media/exec.js', () => ({
     execActivityFile: vi.fn(async (_tool: string, args: string[]) => {
+        await tool.gate;
         if (tool.error) {
             throw tool.error;
         }
@@ -20,7 +28,13 @@ vi.mock('../activities/media/exec.js', () => ({
     }),
 }));
 
-const zip = vi.hoisted(() => ({ entries: [] as { name: string; uncompressedSize: number }[] }));
+const prlimit = vi.hoisted(() => ({ path: undefined as string | undefined }));
+
+vi.mock('./prlimit.js', () => ({ findPrlimit: () => prlimit.path }));
+
+const zip = vi.hoisted(() => ({
+    entries: [] as { name: string; uncompressedSize: number; compressionMethod: number }[],
+}));
 
 vi.mock('./office-zip.js', async (importOriginal) => ({
     ...(await importOriginal<typeof import('./office-zip.js')>()),
@@ -29,8 +43,13 @@ vi.mock('./office-zip.js', async (importOriginal) => ({
 
 import { execActivityFile } from '../activities/media/exec.js';
 import { DocumentConversionError, SourceTooLargeError } from '../errors.js';
-import { OFFICE_MAX_PARSED_MB_ENV, OFFICE_MAX_UNPACKED_MB_ENV } from '../utils/source-limits.js';
-import { markdownWithMarkitdown, officeSize, rejectionReason } from './markitdown.js';
+import {
+    OFFICE_MAX_CONCURRENT_ENV,
+    OFFICE_MAX_MEMORY_MB_ENV,
+    OFFICE_MAX_PARSED_MB_ENV,
+    OFFICE_MAX_UNPACKED_MB_ENV,
+} from '../utils/source-limits.js';
+import { markdownWithMarkitdown, officeSize, ranOutOfMemory, rejectionReason } from './markitdown.js';
 import { InvalidZipError, readZipEntries } from './office-zip.js';
 
 const MiB = 1024 * 1024;
@@ -79,7 +98,9 @@ describe('markdownWithMarkitdown', () => {
     beforeEach(() => {
         tool.output = 'converted text';
         tool.error = undefined;
-        zip.entries = [{ name: 'word/document.xml', uncompressedSize: 1000 }];
+        tool.gate = undefined;
+        prlimit.path = undefined;
+        zip.entries = [{ name: 'word/document.xml', uncompressedSize: 1000, compressionMethod: 8 }];
         vi.mocked(execActivityFile).mockClear();
         tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'markitdown-test-'));
         input = path.join(tempDir, 'blob.docx');
@@ -115,14 +136,94 @@ describe('markdownWithMarkitdown', () => {
         const options = vi.mocked(execActivityFile).mock.calls[0][2];
         expect(options?.env).toMatchObject({ TMPDIR: tempDir });
         expect(options?.env).not.toHaveProperty('VERTESIA_TEST_SECRET');
-        expect(Object.keys(options?.env ?? {}).every((name) => /^(PATH|HOME|TMPDIR|LANG|LC_\w+|TZ)$/.test(name))).toBe(
-            true,
-        );
+        expect(options?.env).toMatchObject({ MALLOC_ARENA_MAX: '2', OMP_NUM_THREADS: '1' });
+        expect(
+            Object.keys(options?.env ?? {}).every((name) =>
+                /^(PATH|HOME|TMPDIR|LANG|LC_\w+|TZ|MALLOC_ARENA_MAX|OMP_NUM_THREADS)$/.test(name),
+            ),
+        ).toBe(true);
+    });
+
+    it('should run markitdown under its memory limit where prlimit is available', async () => {
+        prlimit.path = '/usr/bin/prlimit';
+        vi.stubEnv(OFFICE_MAX_MEMORY_MB_ENV, '512');
+
+        await markdownWithMarkitdown(input, 'docx');
+
+        const [command, args] = vi.mocked(execActivityFile).mock.calls[0];
+        expect(command).toBe('/usr/bin/prlimit');
+        expect(args?.slice(0, 4)).toEqual([`--as=${512 * MiB}`, 'markitdown', input, '-o']);
+    });
+
+    it('should refuse a document that runs out of the memory limit, and not retry it', async () => {
+        prlimit.path = '/usr/bin/prlimit';
+        tool.error = execError(stderrWrapping('MemoryError', ''), 1);
+
+        const result = markdownWithMarkitdown(input, 'docx', { source: 'gs://bucket/doc.docx' });
+
+        await expect(result).rejects.toBeInstanceOf(SourceTooLargeError);
+        await expect(result).rejects.toMatchObject({ source: 'gs://bucket/doc.docx', maxBytes: 1536 * MiB });
+    });
+
+    it('should let a retry run on a MemoryError when markitdown had no limit of its own', async () => {
+        const error = execError(stderrWrapping('MemoryError', ''), 1);
+        tool.error = error;
+
+        await expect(markdownWithMarkitdown(input, 'docx')).rejects.toBe(error);
+    });
+
+    it('should run one conversion at a time by default', async () => {
+        let open = (): void => undefined;
+        tool.gate = new Promise((resolve) => {
+            open = resolve;
+        });
+
+        const first = markdownWithMarkitdown(input, 'docx');
+        const second = markdownWithMarkitdown(input, 'docx');
+        await vi.waitFor(() => expect(execActivityFile).toHaveBeenCalledTimes(1));
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        expect(execActivityFile).toHaveBeenCalledTimes(1);
+
+        open();
+        await expect(Promise.all([first, second])).resolves.toEqual(['converted text', 'converted text']);
+        expect(execActivityFile).toHaveBeenCalledTimes(2);
+    });
+
+    it('should run as many conversions at once as configured', async () => {
+        vi.stubEnv(OFFICE_MAX_CONCURRENT_ENV, '2');
+        let open = (): void => undefined;
+        tool.gate = new Promise((resolve) => {
+            open = resolve;
+        });
+
+        const both = Promise.all([markdownWithMarkitdown(input, 'docx'), markdownWithMarkitdown(input, 'docx')]);
+        await vi.waitFor(() => expect(execActivityFile).toHaveBeenCalledTimes(2));
+
+        open();
+        await both;
+    });
+
+    it('should free its slot when a conversion fails', async () => {
+        tool.error = execError(STDERR_0_1, 1);
+        await expect(markdownWithMarkitdown(input, 'docx')).rejects.toBeInstanceOf(DocumentConversionError);
+
+        tool.error = undefined;
+        await expect(markdownWithMarkitdown(input, 'docx')).resolves.toBe('converted text');
+    });
+
+    it('should refuse a part compressed by a method Office does not write, without running markitdown', async () => {
+        zip.entries = [{ name: 'word/document.xml', uncompressedSize: 1000, compressionMethod: 12 }];
+
+        const result = markdownWithMarkitdown(input, 'docx', { source: 'gs://bucket/doc.docx' });
+
+        await expect(result).rejects.toBeInstanceOf(DocumentConversionError);
+        await expect(result).rejects.toThrow('word/document.xml uses zip compression method 12');
+        expect(execActivityFile).not.toHaveBeenCalled();
     });
 
     it('should refuse a document over the parse limit without running markitdown', async () => {
         vi.stubEnv(OFFICE_MAX_PARSED_MB_ENV, '1');
-        zip.entries = [{ name: 'word/document.xml', uncompressedSize: 2 * MiB }];
+        zip.entries = [{ name: 'word/document.xml', uncompressedSize: 2 * MiB, compressionMethod: 8 }];
 
         const result = markdownWithMarkitdown(input, 'docx', { source: 'gs://bucket/doc.docx' });
 
@@ -134,8 +235,8 @@ describe('markdownWithMarkitdown', () => {
     it('should refuse a PPTX whose media unpack over the limit without running markitdown', async () => {
         vi.stubEnv(OFFICE_MAX_UNPACKED_MB_ENV, '1');
         zip.entries = [
-            { name: 'ppt/slides/slide1.xml', uncompressedSize: 1000 },
-            { name: 'ppt/media/video1.mp4', uncompressedSize: 2 * MiB },
+            { name: 'ppt/slides/slide1.xml', uncompressedSize: 1000, compressionMethod: 8 },
+            { name: 'ppt/media/video1.mp4', uncompressedSize: 2 * MiB, compressionMethod: 0 },
         ];
 
         const result = markdownWithMarkitdown(input, 'pptx', { source: 'gs://bucket/deck.pptx' });
@@ -183,10 +284,10 @@ describe('markdownWithMarkitdown', () => {
 
 describe('officeSize', () => {
     const entries = [
-        { name: '[Content_Types].xml', uncompressedSize: 1 },
-        { name: 'word/_rels/document.xml.rels', uncompressedSize: 10 },
-        { name: 'word/document.xml', uncompressedSize: 100 },
-        { name: 'word/media/image1.png', uncompressedSize: 1000 },
+        { name: '[Content_Types].xml', uncompressedSize: 1, compressionMethod: 8 },
+        { name: 'word/_rels/document.xml.rels', uncompressedSize: 10, compressionMethod: 8 },
+        { name: 'word/document.xml', uncompressedSize: 100, compressionMethod: 8 },
+        { name: 'word/media/image1.png', uncompressedSize: 1000, compressionMethod: 0 },
     ];
 
     it('should count every part of a DOCX as parsed, since mammoth inlines its images', () => {
@@ -241,5 +342,23 @@ describe('rejectionReason', () => {
         { name: 'a non-error', error: 'markitdown failed' },
     ])('should not classify $name as a rejection', ({ error }) => {
         expect(rejectionReason(error)).toBeUndefined();
+    });
+});
+
+describe('ranOutOfMemory', () => {
+    it('should recognize a MemoryError a converter raised', () => {
+        expect(ranOutOfMemory(execError(stderrWrapping('MemoryError', ''), 1))).toBe(true);
+    });
+
+    it('should recognize a MemoryError raised outside the converters', () => {
+        expect(ranOutOfMemory(execError('Traceback (most recent call last):\nMemoryError', 1))).toBe(true);
+    });
+
+    it.each([
+        { name: 'an input error', error: execError(STDERR_0_1, 1) },
+        { name: 'a kill', error: execError('', null, 'SIGKILL') },
+        { name: 'a non-error', error: 'MemoryError' },
+    ])('should not report $name', ({ error }) => {
+        expect(ranOutOfMemory(error)).toBe(false);
     });
 });

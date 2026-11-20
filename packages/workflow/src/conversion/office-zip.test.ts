@@ -15,6 +15,8 @@ interface FixtureEntry {
     declaredSize?: number;
     /** Declare the size in a ZIP64 extra field, as a writer does for an entry over 4 GiB. */
     zip64?: boolean;
+    /** The compression method the central directory declares; the data is stored whatever it says. */
+    method?: number;
 }
 
 /**
@@ -47,6 +49,7 @@ function buildZip(entries: FixtureEntry[], { prefix = Buffer.alloc(0) } = {}): B
         central.writeUInt32LE(0x02014b50, 0);
         central.writeUInt16LE(20, 4);
         central.writeUInt16LE(20, 6);
+        central.writeUInt16LE(entry.method ?? 0, 10);
         central.writeUInt32LE(data.length, 20);
         central.writeUInt32LE(entry.zip64 ? 0xffffffff : size, 24);
         central.writeUInt16LE(name.length, 28);
@@ -99,16 +102,29 @@ describe('readZipEntries', () => {
         );
 
         await expect(readZipEntries(file)).resolves.toEqual([
-            { name: 'word/document.xml', uncompressedSize: 300 * 1024 * 1024 },
-            { name: 'word/media/image1.png', uncompressedSize: 3 },
+            { name: 'word/document.xml', uncompressedSize: 300 * 1024 * 1024, compressionMethod: 0 },
+            { name: 'word/media/image1.png', uncompressedSize: 3, compressionMethod: 0 },
         ]);
+    });
+
+    it('should report the compression method of each entry', async () => {
+        const file = write(
+            buildZip([
+                { name: 'word/document.xml', data: Buffer.from('x'), method: 8 },
+                { name: 'word/media/image1.png', data: Buffer.from('y'), method: 14 },
+            ]),
+        );
+
+        const entries = await readZipEntries(file);
+
+        expect(entries.map((entry) => entry.compressionMethod)).toEqual([8, 14]);
     });
 
     it('should read a size from the ZIP64 extra field', async () => {
         const file = write(buildZip([{ name: 'ppt/slides/slide1.xml', declaredSize: 5 * 1024 ** 3, zip64: true }]));
 
         await expect(readZipEntries(file)).resolves.toEqual([
-            { name: 'ppt/slides/slide1.xml', uncompressedSize: 5 * 1024 ** 3 },
+            { name: 'ppt/slides/slide1.xml', uncompressedSize: 5 * 1024 ** 3, compressionMethod: 0 },
         ]);
     });
 
@@ -117,7 +133,9 @@ describe('readZipEntries', () => {
             buildZip([{ name: 'word/document.xml', data: Buffer.from('x') }], { prefix: Buffer.alloc(100) }),
         );
 
-        await expect(readZipEntries(file)).resolves.toEqual([{ name: 'word/document.xml', uncompressedSize: 1 }]);
+        await expect(readZipEntries(file)).resolves.toEqual([
+            { name: 'word/document.xml', uncompressedSize: 1, compressionMethod: 0 },
+        ]);
     });
 
     it('should reject a file that is not a zip', async () => {

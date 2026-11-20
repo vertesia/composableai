@@ -5,6 +5,8 @@ export interface ZipEntry {
     name: string;
     /** The size the entry declares once decompressed, in bytes. */
     uncompressedSize: number;
+    /** The compression method: 0 is stored, 8 is deflate. */
+    compressionMethod: number;
 }
 
 const EOCD_SIGNATURE = 0x06054b50;
@@ -119,6 +121,7 @@ function parseCentralDirectory(directory: Buffer, entryCount: number): ZipEntry[
         if (directory.readUInt32LE(offset) !== CENTRAL_HEADER_SIGNATURE) {
             throw new InvalidZipError('Bad zip central directory entry');
         }
+        const compressionMethod = directory.readUInt16LE(offset + 10);
         let uncompressedSize = directory.readUInt32LE(offset + 24);
         const nameLength = directory.readUInt16LE(offset + 28);
         const extraLength = directory.readUInt16LE(offset + 30);
@@ -136,6 +139,7 @@ function parseCentralDirectory(directory: Buffer, entryCount: number): ZipEntry[
         entries.push({
             name: directory.toString('utf8', nameStart, extraStart),
             uncompressedSize,
+            compressionMethod,
         });
         offset = next;
     }
