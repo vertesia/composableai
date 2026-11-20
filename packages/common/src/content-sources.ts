@@ -36,6 +36,10 @@ export type ContentSourceStatus = Wire.ContentSourceStatus;
 export type ContentSourceSyncRound = Wire.ContentSourceSyncRound;
 export type ContentSourceSyncCounts = Wire.ContentSourceSyncCounts;
 
+/** What a content source syncs and how its sync stands, without its connection settings. */
+export type ContentSourceSummary = Wire.ContentSourceSummary;
+export type ContentSourceRoundSummary = Wire.ContentSourceRoundSummary;
+
 /** A page of the files a sync round created, updated, deleted, skipped or failed. */
 export type ContentSourceReport = Wire.ContentSourceReport;
 export type ContentSourceReportEntry = Wire.ContentSourceReportEntry;

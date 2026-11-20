@@ -2440,6 +2440,28 @@ export type ContentSourceSyncCounts = {
     skipped: number;
     failed: number;
 };
+/** What a content source syncs and how its sync stands, without its connection settings. */
+export type ContentSourceSummary = {
+    id: string;
+    name: string;
+    description?: string | undefined;
+    type: 'sharepoint' | 'box';
+    location_root: string;
+    site_url?: string | undefined;
+    library_name?: string | undefined;
+    folder_path: string;
+    sync: ContentSourceSyncSettings;
+    state: 'not_started' | 'running' | 'waiting' | 'stopped';
+    next_sync_at?: string | undefined;
+    last_success_at?: string | undefined;
+    last_round?: ContentSourceRoundSummary | undefined;
+};
+export type ContentSourceRoundSummary = {
+    kind: 'import' | 'update';
+    started_at: string;
+    finished_at?: string | undefined;
+    outcome: 'succeeded' | 'failed';
+};
 /** A page of the files a sync round created, updated, deleted, skipped or failed. */
 export type ContentSourceReport = {
     round_id: string;
@@ -11502,6 +11524,7 @@ export type EventDeliveryTargetInputWire = unknown;
 export type ProcessEventDeliveryTargetWire = unknown;
 export type EventIngestChannelArray = EventIngestChannel[];
 export type ExternalContentSourceArray = ExternalContentSource[];
+export type ContentSourceSummaryArray = ContentSourceSummary[];
 export type CollectionStatusWire = CollectionStatus;
 export type CollectionArray = Collection[];
 export type AgentRunArtifactPathArray = string[];
@@ -12820,6 +12843,9 @@ export interface ApiComponentTypes {
     ContentSourceSyncCounts: ContentSourceSyncCounts;
     ContentSourceSyncRound: ContentSourceSyncRound;
     ContentSourceStatus: ContentSourceStatus;
+    ContentSourceRoundSummary: ContentSourceRoundSummary;
+    ContentSourceSummary: ContentSourceSummary;
+    ContentSourceSummaryArray: ContentSourceSummaryArray;
     ContentSourceReportAction: ContentSourceReportAction;
     ContentSourceReportEntry: ContentSourceReportEntry;
     ContentSourceReportQuery: ContentSourceReportQuery;
