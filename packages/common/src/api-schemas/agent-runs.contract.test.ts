@@ -8,9 +8,11 @@ import type {
 } from '../store/agent-run.js';
 import {
     AgentEventType,
+    type KnownTurnEvaluationFlag,
     TelemetryToolType,
     type ToolCallEvent,
     type TurnEvaluationEvent,
+    type TurnEvaluationFlag,
 } from '../workflow-analytics.js';
 import type {
     AgentRunEvaluationRollupSchema,
@@ -18,6 +20,8 @@ import type {
     AgentRunFeedbackEntrySchema,
     AgentRunFeedbackPayloadSchema,
     AgentRunFeedbackResponseSchema,
+    KnownTurnEvaluationFlagSchema,
+    TurnEvaluationFlagSchema,
 } from './agent-runs.js';
 import { validateApiRequest, validateApiResponse } from './registry.js';
 
@@ -82,6 +86,35 @@ const turnEvaluation: TurnEvaluationEvent = {
         },
     ],
     toolsTruncated: 0,
+};
+
+const rollup: AgentRunEvaluationRollup = {
+    seq: 3,
+    detector_version: 1,
+    turns: 2,
+    severity: 'medium',
+    flags: ['unrecovered_tool'],
+    worst_turn_seq: 2,
+    last_terminal_type: 'answer',
+    totals: {
+        tool_calls: 5,
+        error_tool_results: 2,
+        unrecovered_tools: ['create_view'],
+        llm_calls: 6,
+        prompt_tokens: 100,
+        completion_tokens: 20,
+        cached_tokens: 0,
+        retry_completion_tokens: 5,
+        active_ms: 1000,
+        ask_user_wait_ms: 0,
+        approval_wait_ms: 0,
+        followups: 0,
+        approvals_requested: 0,
+        approvals_denied: 0,
+        stop_requests: 0,
+        stall_trips: 0,
+    },
+    updated_at: turnEvaluation.timestamp,
 };
 
 describe('agent run evaluation API contracts', () => {
@@ -283,34 +316,6 @@ describe('agent run evaluation API contracts', () => {
     });
 
     it('keeps the workflow rollup free of server-owned fields', () => {
-        const rollup: AgentRunEvaluationRollup = {
-            seq: 3,
-            detector_version: 1,
-            turns: 2,
-            severity: 'medium',
-            flags: ['unrecovered_tool'],
-            worst_turn_seq: 2,
-            last_terminal_type: 'answer',
-            totals: {
-                tool_calls: 5,
-                error_tool_results: 2,
-                unrecovered_tools: ['create_view'],
-                llm_calls: 6,
-                prompt_tokens: 100,
-                completion_tokens: 20,
-                cached_tokens: 0,
-                retry_completion_tokens: 5,
-                active_ms: 1000,
-                ask_user_wait_ms: 0,
-                approval_wait_ms: 0,
-                followups: 0,
-                approvals_requested: 0,
-                approvals_denied: 0,
-                stop_requests: 0,
-                stall_trips: 0,
-            },
-            updated_at: turnEvaluation.timestamp,
-        };
         expect(validateApiRequest('UpdateAgentRunStatusPayload', { evaluation_rollup: rollup }).valid).toBe(true);
         // Rollups stored or sent before the stall counter existed keep validating.
         const { stall_trips: _s, ...legacyTotals } = rollup.totals;
@@ -349,6 +354,38 @@ describe('agent run evaluation API contracts', () => {
         };
         expect(validateApiResponse('AgentRunEvaluation', evaluation).valid).toBe(true);
         expect(validateApiRequest('ListAgentRunsQuery', { evaluation_severity: ['unrated', 'high'] }).valid).toBe(true);
+    });
+
+    it('accepts an evaluation flag a later detector adds, but filters only on known flags', () => {
+        const evaluation = {
+            rev: 2,
+            severity: 'low',
+            flags: ['run_failed', 'flag_from_a_later_detector'],
+            contradicted: false,
+            updated_at: turnEvaluation.timestamp,
+        };
+        expect(validateApiResponse('AgentRunEvaluation', evaluation).valid).toBe(true);
+        expect(validateApiRequest('ListAgentRunsQuery', { evaluation_flag: ['run_failed'] }).valid).toBe(true);
+        expect(
+            validateApiRequest('ListAgentRunsQuery', { evaluation_flag: ['flag_from_a_later_detector'] }).valid,
+        ).toBe(false);
+    });
+
+    it('accepts an unknown flag from a newer worker in both worker request contracts', () => {
+        const later = 'flag_from_a_later_detector';
+        const event = { ...turnEvaluation, flags: [later], checks: [{ name: later, state: 'fired' }] };
+        expect(validateApiRequest('IngestAgentEventsPayload', { events: [event] }).valid).toBe(true);
+        expect(
+            validateApiRequest('UpdateAgentRunStatusPayload', { evaluation_rollup: { ...rollup, flags: [later] } })
+                .valid,
+        ).toBe(true);
+    });
+
+    it('keeps the known flag type equal to the filter schema', () => {
+        expectTypeOf<KnownTurnEvaluationFlag>().toEqualTypeOf<
+            import('zod').z.infer<typeof KnownTurnEvaluationFlagSchema>
+        >();
+        expectTypeOf<TurnEvaluationFlag>().toEqualTypeOf<import('zod').z.infer<typeof TurnEvaluationFlagSchema>>();
     });
 });
 

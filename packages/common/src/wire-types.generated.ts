@@ -7728,7 +7728,30 @@ export type ListAgentRunsQuery = {
     sort?: 'started_at' | 'updated_at' | undefined;
     order?: 'asc' | 'desc' | undefined;
     evaluation_severity?: ListAgentRunsEvaluationSeverity[] | undefined;
-    evaluation_flag?: TurnEvaluationFlagWire[] | undefined;
+    evaluation_flag?:
+        | (
+              | 'user_stopped_after_failure'
+              | 'mutation_unsuccessful'
+              | 'run_failed'
+              | 'unrecovered_tool'
+              | 'fail_streak'
+              | 'identical_retry'
+              | 'reread'
+              | 'high_gather'
+              | 'overhead'
+              | 'followup_after_answer'
+              | 'approval_denied'
+              | 'circuit_breaker'
+              | 'no_visible_answer'
+              | 'answer_in_tool_preamble'
+              | 'response_cut_off'
+              | 'llm_retried'
+              | 'unknown_tool'
+              | 'invalid_tool_arguments'
+              | 'context_near_full'
+              | 'checkpoint_forced'
+          )[]
+        | undefined;
     feedback_rating?: AgentRunFeedbackRating | undefined;
     contradicted?: boolean | undefined;
 };
@@ -11648,27 +11671,7 @@ export type UpdateAgentRunStatusPayloadWire = {
 };
 export type TurnTerminalTypeWire = 'answer' | 'user_stopped' | 'completed' | 'failed' | 'cancelled' | 'interrupted';
 export type EvaluationSeverityWire = 'none' | 'low' | 'medium' | 'high';
-export type TurnEvaluationFlagWire =
-    | 'user_stopped_after_failure'
-    | 'mutation_unsuccessful'
-    | 'run_failed'
-    | 'unrecovered_tool'
-    | 'fail_streak'
-    | 'identical_retry'
-    | 'reread'
-    | 'high_gather'
-    | 'overhead'
-    | 'followup_after_answer'
-    | 'approval_denied'
-    | 'circuit_breaker'
-    | 'no_visible_answer'
-    | 'answer_in_tool_preamble'
-    | 'response_cut_off'
-    | 'llm_retried'
-    | 'unknown_tool'
-    | 'invalid_tool_arguments'
-    | 'context_near_full'
-    | 'checkpoint_forced';
+export type TurnEvaluationFlagWire = string;
 export type ToolErrorClassWire =
     | 'schema'
     | 'unknown_tool'

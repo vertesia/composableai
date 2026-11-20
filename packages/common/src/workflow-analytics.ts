@@ -73,8 +73,11 @@ export type TurnTerminalType = 'answer' | 'user_stopped' | 'completed' | 'failed
 /** Worst deterministic detector level. `none` means no detector fired, not that the turn succeeded. */
 export type EvaluationSeverity = 'none' | 'low' | 'medium' | 'high';
 
-/** Reasons behind an evaluation severity. */
-export type TurnEvaluationFlag =
+/**
+ * Flags the detectors of this release emit: the vocabulary a producer writes and a filter accepts.
+ * Keep it equal to `KnownTurnEvaluationFlagSchema` (checked by the agent-runs contract test).
+ */
+export type KnownTurnEvaluationFlag =
     | 'user_stopped_after_failure'
     | 'mutation_unsuccessful'
     | 'run_failed'
@@ -95,6 +98,12 @@ export type TurnEvaluationFlag =
     | 'invalid_tool_arguments'
     | 'context_near_full'
     | 'checkpoint_forced';
+
+/**
+ * Reason behind an evaluation severity, as an API response carries it. New detectors add values, so a reader
+ * must handle a flag it does not know; narrow to {@link KnownTurnEvaluationFlag} before an exhaustive lookup.
+ */
+export type TurnEvaluationFlag = string;
 
 /** Outcome of one detector on one turn. */
 export type TurnCheckState = 'fired' | 'fine' | 'not_checked';
