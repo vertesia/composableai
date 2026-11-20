@@ -338,6 +338,46 @@ describe('"Edit and run" on a tool approval prompt', () => {
         expect(check({ ...SHOWN_INPUT, headers: '{"trace":"two"}' })).toHaveProperty('input');
     });
 
+    it('rejects added credentials before sending them, including nested JSON text', () => {
+        const config = getToolApprovalEditConfig(makeEditableRequest());
+        if (!config) throw new Error('expected an edit config');
+        const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
+
+        expect(check({ ...SHOWN_INPUT, password: 'synthetic-password' })).toEqual({
+            problem: { code: 'secret_added', path: 'password' },
+        });
+        expect(
+            check({
+                ...SHOWN_INPUT,
+                options: JSON.stringify({ request: JSON.stringify({ api_key: 'synthetic-key' }) }),
+            }),
+        ).toEqual({ problem: { code: 'secret_added', path: 'options.request.api_key' } });
+        expect(check({ ...SHOWN_INPUT, options: JSON.stringify({ request: '{"x":"\\u005BREDACTED]"}' }) })).toEqual({
+            problem: { code: 'placeholder_added', path: 'options.request.x' },
+        });
+        expect(check({ ...SHOWN_INPUT, options: JSON.stringify({ request: '{"trace":"two"}' }) })).toHaveProperty(
+            'input',
+        );
+    });
+
+    it('locks literal keys containing dots and brackets', () => {
+        const shown = {
+            'headers.v1': { 'access[token]': TOOL_APPROVAL_REDACTED_PLACEHOLDER },
+            'calls[0]': [{ token: TOOL_APPROVAL_REDACTED_PLACEHOLDER, id: 'a' }],
+        };
+        const config = getToolApprovalEditConfig(makeEditableRequest(true, shown));
+        if (!config) throw new Error('expected an edit config');
+        const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
+
+        expect(check({ ...shown, 'headers.v1': { 'access[token]': 'synthetic-key' } })).toEqual({
+            problem: { code: 'redacted_changed', path: 'headers.v1.access[token]' },
+        });
+        expect(check({ ...shown, 'calls[0]': [{ token: TOOL_APPROVAL_REDACTED_PLACEHOLDER, id: 'b' }] })).toEqual({
+            problem: { code: 'locked_array_changed', path: 'calls[0]' },
+        });
+        expect(check(shown)).toHaveProperty('input');
+    });
+
     it('marks the prompt answered once the edit is sent', () => {
         const request = makeEditableRequest();
         const metadata = getToolApprovalEditResponseMetadata(request, SHOWN_INPUT);

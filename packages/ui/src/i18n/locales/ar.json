@@ -272,6 +272,7 @@
     "agent.toolApprovalEdit.errorNotObject": "يجب أن تكون الوسائط كائن JSON.",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "يحتوي {{path}} على [REDACTED]. لا يمكن إضافة أسرار في التعديل.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} محجوب ولا يمكن تغييره. اتركه [REDACTED] أو احذفه.",
+    "agent.toolApprovalEdit.errorSecretAdded": "يشير {{path}} إلى سر. أزل هذا الحقل؛ لا يمكن إضافة حقول سرية أثناء التعديل.",
     "agent.toolApprovalEdit.lockedFields": "تبقى القيم المحجوبة مخفية ولا يمكن تغييرها: {{fields}}",
     "agent.toolApprovalEdit.response": "نفّذ هذا الإجراء بالوسائط التي عدّلتها.",
     "agent.toolApprovalEdit.submit": "تشغيل الاستدعاء المعدّل",

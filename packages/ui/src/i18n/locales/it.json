@@ -262,6 +262,7 @@
     "agent.toolApprovalEdit.errorNotObject": "Gli argomenti devono essere un oggetto JSON.",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} contiene [REDACTED]. Non è possibile aggiungere segreti in una modifica.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} è oscurato e non può essere modificato. Lascia [REDACTED] o rimuovilo.",
+    "agent.toolApprovalEdit.errorSecretAdded": "{{path}} identifica un segreto. Rimuovi questo campo; non è possibile aggiungere campi segreti durante una modifica.",
     "agent.toolApprovalEdit.lockedFields": "I valori oscurati restano nascosti e non possono essere modificati: {{fields}}",
     "agent.toolApprovalEdit.response": "Esegui questa azione con gli argomenti che ho modificato.",
     "agent.toolApprovalEdit.submit": "Esegui la chiamata modificata",

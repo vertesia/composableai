@@ -260,6 +260,7 @@
     "agent.toolApprovalEdit.errorNotObject": "Die Argumente müssen ein JSON-Objekt sein.",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} enthält [REDACTED]. Geheimnisse können bei einer Bearbeitung nicht hinzugefügt werden.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} ist geschwärzt und kann nicht geändert werden. Lassen Sie [REDACTED] stehen oder entfernen Sie den Wert.",
+    "agent.toolApprovalEdit.errorSecretAdded": "{{path}} bezeichnet ein Geheimnis. Entfernen Sie das Feld; geheime Felder können beim Bearbeiten nicht hinzugefügt werden.",
     "agent.toolApprovalEdit.lockedFields": "Geschwärzte Werte bleiben verborgen und können nicht geändert werden: {{fields}}",
     "agent.toolApprovalEdit.response": "Führe diese Aktion mit meinen bearbeiteten Argumenten aus.",
     "agent.toolApprovalEdit.submit": "Bearbeiteten Aufruf ausführen",

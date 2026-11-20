@@ -316,6 +316,9 @@ export const TOOL_APPROVAL_EDIT_DECISION = 'allow_edited';
 /** What the workflow shows in place of a secret; the reviewer edits around it, never through it. */
 export const TOOL_APPROVAL_REDACTED_PLACEHOLDER = '[REDACTED]';
 
+// Keep credential names aligned with workflows/src/tools/approval.ts, which owns the dispatch guard.
+const SECRET_INPUT_KEY = /(api[_-]?key|authorization|cookie|credential|password|private[_-]?key|secret|session|token)/i;
+
 export interface ToolApprovalEditConfig {
     /** The call's arguments as the prompt shows them, secrets already redacted. */
     input: Record<string, unknown>;
@@ -406,6 +409,7 @@ export type ToolApprovalEditProblem =
     | { code: 'invalid_json' }
     | { code: 'not_object' }
     | { code: 'redacted_changed'; path: string }
+    | { code: 'secret_added'; path: string }
     | { code: 'locked_array_changed'; path: string }
     | { code: 'placeholder_added'; path: string };
 
@@ -438,22 +442,57 @@ function canonicalJson(value: unknown): string {
     return JSON.stringify(value) ?? 'undefined';
 }
 
-function valueAtPath(root: unknown, path: string): { found: boolean; value?: unknown } {
-    const segments = path.match(/[^.[\]]+/g) ?? [];
-    let current: unknown = root;
-    for (const segment of segments) {
-        current = decodeJsonText(current);
-        if (Array.isArray(current) && /^\d+$/.test(segment)) {
-            const index = Number(segment);
-            if (index >= current.length) return { found: false };
-            current = current[index];
-            continue;
-        }
-        const record = getRecord(current);
-        if (!record || !Object.hasOwn(record, segment)) return { found: false };
-        current = record[segment];
+function findLockedEditProblem(shown: unknown, edited: unknown, path: string): ToolApprovalEditProblem | undefined {
+    if (shown === TOOL_APPROVAL_REDACTED_PLACEHOLDER) {
+        return edited === shown ? undefined : { code: 'redacted_changed', path };
     }
-    return { found: true, value: decodeJsonText(current) };
+    const decoded = decodeJsonText(edited);
+    if (Array.isArray(shown)) {
+        if (holdsPlaceholder(shown) && canonicalJson(decoded) !== canonicalJson(shown)) {
+            return { code: 'locked_array_changed', path };
+        }
+        if (!Array.isArray(decoded)) return undefined;
+        for (const [index, item] of shown.entries()) {
+            if (index >= decoded.length) continue;
+            const problem = findLockedEditProblem(item, decoded[index], `${path}[${index}]`);
+            if (problem) return problem;
+        }
+        return undefined;
+    }
+    const originalRecord = getRecord(shown);
+    const editedRecord = getRecord(decoded);
+    if (!originalRecord || !editedRecord) return undefined;
+    for (const [key, child] of Object.entries(originalRecord)) {
+        if (!Object.hasOwn(editedRecord, key)) continue;
+        const problem = findLockedEditProblem(child, editedRecord[key], path ? `${path}.${key}` : key);
+        if (problem) return problem;
+    }
+    return undefined;
+}
+
+function findAddedSecret(original: unknown, edited: unknown, path: string): ToolApprovalEditProblem | undefined {
+    const shown = decodeJsonText(original);
+    const decoded = decodeJsonText(edited);
+    if (Array.isArray(decoded)) {
+        const originalItems = Array.isArray(shown) ? shown : [];
+        for (const [index, item] of decoded.entries()) {
+            const problem = findAddedSecret(originalItems[index], item, `${path}[${index}]`);
+            if (problem) return problem;
+        }
+        return undefined;
+    }
+    const record = getRecord(decoded);
+    if (!record) return undefined;
+    const originalRecord = getRecord(shown);
+    for (const [key, child] of Object.entries(record)) {
+        const childPath = path ? `${path}.${key}` : key;
+        if (SECRET_INPUT_KEY.test(key) && !(originalRecord && Object.hasOwn(originalRecord, key))) {
+            return { code: 'secret_added', path: childPath };
+        }
+        const problem = findAddedSecret(originalRecord?.[key], child, childPath);
+        if (problem) return problem;
+    }
+    return undefined;
 }
 
 function findAddedPlaceholder(original: unknown, edited: unknown, path: string): string | undefined {
@@ -505,21 +544,11 @@ export function validateToolApprovalEdit(
     }
     const input = getRecord(parsed);
     if (!input) return { problem: { code: 'not_object' } };
-    for (const path of config.lockedArrayPaths) {
-        const { found, value } = valueAtPath(input, path);
-        const { value: shown } = valueAtPath(config.input, path);
-        // Removing the whole array is allowed; changing any part of it is not.
-        if (found && canonicalJson(value) !== canonicalJson(shown)) {
-            return { problem: { code: 'locked_array_changed', path } };
-        }
-    }
-    for (const path of config.redactedPaths) {
-        const { found, value } = valueAtPath(input, path);
-        // Removing a redacted field is allowed; changing it is not.
-        if (found && value !== TOOL_APPROVAL_REDACTED_PLACEHOLDER) {
-            return { problem: { code: 'redacted_changed', path } };
-        }
-    }
+    // Walk the original keys directly: tool arguments can contain literal dots and brackets in their names.
+    const lockedProblem = findLockedEditProblem(config.input, input, '');
+    if (lockedProblem) return { problem: lockedProblem };
+    const secretProblem = findAddedSecret(config.input, input, '');
+    if (secretProblem) return { problem: secretProblem };
     const added = findAddedPlaceholder(config.input, input, '');
     if (added) return { problem: { code: 'placeholder_added', path: added } };
     return { input };

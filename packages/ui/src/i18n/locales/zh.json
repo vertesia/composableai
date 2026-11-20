@@ -260,6 +260,7 @@
     "agent.toolApprovalEdit.errorNotObject": "参数必须是 JSON 对象。",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} 包含 [REDACTED]。编辑时不能添加密钥。",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} 已脱敏，无法更改。请保留 [REDACTED] 或将其删除。",
+    "agent.toolApprovalEdit.errorSecretAdded": "{{path}} 是密钥字段。请移除此字段；编辑时不能添加密钥字段。",
     "agent.toolApprovalEdit.lockedFields": "脱敏的值保持隐藏，无法更改：{{fields}}",
     "agent.toolApprovalEdit.response": "请使用我编辑后的参数执行此操作。",
     "agent.toolApprovalEdit.submit": "运行编辑后的调用",

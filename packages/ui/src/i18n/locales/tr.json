@@ -260,6 +260,7 @@
     "agent.toolApprovalEdit.errorNotObject": "Argümanlar bir JSON nesnesi olmalıdır.",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} [REDACTED] içeriyor. Düzenlemede gizli değer eklenemez.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} gizlenmiştir ve değiştirilemez. [REDACTED] olarak bırakın veya kaldırın.",
+    "agent.toolApprovalEdit.errorSecretAdded": "{{path}} gizli bir alanı belirtir. Bu alanı kaldırın; düzenleme sırasında gizli alanlar eklenemez.",
     "agent.toolApprovalEdit.lockedFields": "Gizlenen değerler gizli kalır ve değiştirilemez: {{fields}}",
     "agent.toolApprovalEdit.response": "Bu işlemi düzenlediğim argümanlarla çalıştır.",
     "agent.toolApprovalEdit.submit": "Düzenlenen çağrıyı çalıştır",

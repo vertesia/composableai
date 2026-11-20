@@ -260,6 +260,7 @@
     "agent.toolApprovalEdit.errorNotObject": "參數必須是 JSON 物件。",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} 包含 [REDACTED]。編輯時不能新增密鑰。",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} 已遮蔽，無法變更。請保留 [REDACTED] 或將其刪除。",
+    "agent.toolApprovalEdit.errorSecretAdded": "{{path}} 是密鑰欄位。請移除此欄位；編輯時不能新增密鑰欄位。",
     "agent.toolApprovalEdit.lockedFields": "遮蔽的值保持隱藏，無法變更：{{fields}}",
     "agent.toolApprovalEdit.response": "請使用我編輯後的參數執行此操作。",
     "agent.toolApprovalEdit.submit": "執行編輯後的呼叫",

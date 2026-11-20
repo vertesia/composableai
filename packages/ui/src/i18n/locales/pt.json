@@ -262,6 +262,7 @@
     "agent.toolApprovalEdit.errorNotObject": "Os argumentos devem ser um objeto JSON.",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} contém [REDACTED]. Não é possível adicionar segredos numa edição.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} está ocultado e não pode ser alterado. Mantenha [REDACTED] ou remova-o.",
+    "agent.toolApprovalEdit.errorSecretAdded": "{{path}} identifica um segredo. Remova este campo; não é possível adicionar campos secretos numa edição.",
     "agent.toolApprovalEdit.lockedFields": "Os valores ocultados permanecem escondidos e não podem ser alterados: {{fields}}",
     "agent.toolApprovalEdit.response": "Execute esta ação com os argumentos que editei.",
     "agent.toolApprovalEdit.submit": "Executar a chamada editada",
