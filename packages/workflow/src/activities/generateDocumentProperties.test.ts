@@ -83,11 +83,15 @@ async function mockSetup(options: {
     renditions?: Rendition[];
     properties?: Record<string, unknown>;
     generationRuns?: GenerationRunMetadata[];
+    name?: string;
+    location?: string;
 }) {
     const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
     const update = vi.fn(async () => ({}));
     const retrieveObject = vi.fn(async () => ({
         id: 'object-1',
+        name: options.name,
+        location: options.location,
         text: options.text,
         text_etag: 'source-etag',
         properties: options.properties,
@@ -204,6 +208,29 @@ describe('generateDocumentProperties', () => {
 
         expect(result).toEqual({ status: 'failed', error: 'no-source' });
         expect(executeInteractionFromActivity).not.toHaveBeenCalled();
+    });
+
+    it('passes the file name and location to extraction as context', async () => {
+        await mockSetup({
+            text: 'Schedule 16 (Security)',
+            contentType: 'text/plain',
+            name: 'Mid-Tier_Schedule_16__Security.docx',
+            location: '/sharepoint/library/Legal/Templates',
+        });
+        mockExtractionResult({ title: 'Schedule 16' });
+
+        await testEnv.run(generateDocumentProperties, payload({ source: 'text' }));
+
+        expect(executeInteractionFromActivity).toHaveBeenCalledWith(
+            expect.anything(),
+            'sys:ExtractInformation',
+            expect.anything(),
+            expect.objectContaining({
+                file_name: 'Mid-Tier_Schedule_16__Security.docx',
+                location: '/sharepoint/library/Legal/Templates',
+            }),
+            false,
+        );
     });
 
     it('uses a PDF rendition as vision evidence for non-visual source documents', async () => {

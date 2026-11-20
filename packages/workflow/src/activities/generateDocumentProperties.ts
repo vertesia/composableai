@@ -265,6 +265,10 @@ export async function generateDocumentProperties(
         images: scopedImages,
         extraction_instructions: params.instructions,
         human_context: project?.configuration?.human_context ?? undefined,
+        // Context for values the content leaves ambiguous (a template family, a period, a party): the prompt tells
+        // the model that the content wins when they disagree.
+        file_name: doc.name || undefined,
+        location: doc.location || undefined,
     };
 
     // Strip properties marked x-extract:false so constrained decoding cannot invent them.
