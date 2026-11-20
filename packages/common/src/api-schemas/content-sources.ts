@@ -352,6 +352,54 @@ export const ContentSourceStatusSchema = z
     })
     .meta({ id: 'ContentSourceStatus', description: "A content source's sync state." });
 
+export const ContentSourceRoundSummarySchema = z
+    .strictObject({
+        kind: z.enum(['import', 'update']).meta({
+            description: '`import` lists the whole folder; `update` reads the changes since the previous sync.',
+        }),
+        started_at: z.string().meta({ format: 'date-time' }),
+        finished_at: z.string().meta({ format: 'date-time' }).optional(),
+        outcome: z.enum(['succeeded', 'failed']).meta({ description: 'Whether the round finished without an error.' }),
+    })
+    .meta({ id: 'ContentSourceRoundSummary', description: 'When a finished sync round ran, and how it ended.' });
+
+export const ContentSourceSummarySchema = z
+    .strictObject({
+        id: z.string(),
+        name: z.string(),
+        description: z.string().optional(),
+        type: z.enum(['sharepoint', 'box']),
+        location_root: commonSourceFields.location_root,
+        site_url: z.string().meta({ description: 'SharePoint only: the site URL.' }).optional(),
+        library_name: z.string().meta({ description: 'SharePoint only: the document library name.' }).optional(),
+        folder_path: z.string().meta({
+            description:
+                'The folder synced: relative to the library root for SharePoint (empty for the whole library), the ' +
+                'folder path below All Files for Box.',
+        }),
+        sync: ContentSourceSyncSettingsSchema,
+        state: ContentSourceStatusSchema.shape.state,
+        next_sync_at: z.string().meta({ format: 'date-time' }).optional(),
+        last_success_at: z
+            .string()
+            .meta({
+                format: 'date-time',
+                description: 'When the last round that finished without an error ended. Absent when none has.',
+            })
+            .optional(),
+        last_round: ContentSourceRoundSummarySchema.optional(),
+    })
+    .meta({
+        id: 'ContentSourceSummary',
+        description:
+            'What a content source syncs into the project and how its sync stands, readable by every member who can ' +
+            'read content. Holds no connection, credential or permission settings.',
+    });
+
+export const ContentSourceSummaryArraySchema = z
+    .array(ContentSourceSummarySchema)
+    .meta({ id: 'ContentSourceSummaryArray' });
+
 export const ContentSourceReportActionSchema = z
     .enum(['created', 'updated', 'deleted', 'skipped', 'failed'])
     .meta({ id: 'ContentSourceReportAction', description: 'What a sync round did with a file.' });
