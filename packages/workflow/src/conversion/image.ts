@@ -4,6 +4,8 @@ import { promisify } from 'node:util';
 import { log } from '@temporalio/activity';
 import { tmpName } from 'tmp-promise';
 import { ImageConversionError } from '../errors.js';
+import { currentActivitySignal } from '../utils/activity-info.js';
+import { cpuSlotEnv, withCpuSlot } from '../utils/cpu-slots.js';
 
 const execFile = promisify(execFileCallback);
 
@@ -23,7 +25,9 @@ interface FirstFrameGeometry {
  * Reads the geometry of the first frame. `identify -ping` reads it from the header without decoding pixels.
  */
 async function readFirstFrameGeometry(inputPath: string): Promise<FirstFrameGeometry> {
-    const { stdout } = await execFile('identify', ['-ping', '-format', '%W %H %w %h %X %Y', `${inputPath}[0]`]);
+    const { stdout } = await execFile('identify', ['-ping', '-format', '%W %H %w %h %X %Y', `${inputPath}[0]`], {
+        env: cpuSlotEnv(),
+    });
     const [pageWidth, pageHeight, width, height, offsetX, offsetY] = stdout.trim().split(/\s+/);
     return {
         width: Number.parseInt(width, 10),
@@ -128,94 +132,97 @@ export async function imageResizer(
 
         log.debug(`Resizing image using ImageMagick: ${inputPath} -> ${outputPath}`);
 
-        const command = 'convert';
-        const geometry = await readFirstFrameGeometry(inputPath);
-        const args: string[] = [];
-        const sizeHint = jpegSizeHint(geometry, max_hw);
-        if (sizeHint) {
-            args.push('-define', `jpeg:size=${sizeHint}`);
-        }
-
-        // Renditions are single images. Explicitly select the first frame so animated GIF/WebP inputs do not
-        // expand into numbered sibling files while leaving the requested output path empty.
-        // Keep the selector after the JPEG shrink-on-load optimization so ImageMagick can apply it while decoding.
-        args.push(`${inputPath}[0]`);
-
-        // Place an optimized animation subframe on its logical canvas before resizing. Only when needed: -coalesce
-        // copies the decoded frame, which can exhaust the pixel cache on a large image that already fills its canvas.
-        if (geometry.needsCanvas) {
-            args.push('-coalesce');
-        }
-
-        // Apply EXIF orientation to pixels before stripping metadata or resizing.
-        args.push('-auto-orient');
-
-        // Remove metadata
-        args.push('-strip');
-
-        // https://usage.imagemagick.org/filter/nicolas/#downsample
-        // Add colorspace correction if enabled
-        if (colorspaceCorrection) {
-            switch (colorspace) {
-                case 'RGB':
-                    // Linear light, recommended default
-                    // Convert from sRGB to linear RGB for processing
-                    args.push('-colorspace', 'RGB');
-                    log.debug('Using linear RGB colorspace for resize processing');
-                    break;
-                case 'LAB':
-                    // Perceptual linear light
-                    // Use LAB colorspace which separates intensity from color
-                    // Better for avoiding color clipping and distortion
-                    args.push('-colorspace', 'LAB');
-                    log.debug('Using LAB colorspace for resize processing');
-                    break;
-                case 'LUV':
-                    // Perceptual linear light
-                    // Alternative to LAB with perceptually uniform color deltas
-                    args.push('-colorspace', 'LUV');
-                    log.debug('Using LUV colorspace for resize processing');
-                    break;
-                case 'sigmoidal':
-                    // Sigmoidal colorspace modification to reduce ringing artifacts
-                    args.push('-colorspace', 'RGB');
-                    args.push('+sigmoidal-contrast', '6.5,50%');
-                    log.debug('Using sigmoidal contrast modification for resize processing');
-                    break;
+        // One CPU slot for both ImageMagick commands, so a resize waits for a slot once.
+        const { stderr } = await withCpuSlot(async () => {
+            const command = 'convert';
+            const geometry = await readFirstFrameGeometry(inputPath);
+            const args: string[] = [];
+            const sizeHint = jpegSizeHint(geometry, max_hw);
+            if (sizeHint) {
+                args.push('-define', `jpeg:size=${sizeHint}`);
             }
-        }
 
-        // Resize operation
-        args.push('-resize', `${max_hw}x${max_hw}>`);
+            // Renditions are single images. Explicitly select the first frame so animated GIF/WebP inputs do not
+            // expand into numbered sibling files while leaving the requested output path empty.
+            // Keep the selector after the JPEG shrink-on-load optimization so ImageMagick can apply it while decoding.
+            args.push(`${inputPath}[0]`);
 
-        // Restore colorspace after processing
-        if (colorspaceCorrection) {
-            switch (colorspace) {
-                case 'RGB':
-                case 'LAB':
-                case 'LUV':
-                    // Convert back to sRGB for output
-                    args.push('-colorspace', 'sRGB');
-                    break;
-                case 'sigmoidal':
-                    // Restore from sigmoidal modification and convert to sRGB
-                    args.push('-sigmoidal-contrast', '6.5,50%');
-                    args.push('-colorspace', 'sRGB');
-                    break;
+            // Place an optimized animation subframe on its logical canvas before resizing. Only when needed: -coalesce
+            // copies the decoded frame, which can exhaust the pixel cache on a large image that already fills its canvas.
+            if (geometry.needsCanvas) {
+                args.push('-coalesce');
             }
-        }
 
-        // Add progressive/interlace options
-        if (conversionOption) {
-            args.push(...conversionOption.split(' '));
-        }
+            // Apply EXIF orientation to pixels before stripping metadata or resizing.
+            args.push('-auto-orient');
 
-        // Output path
-        args.push(outputPath);
+            // Remove metadata
+            args.push('-strip');
 
-        log.debug(`ImageMagick command: ${command} ${args.join(' ')}`);
+            // https://usage.imagemagick.org/filter/nicolas/#downsample
+            // Add colorspace correction if enabled
+            if (colorspaceCorrection) {
+                switch (colorspace) {
+                    case 'RGB':
+                        // Linear light, recommended default
+                        // Convert from sRGB to linear RGB for processing
+                        args.push('-colorspace', 'RGB');
+                        log.debug('Using linear RGB colorspace for resize processing');
+                        break;
+                    case 'LAB':
+                        // Perceptual linear light
+                        // Use LAB colorspace which separates intensity from color
+                        // Better for avoiding color clipping and distortion
+                        args.push('-colorspace', 'LAB');
+                        log.debug('Using LAB colorspace for resize processing');
+                        break;
+                    case 'LUV':
+                        // Perceptual linear light
+                        // Alternative to LAB with perceptually uniform color deltas
+                        args.push('-colorspace', 'LUV');
+                        log.debug('Using LUV colorspace for resize processing');
+                        break;
+                    case 'sigmoidal':
+                        // Sigmoidal colorspace modification to reduce ringing artifacts
+                        args.push('-colorspace', 'RGB');
+                        args.push('+sigmoidal-contrast', '6.5,50%');
+                        log.debug('Using sigmoidal contrast modification for resize processing');
+                        break;
+                }
+            }
 
-        const { stderr } = await execFile(command, args);
+            // Resize operation
+            args.push('-resize', `${max_hw}x${max_hw}>`);
+
+            // Restore colorspace after processing
+            if (colorspaceCorrection) {
+                switch (colorspace) {
+                    case 'RGB':
+                    case 'LAB':
+                    case 'LUV':
+                        // Convert back to sRGB for output
+                        args.push('-colorspace', 'sRGB');
+                        break;
+                    case 'sigmoidal':
+                        // Restore from sigmoidal modification and convert to sRGB
+                        args.push('-sigmoidal-contrast', '6.5,50%');
+                        args.push('-colorspace', 'sRGB');
+                        break;
+                }
+            }
+
+            // Add progressive/interlace options
+            if (conversionOption) {
+                args.push(...conversionOption.split(' '));
+            }
+
+            // Output path
+            args.push(outputPath);
+
+            log.debug(`ImageMagick command: ${command} ${args.join(' ')}`);
+
+            return execFile(command, args, { env: cpuSlotEnv() });
+        }, currentActivitySignal());
 
         if (stderr) {
             log.warn(`ImageMagick warning: ${stderr}`);
