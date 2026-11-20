@@ -32,14 +32,6 @@ export type ServiceAccountTokenRequest = Wire.ServiceAccountTokenRequest;
  */
 export type IssueTokenRequest = Wire.IssueTokenRequest;
 
-export interface RefreshTokenRequest {
-    token: string;
-}
-
-export interface RevokeTokenRequest {
-    token: string;
-}
-
 // Response types
 export interface TokenResponse {
     token: string;
