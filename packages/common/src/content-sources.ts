@@ -12,6 +12,10 @@ export const CONTENT_SOURCE_REPORT_ROUNDS = 10;
 export const CONTENT_SOURCE_REPORT_MAX_LIMIT = 1000;
 /** The most files a sample of a source's folder returns. */
 export const CONTENT_SOURCE_SAMPLE_MAX_LIMIT = 500;
+/** The smallest share of a source's files, in percent, that a sample mode syncs. */
+export const CONTENT_SOURCE_MIN_SAMPLE_PERCENT = 1;
+/** The largest share of a sample mode: 100 would be every file, which is a source without a sample. */
+export const CONTENT_SOURCE_MAX_SAMPLE_PERCENT = 99;
 
 /** A folder of an external content system whose files are synced into the project without copies. */
 export type ExternalContentSource = Wire.ExternalContentSource;
