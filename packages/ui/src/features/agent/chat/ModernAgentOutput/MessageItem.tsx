@@ -32,6 +32,7 @@ import { PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget, isAskUserOptions } from '../AskUserWidget';
 import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
 import { useImageLightbox } from '../ImageLightbox';
+import { toolApprovalEditActionFor } from '../ToolApprovalEditAction';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
 import { ThinkingMessages } from '../WaitingMessages';
 import { createAgentMarkdownAnchor } from './AgentMarkdownAnchor';
@@ -671,6 +672,13 @@ function MessageItemComponent({
                                     askUserUx.free_response?.metadata,
                                 )
                             }
+                            extraActions={toolApprovalEditActionFor(
+                                message,
+                                onSendMessage
+                                    ? (text, metadata) =>
+                                          sendRequestInputResponse(onSendMessage, message, text, metadata)
+                                    : undefined,
+                            )}
                             hideBorder
                             compact
                             answered={requestInputAnswered}
