@@ -521,6 +521,24 @@ export const McpOAuthDisconnectResponseSchema = z
     })
     .meta({ id: 'McpOAuthDisconnectResponse' });
 
+export const McpOAuthExchangePayloadSchema = z
+    .strictObject({
+        code: z.string(),
+        state: z.string(),
+        iss: z
+            .string()
+            .optional()
+            .meta({
+                description:
+                    'The `iss` parameter of the authorization response (RFC 9207), when the authorization server sent ' +
+                    'one. It is checked against the issuer the server discovered, to detect an authorization server mix-up.',
+            }),
+    })
+    .meta({
+        id: 'McpOAuthExchangePayload',
+        description: 'The authorization response parameters of a remote MCP OAuth callback.',
+    });
+
 export const McpOAuthConnectResponseSchema = z
     .strictObject({
         success: z.boolean(),
