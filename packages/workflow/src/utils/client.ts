@@ -50,6 +50,22 @@ export function withWorkflowRequestHeaders<T>(headers: Record<string, string>, a
     return workflowRequestHeaders.run(headers, action);
 }
 
+const WORKFLOW_API_REQUEST_HEADERS = Symbol.for('@vertesia/workflow.apiRequestHeaders');
+const apiProcessGlobals = globalThis as {
+    [WORKFLOW_API_REQUEST_HEADERS]?: AsyncLocalStorage<Record<string, string>>;
+};
+apiProcessGlobals[WORKFLOW_API_REQUEST_HEADERS] ??= new AsyncLocalStorage();
+const workflowApiRequestHeaders = apiProcessGlobals[WORKFLOW_API_REQUEST_HEADERS];
+
+/**
+ * Add these headers to the requests of every client `getVertesiaClient` creates inside `action`, to the API server and
+ * to the content store alike. {@link withWorkflowRequestHeaders} reaches the API server only. A nested call replaces
+ * the headers of the outer one.
+ */
+export function withWorkflowApiRequestHeaders<T>(headers: Record<string, string>, action: () => T): T {
+    return workflowApiRequestHeaders.run(headers, action);
+}
+
 /**
  * Give a logical HTTP operation an identity stable across activity retries and continue-as-new.
  * Choose a separate key for each intended operation; server trust and endpoint idempotency still apply.
@@ -136,6 +152,11 @@ function createWorkflowFetch(activitySignal?: AbortSignal): FETCH_FN {
 
 export function getVertesiaClient(payload: WorkflowExecutionBaseParams<unknown>) {
     const client = new VertesiaClient(getVertesiaClientOptions(payload));
+    const apiHeaders = workflowApiRequestHeaders.getStore();
+    if (apiHeaders) {
+        client.withHeaders(apiHeaders);
+        client.store.withHeaders(apiHeaders);
+    }
     const headers = workflowRequestHeaders.getStore();
     return headers ? client.withHeaders(headers) : client;
 }
