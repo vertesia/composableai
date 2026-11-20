@@ -249,7 +249,6 @@ describe('"Edit and run" on a tool approval prompt', () => {
         expect(getToolApprovalEditConfig(makeEditableRequest())).toEqual({
             input: SHOWN_INPUT,
             redactedPaths: ['api_key', 'headers.authorization'],
-            lockedArrayPaths: [],
         });
     });
 
@@ -306,7 +305,6 @@ describe('"Edit and run" on a tool approval prompt', () => {
         };
         const config = getToolApprovalEditConfig(makeEditableRequest(true, shown));
         if (!config) throw new Error('expected an edit config');
-        expect(config.lockedArrayPaths).toEqual(['calls']);
         const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
 
         const changedId = structuredClone(shown);

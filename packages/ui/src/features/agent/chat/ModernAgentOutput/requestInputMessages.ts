@@ -324,11 +324,6 @@ export interface ToolApprovalEditConfig {
     input: Record<string, unknown>;
     /** Paths of the redacted values (`headers.authorization`, `items[0].token`); they cannot be changed. */
     redactedPaths: string[];
-    /**
-     * Paths of the arrays that hold a redacted value. The workflow puts secrets back by position, so such an array
-     * must stay exactly as shown: it can be removed, not edited.
-     */
-    lockedArrayPaths: string[];
 }
 
 function holdsPlaceholder(value: unknown): boolean {
@@ -336,22 +331,6 @@ function holdsPlaceholder(value: unknown): boolean {
     if (Array.isArray(value)) return value.some(holdsPlaceholder);
     const record = getRecord(value);
     return !!record && Object.values(record).some(holdsPlaceholder);
-}
-
-function collectLockedArrayPaths(value: unknown, path: string, out: string[]): void {
-    if (Array.isArray(value)) {
-        if (holdsPlaceholder(value)) {
-            out.push(path);
-            return;
-        }
-        for (const [index, item] of value.entries()) collectLockedArrayPaths(item, `${path}[${index}]`, out);
-        return;
-    }
-    const record = getRecord(value);
-    if (!record) return;
-    for (const [key, child] of Object.entries(record)) {
-        collectLockedArrayPaths(child, path ? `${path}.${key}` : key, out);
-    }
 }
 
 function collectRedactedPaths(value: unknown, path: string, out: string[]): void {
@@ -382,9 +361,7 @@ export function getToolApprovalEditConfig(message: AgentMessage): ToolApprovalEd
     if (!input) return undefined;
     const redactedPaths: string[] = [];
     collectRedactedPaths(input, '', redactedPaths);
-    const lockedArrayPaths: string[] = [];
-    collectLockedArrayPaths(input, '', lockedArrayPaths);
-    return { input, redactedPaths, lockedArrayPaths };
+    return { input, redactedPaths };
 }
 
 /** Metadata of an "Edit and run" answer: the decision, the prompt it answers, and the edited arguments. */
