@@ -1,24 +1,16 @@
 import { execFile as execFileCallback } from 'node:child_process';
 import fs from 'node:fs';
 import { promisify } from 'node:util';
-import { Context, log } from '@temporalio/activity';
+import { log } from '@temporalio/activity';
 import { tmpName } from 'tmp-promise';
 import { ImageConversionError } from '../errors.js';
+import { currentActivitySignal } from '../utils/activity-info.js';
 import { cpuSlotEnv, withCpuSlot } from '../utils/cpu-slots.js';
 
 const execFile = promisify(execFileCallback);
 
 function isCommandExitError(error: unknown): error is Error & { code: number } {
     return error instanceof Error && 'code' in error && typeof error.code === 'number';
-}
-
-/** The cancellation signal of the current activity, or undefined outside an activity. */
-function currentActivitySignal(): AbortSignal | undefined {
-    try {
-        return Context.current().cancellationSignal;
-    } catch {
-        return undefined;
-    }
 }
 
 interface FirstFrameGeometry {
