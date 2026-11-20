@@ -256,6 +256,7 @@
     "agent.toolApprovalEdit.description": "エージェントの呼び出しは、元の引数の代わりにこれらの引数で一度だけ実行されます。以降の呼び出しでは引き続き承認が求められます。",
     "agent.toolApprovalEdit.editorLabel": "ツール呼び出しの引数（JSON）",
     "agent.toolApprovalEdit.errorInvalidJson": "引数が有効な JSON ではありません。",
+    "agent.toolApprovalEdit.errorLockedArray": "{{path}} には伏せられた値が含まれるため、表示どおりのままにする必要があります。削除はできますが、編集はできません。",
     "agent.toolApprovalEdit.errorNotObject": "引数は JSON オブジェクトである必要があります。",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} に [REDACTED] が含まれています。編集でシークレットを追加することはできません。",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} は秘匿化されているため変更できません。[REDACTED] のままにするか削除してください。",

@@ -258,6 +258,7 @@
     "agent.toolApprovalEdit.description": "La chiamata dell'agente viene eseguita una volta con questi argomenti al posto dei suoi. Le chiamate successive chiederanno comunque l'approvazione.",
     "agent.toolApprovalEdit.editorLabel": "Argomenti della chiamata allo strumento (JSON)",
     "agent.toolApprovalEdit.errorInvalidJson": "Gli argomenti non sono un JSON valido.",
+    "agent.toolApprovalEdit.errorLockedArray": "{{path}} contiene un valore oscurato, quindi deve restare esattamente com'è. Puoi rimuoverlo, ma non modificarlo.",
     "agent.toolApprovalEdit.errorNotObject": "Gli argomenti devono essere un oggetto JSON.",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} contiene [REDACTED]. Non è possibile aggiungere segreti in una modifica.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} è oscurato e non può essere modificato. Lascia [REDACTED] o rimuovilo.",

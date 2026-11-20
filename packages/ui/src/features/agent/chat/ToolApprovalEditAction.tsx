@@ -127,6 +127,8 @@ function describeProblem(problem: ToolApprovalEditProblem, t: ReturnType<typeof 
             return t('agent.toolApprovalEdit.errorInvalidJson');
         case 'not_object':
             return t('agent.toolApprovalEdit.errorNotObject');
+        case 'locked_array_changed':
+            return t('agent.toolApprovalEdit.errorLockedArray', { path: problem.path });
         case 'redacted_changed':
             return t('agent.toolApprovalEdit.errorRedactedChanged', { path: problem.path });
         case 'placeholder_added':

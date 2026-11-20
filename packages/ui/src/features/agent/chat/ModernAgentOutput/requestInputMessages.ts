@@ -321,6 +321,34 @@ export interface ToolApprovalEditConfig {
     input: Record<string, unknown>;
     /** Paths of the redacted values (`headers.authorization`, `items[0].token`); they cannot be changed. */
     redactedPaths: string[];
+    /**
+     * Paths of the arrays that hold a redacted value. The workflow puts secrets back by position, so such an array
+     * must stay exactly as shown: it can be removed, not edited.
+     */
+    lockedArrayPaths: string[];
+}
+
+function holdsPlaceholder(value: unknown): boolean {
+    if (value === TOOL_APPROVAL_REDACTED_PLACEHOLDER) return true;
+    if (Array.isArray(value)) return value.some(holdsPlaceholder);
+    const record = getRecord(value);
+    return !!record && Object.values(record).some(holdsPlaceholder);
+}
+
+function collectLockedArrayPaths(value: unknown, path: string, out: string[]): void {
+    if (Array.isArray(value)) {
+        if (holdsPlaceholder(value)) {
+            out.push(path);
+            return;
+        }
+        for (const [index, item] of value.entries()) collectLockedArrayPaths(item, `${path}[${index}]`, out);
+        return;
+    }
+    const record = getRecord(value);
+    if (!record) return;
+    for (const [key, child] of Object.entries(record)) {
+        collectLockedArrayPaths(child, path ? `${path}.${key}` : key, out);
+    }
 }
 
 function collectRedactedPaths(value: unknown, path: string, out: string[]): void {
@@ -351,7 +379,9 @@ export function getToolApprovalEditConfig(message: AgentMessage): ToolApprovalEd
     if (!input) return undefined;
     const redactedPaths: string[] = [];
     collectRedactedPaths(input, '', redactedPaths);
-    return { input, redactedPaths };
+    const lockedArrayPaths: string[] = [];
+    collectLockedArrayPaths(input, '', lockedArrayPaths);
+    return { input, redactedPaths, lockedArrayPaths };
 }
 
 /** Metadata of an "Edit and run" answer: the decision, the prompt it answers, and the edited arguments. */
@@ -376,12 +406,43 @@ export type ToolApprovalEditProblem =
     | { code: 'invalid_json' }
     | { code: 'not_object' }
     | { code: 'redacted_changed'; path: string }
+    | { code: 'locked_array_changed'; path: string }
     | { code: 'placeholder_added'; path: string };
+
+/**
+ * JSON text the workflow would read as an object or array. Its schema check decodes such a string before the tool
+ * runs, so the client checks what the string decodes to as well.
+ */
+function decodeJsonText(value: unknown): unknown {
+    if (typeof value !== 'string') return value;
+    const trimmed = value.trim();
+    if (!((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']')))) {
+        return value;
+    }
+    try {
+        return JSON.parse(trimmed) as unknown;
+    } catch {
+        return value;
+    }
+}
+
+function canonicalJson(value: unknown): string {
+    if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+    const record = getRecord(value);
+    if (record) {
+        return `{${Object.keys(record)
+            .sort()
+            .map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`)
+            .join(',')}}`;
+    }
+    return JSON.stringify(value) ?? 'undefined';
+}
 
 function valueAtPath(root: unknown, path: string): { found: boolean; value?: unknown } {
     const segments = path.match(/[^.[\]]+/g) ?? [];
     let current: unknown = root;
     for (const segment of segments) {
+        current = decodeJsonText(current);
         if (Array.isArray(current) && /^\d+$/.test(segment)) {
             const index = Number(segment);
             if (index >= current.length) return { found: false };
@@ -392,13 +453,16 @@ function valueAtPath(root: unknown, path: string): { found: boolean; value?: unk
         if (!record || !Object.hasOwn(record, segment)) return { found: false };
         current = record[segment];
     }
-    return { found: true, value: current };
+    return { found: true, value: decodeJsonText(current) };
 }
 
 function findAddedPlaceholder(original: unknown, edited: unknown, path: string): string | undefined {
     if (typeof edited === 'string') {
-        if (!edited.includes(TOOL_APPROVAL_REDACTED_PLACEHOLDER)) return undefined;
-        return original === edited ? undefined : path || '$';
+        if (original === edited) return undefined;
+        const decoded = decodeJsonText(edited);
+        // An escaped placeholder (`\u005BREDACTED]`) only shows once the JSON text is decoded.
+        if (decoded !== edited) return findAddedPlaceholder(undefined, decoded, path);
+        return edited.includes(TOOL_APPROVAL_REDACTED_PLACEHOLDER) ? path || '$' : undefined;
     }
     if (Array.isArray(edited)) {
         const originalItems = Array.isArray(original) ? original : [];
@@ -441,6 +505,14 @@ export function validateToolApprovalEdit(
     }
     const input = getRecord(parsed);
     if (!input) return { problem: { code: 'not_object' } };
+    for (const path of config.lockedArrayPaths) {
+        const { found, value } = valueAtPath(input, path);
+        const { value: shown } = valueAtPath(config.input, path);
+        // Removing the whole array is allowed; changing any part of it is not.
+        if (found && canonicalJson(value) !== canonicalJson(shown)) {
+            return { problem: { code: 'locked_array_changed', path } };
+        }
+    }
     for (const path of config.redactedPaths) {
         const { found, value } = valueAtPath(input, path);
         // Removing a redacted field is allowed; changing it is not.

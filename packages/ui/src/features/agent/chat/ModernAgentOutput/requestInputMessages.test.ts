@@ -226,7 +226,7 @@ describe('"Edit and run" on a tool approval prompt', () => {
         headers: { authorization: TOOL_APPROVAL_REDACTED_PLACEHOLDER, trace: 'one' },
     };
 
-    function makeEditableRequest(supportsEdit: unknown = true): AgentMessage {
+    function makeEditableRequest(supportsEdit: unknown = true, input: unknown = SHOWN_INPUT): AgentMessage {
         const request = makeApprovalRequestForToolUse('tool-1');
         const details = request.details as Record<string, unknown>;
         return {
@@ -235,7 +235,7 @@ describe('"Edit and run" on a tool approval prompt', () => {
                 ...details,
                 tool_approval: {
                     ...(details.tool_approval as Record<string, unknown>),
-                    input: SHOWN_INPUT,
+                    input,
                     supports_edit: supportsEdit,
                 },
             },
@@ -249,6 +249,7 @@ describe('"Edit and run" on a tool approval prompt', () => {
         expect(getToolApprovalEditConfig(makeEditableRequest())).toEqual({
             input: SHOWN_INPUT,
             redactedPaths: ['api_key', 'headers.authorization'],
+            lockedArrayPaths: [],
         });
     });
 
@@ -292,6 +293,49 @@ describe('"Edit and run" on a tool approval prompt', () => {
         expect(check({ ...SHOWN_INPUT, tags: [TOOL_APPROVAL_REDACTED_PLACEHOLDER] })).toEqual({
             problem: { code: 'placeholder_added', path: 'tags[0]' },
         });
+    });
+
+    it('locks an array that holds a redacted value, as the workflow does', () => {
+        const shown = {
+            name: 'batch',
+            calls: [
+                { token: TOOL_APPROVAL_REDACTED_PLACEHOLDER, id: 'a' },
+                { token: TOOL_APPROVAL_REDACTED_PLACEHOLDER, id: 'b' },
+            ],
+            tags: ['x'],
+        };
+        const config = getToolApprovalEditConfig(makeEditableRequest(true, shown));
+        if (!config) throw new Error('expected an edit config');
+        expect(config.lockedArrayPaths).toEqual(['calls']);
+        const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
+
+        const changedId = structuredClone(shown);
+        changedId.calls[0].id = 'z';
+        expect(check(changedId)).toEqual({ problem: { code: 'locked_array_changed', path: 'calls' } });
+        expect(check({ ...shown, calls: [shown.calls[1], shown.calls[0]] })).toEqual({
+            problem: { code: 'locked_array_changed', path: 'calls' },
+        });
+        expect(check({ ...shown, calls: shown.calls.slice(0, 1) })).toEqual({
+            problem: { code: 'locked_array_changed', path: 'calls' },
+        });
+
+        const { calls: _removed, ...withoutCalls } = shown;
+        expect(check(withoutCalls)).toEqual({ input: withoutCalls });
+        expect(check({ ...shown, name: 'other', tags: ['x', 'y'] })).toHaveProperty('input');
+    });
+
+    it('checks JSON text the way the workflow decodes it', () => {
+        const config = getToolApprovalEditConfig(makeEditableRequest());
+        if (!config) throw new Error('expected an edit config');
+        const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
+
+        expect(check({ ...SHOWN_INPUT, headers: '{"authorization":"Bearer typed","trace":"one"}' })).toEqual({
+            problem: { code: 'redacted_changed', path: 'headers.authorization' },
+        });
+        expect(check({ ...SHOWN_INPUT, note: '{"x":"\\u005BREDACTED]"}' })).toEqual({
+            problem: { code: 'placeholder_added', path: 'note.x' },
+        });
+        expect(check({ ...SHOWN_INPUT, headers: '{"trace":"two"}' })).toHaveProperty('input');
     });
 
     it('marks the prompt answered once the edit is sent', () => {

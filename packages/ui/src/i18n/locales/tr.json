@@ -256,6 +256,7 @@
     "agent.toolApprovalEdit.description": "Ajanın çağrısı kendi argümanları yerine bu argümanlarla bir kez çalışır. Sonraki çağrılar yine onay ister.",
     "agent.toolApprovalEdit.editorLabel": "Araç çağrısı argümanları (JSON)",
     "agent.toolApprovalEdit.errorInvalidJson": "Argümanlar geçerli bir JSON değil.",
+    "agent.toolApprovalEdit.errorLockedArray": "{{path}} gizlenmiş bir değer içerdiği için gösterildiği gibi kalmalıdır. Kaldırabilirsiniz ama düzenleyemezsiniz.",
     "agent.toolApprovalEdit.errorNotObject": "Argümanlar bir JSON nesnesi olmalıdır.",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} [REDACTED] içeriyor. Düzenlemede gizli değer eklenemez.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} gizlenmiştir ve değiştirilemez. [REDACTED] olarak bırakın veya kaldırın.",

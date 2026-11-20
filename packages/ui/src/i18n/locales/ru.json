@@ -262,6 +262,7 @@
     "agent.toolApprovalEdit.description": "Вызов агента будет выполнен один раз с этими аргументами вместо его собственных. Последующие вызовы по-прежнему потребуют одобрения.",
     "agent.toolApprovalEdit.editorLabel": "Аргументы вызова инструмента (JSON)",
     "agent.toolApprovalEdit.errorInvalidJson": "Аргументы не являются допустимым JSON.",
+    "agent.toolApprovalEdit.errorLockedArray": "{{path}} содержит скрытое значение, поэтому должно остаться без изменений. Его можно удалить, но не изменить.",
     "agent.toolApprovalEdit.errorNotObject": "Аргументы должны быть объектом JSON.",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} содержит [REDACTED]. При изменении нельзя добавлять секреты.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} скрыто и не может быть изменено. Оставьте [REDACTED] или удалите это поле.",

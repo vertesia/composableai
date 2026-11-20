@@ -256,6 +256,7 @@
     "agent.toolApprovalEdit.description": "代理的呼叫將使用這些參數取代其自身參數執行一次。之後的呼叫仍需核准。",
     "agent.toolApprovalEdit.editorLabel": "工具呼叫參數（JSON）",
     "agent.toolApprovalEdit.errorInvalidJson": "參數不是有效的 JSON。",
+    "agent.toolApprovalEdit.errorLockedArray": "{{path}} 包含已遮蔽的值，必須保持原樣。可以刪除，但不能編輯。",
     "agent.toolApprovalEdit.errorNotObject": "參數必須是 JSON 物件。",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} 包含 [REDACTED]。編輯時不能新增密鑰。",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} 已遮蔽，無法變更。請保留 [REDACTED] 或將其刪除。",

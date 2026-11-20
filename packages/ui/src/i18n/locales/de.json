@@ -256,6 +256,7 @@
     "agent.toolApprovalEdit.description": "Der Aufruf des Agenten wird einmal mit diesen Argumenten statt seiner eigenen ausgeführt. Spätere Aufrufe fragen weiterhin nach Genehmigung.",
     "agent.toolApprovalEdit.editorLabel": "Argumente des Tool-Aufrufs (JSON)",
     "agent.toolApprovalEdit.errorInvalidJson": "Die Argumente sind kein gültiges JSON.",
+    "agent.toolApprovalEdit.errorLockedArray": "{{path}} enthält einen geschwärzten Wert und muss daher unverändert bleiben. Sie können es entfernen, aber nicht bearbeiten.",
     "agent.toolApprovalEdit.errorNotObject": "Die Argumente müssen ein JSON-Objekt sein.",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} enthält [REDACTED]. Geheimnisse können bei einer Bearbeitung nicht hinzugefügt werden.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} ist geschwärzt und kann nicht geändert werden. Lassen Sie [REDACTED] stehen oder entfernen Sie den Wert.",

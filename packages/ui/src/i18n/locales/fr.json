@@ -258,6 +258,7 @@
     "agent.toolApprovalEdit.description": "L'appel de l'agent s'exécute une fois avec ces arguments à la place des siens. Les appels suivants demanderont toujours une approbation.",
     "agent.toolApprovalEdit.editorLabel": "Arguments de l'appel d'outil (JSON)",
     "agent.toolApprovalEdit.errorInvalidJson": "Les arguments ne sont pas un JSON valide.",
+    "agent.toolApprovalEdit.errorLockedArray": "{{path}} contient une valeur masquée : il doit rester tel quel. Vous pouvez le supprimer, mais pas le modifier.",
     "agent.toolApprovalEdit.errorNotObject": "Les arguments doivent être un objet JSON.",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} contient [REDACTED]. Une modification ne peut pas ajouter de secret.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} est masqué et ne peut pas être modifié. Laissez [REDACTED] ou supprimez-le.",

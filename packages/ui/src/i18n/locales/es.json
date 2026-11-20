@@ -258,6 +258,7 @@
     "agent.toolApprovalEdit.description": "La llamada del agente se ejecuta una vez con estos argumentos en lugar de los suyos. Las llamadas posteriores seguirán pidiendo aprobación.",
     "agent.toolApprovalEdit.editorLabel": "Argumentos de la llamada a la herramienta (JSON)",
     "agent.toolApprovalEdit.errorInvalidJson": "Los argumentos no son un JSON válido.",
+    "agent.toolApprovalEdit.errorLockedArray": "{{path}} contiene un valor oculto, por lo que debe quedar tal como se muestra. Puede eliminarlo, pero no editarlo.",
     "agent.toolApprovalEdit.errorNotObject": "Los argumentos deben ser un objeto JSON.",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} contiene [REDACTED]. No se pueden añadir secretos en una edición.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} está censurado y no se puede cambiar. Déjelo como [REDACTED] o elimínelo.",

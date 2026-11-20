@@ -256,6 +256,7 @@
     "agent.toolApprovalEdit.description": "에이전트의 호출이 원래 인수 대신 이 인수로 한 번 실행됩니다. 이후 호출은 계속 승인을 요청합니다.",
     "agent.toolApprovalEdit.editorLabel": "도구 호출 인수(JSON)",
     "agent.toolApprovalEdit.errorInvalidJson": "인수가 유효한 JSON이 아닙니다.",
+    "agent.toolApprovalEdit.errorLockedArray": "{{path}}에는 가려진 값이 있으므로 표시된 그대로 두어야 합니다. 삭제할 수는 있지만 편집할 수는 없습니다.",
     "agent.toolApprovalEdit.errorNotObject": "인수는 JSON 객체여야 합니다.",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}}에 [REDACTED]가 포함되어 있습니다. 편집에서 비밀 값을 추가할 수 없습니다.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}}은(는) 가려져 있어 변경할 수 없습니다. [REDACTED]로 두거나 제거하세요.",

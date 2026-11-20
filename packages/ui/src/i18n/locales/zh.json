@@ -256,6 +256,7 @@
     "agent.toolApprovalEdit.description": "代理的调用将使用这些参数代替其自身参数运行一次。之后的调用仍需批准。",
     "agent.toolApprovalEdit.editorLabel": "工具调用参数（JSON）",
     "agent.toolApprovalEdit.errorInvalidJson": "参数不是有效的 JSON。",
+    "agent.toolApprovalEdit.errorLockedArray": "{{path}} 包含已隐去的值，必须保持原样。可以删除，但不能编辑。",
     "agent.toolApprovalEdit.errorNotObject": "参数必须是 JSON 对象。",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "{{path}} 包含 [REDACTED]。编辑时不能添加密钥。",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} 已脱敏，无法更改。请保留 [REDACTED] 或将其删除。",

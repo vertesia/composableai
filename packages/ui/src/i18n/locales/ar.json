@@ -268,6 +268,7 @@
     "agent.toolApprovalEdit.description": "يُشغَّل استدعاء الوكيل مرة واحدة بهذه الوسائط بدلاً من وسائطه. ستظل الاستدعاءات اللاحقة تطلب الموافقة.",
     "agent.toolApprovalEdit.editorLabel": "وسائط استدعاء الأداة (JSON)",
     "agent.toolApprovalEdit.errorInvalidJson": "الوسائط ليست JSON صالحًا.",
+    "agent.toolApprovalEdit.errorLockedArray": "يحتوي {{path}} على قيمة محجوبة، لذا يجب أن يبقى كما هو. يمكنك حذفه، لكن لا يمكنك تعديله.",
     "agent.toolApprovalEdit.errorNotObject": "يجب أن تكون الوسائط كائن JSON.",
     "agent.toolApprovalEdit.errorPlaceholderAdded": "يحتوي {{path}} على [REDACTED]. لا يمكن إضافة أسرار في التعديل.",
     "agent.toolApprovalEdit.errorRedactedChanged": "{{path}} محجوب ولا يمكن تغييره. اتركه [REDACTED] أو احذفه.",
