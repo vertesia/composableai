@@ -7,6 +7,16 @@ import { removeTempFiles } from '../utils/blobs.js';
 /** Bound on the tool output kept in memory; a tool that writes more fails instead of growing the buffer. */
 const TOOL_MAX_BUFFER = 10 * 1024 * 1024;
 
+export interface ConvertOptions {
+    /**
+     * Read at most this many bytes of the output file. A caller that keeps only a prefix of the text sets it, so a
+     * huge output is never loaded whole. The last character can be cut in half, as with any byte prefix.
+     */
+    maxOutputBytes?: number;
+    /** Environment of the tool. It inherits the worker's environment when omitted. */
+    env?: NodeJS.ProcessEnv;
+}
+
 /**
  * Run `tool` with the arguments built by `args(inputFile, outputFile)`, and return the output file's text.
  *
@@ -17,6 +27,7 @@ const TOOL_MAX_BUFFER = 10 * 1024 * 1024;
  * @param inputExt extension of the temporary input file, with or without the leading dot (e.g. `docx`); a path is
  *   used as it is
  * @param outputExt extension of the output file, with or without the leading dot (e.g. `md`)
+ * @param options bound on the output read and environment of the tool
  */
 export async function convertWithTool(
     tool: string,
@@ -24,6 +35,7 @@ export async function convertWithTool(
     inputExt: string | undefined,
     outputExt: string,
     args: (inputFile: string, outputFile: string) => string[],
+    options: ConvertOptions = {},
 ): Promise<string> {
     let inputFile: string;
     let tempInputFile: string | undefined;
@@ -36,8 +48,8 @@ export async function convertWithTool(
     const outputFile = tmp.tmpNameSync({ postfix: toPostfix(outputExt) });
     try {
         log.info(`Converting with ${tool}`, { inputFile, outputFile });
-        await runTool(tool, args(inputFile, outputFile));
-        return await fs.promises.readFile(outputFile, 'utf8');
+        await runTool(tool, args(inputFile, outputFile), options.env);
+        return await readTextFile(outputFile, options.maxOutputBytes);
     } finally {
         await removeTempFiles(tempInputFile, outputFile);
     }
@@ -48,8 +60,23 @@ export async function convertWithTool(
  * pipe), its stderr is part of the error when it fails or is killed, and it is stopped when the activity is cancelled
  * or about to time out.
  */
-export async function runTool(tool: string, args: string[]): Promise<void> {
-    await execActivityFile(tool, args, { maxBuffer: TOOL_MAX_BUFFER });
+export async function runTool(tool: string, args: string[], env?: NodeJS.ProcessEnv): Promise<void> {
+    await execActivityFile(tool, args, { maxBuffer: TOOL_MAX_BUFFER, env });
+}
+
+/** The text of `file`, or of its first `maxBytes` bytes. */
+async function readTextFile(file: string, maxBytes: number | undefined): Promise<string> {
+    if (maxBytes === undefined) {
+        return await fs.promises.readFile(file, 'utf8');
+    }
+    const handle = await fs.promises.open(file, 'r');
+    try {
+        const buffer = Buffer.alloc(Math.min(maxBytes, (await handle.stat()).size));
+        const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
+        return buffer.toString('utf8', 0, bytesRead);
+    } finally {
+        await handle.close();
+    }
 }
 
 /**

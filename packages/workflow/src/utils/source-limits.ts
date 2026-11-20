@@ -9,11 +9,39 @@ const MiB = 1024 * 1024;
 
 /** Largest source written to disk for a document converter (PDF, Office, HTML...). */
 export const CONVERTER_MAX_SOURCE_MB_ENV = 'WORKFLOW_CONVERTER_MAX_SOURCE_MB';
+/** Most bytes of a DOCX or PPTX the markitdown converter is given to parse, counted once decompressed. */
+export const OFFICE_MAX_PARSED_MB_ENV = 'WORKFLOW_OFFICE_MAX_PARSED_MB';
+/** Most bytes a DOCX or PPTX given to the markitdown converter may decompress to, all parts counted. */
+export const OFFICE_MAX_UNPACKED_MB_ENV = 'WORKFLOW_OFFICE_MAX_UNPACKED_MB';
+/** Most memory (address space) one markitdown conversion may use, in MiB; enforced on Linux. */
+export const OFFICE_MAX_MEMORY_MB_ENV = 'WORKFLOW_OFFICE_MAX_MEMORY_MB';
+/** How many markitdown conversions one worker process runs at a time. */
+export const OFFICE_MAX_CONCURRENT_ENV = 'WORKFLOW_OFFICE_MAX_CONCURRENT';
+/**
+ * `true` lets markitdown run without its memory limit on a Linux system that has no `prlimit`, for local development.
+ * A worker must not set it: without the limit, one document can exhaust the worker's memory.
+ */
+export const OFFICE_ALLOW_UNLIMITED_MEMORY_ENV = 'WORKFLOW_OFFICE_ALLOW_UNLIMITED_MEMORY';
 /** Largest audio or video source downloaded for transcoding, thumbnails and metadata. */
 export const MEDIA_MAX_SOURCE_MB_ENV = 'WORKFLOW_MEDIA_MAX_SOURCE_MB';
 
 // A converter runs on a copy of the source on the worker's disk, which every activity on the worker shares.
 const DEFAULT_CONVERTER_MAX_SOURCE_MB = 1024;
+// markitdown holds a whole Office document in memory several times over, by an amount that depends on its structure
+// more than its size: about 9 bytes per decompressed byte for one long run of DOCX text, 47 for many short paragraphs.
+// These two limits refuse a document from its zip directory, before markitdown starts; the memory limit below is the
+// ceiling that holds whatever the structure. A small zip can decompress to far more than its download, so the size of
+// the download alone bounds none of this.
+const DEFAULT_OFFICE_MAX_PARSED_MB = 100;
+// The PPTX reader also decompresses every other part (images, video, embedded files) into memory, at about their own
+// size.
+const DEFAULT_OFFICE_MAX_UNPACKED_MB = 512;
+// The address space of one markitdown process, enforced with RLIMIT_AS. Its baseline is about 0.5 GiB with the
+// environment markitdown is run with, and 1.5 GiB still converts a DOCX of 400,000 paragraphs. Python raises
+// MemoryError at the limit instead of the kernel killing the worker.
+const DEFAULT_OFFICE_MAX_MEMORY_MB = 1536;
+// One conversion at a time per worker process, so a worker needs memory for one markitdown process, not one per task.
+const DEFAULT_OFFICE_MAX_CONCURRENT = 1;
 // Media is transcoded from a copy on disk too, next to its renditions: a source this large leaves room for them on a
 // worker with a few GiB more disk, and a larger one could never be processed there.
 const DEFAULT_MEDIA_MAX_SOURCE_MB = 8192;
@@ -21,6 +49,12 @@ const DEFAULT_MEDIA_MAX_SOURCE_MB = 8192;
 export interface SourceLimits {
     /** Largest source handed to a document converter, in bytes. */
     converterMaxBytes: number;
+    /** Most decompressed bytes of a DOCX or PPTX handed to markitdown to parse. */
+    officeMaxParsedBytes: number;
+    /** Most bytes a DOCX or PPTX handed to markitdown may decompress to, all parts counted. */
+    officeMaxUnpackedBytes: number;
+    /** Most address space, in bytes, of one markitdown process. */
+    officeMaxMemoryBytes: number;
     /** Largest audio or video source processed, in bytes. */
     mediaMaxBytes: number;
 }
@@ -30,11 +64,11 @@ export const SOURCE_LIMIT_EXCEEDED_MESSAGE = 'Source over size limit';
 
 /**
  * The limit a source went over:
- * - `converter`, `media`: the limits of {@link getSourceLimits};
+ * - `converter`, `office_parsed`, `office_unpacked`, `office_memory`, `media`: the limits of {@link getSourceLimits};
  * - `download`: the `maxBytes` of a download that names no other limit;
  * - any other name: a limit of the activity that logs it, such as a provider's own maximum.
  */
-export type SourceLimitName = 'converter' | 'media' | 'download' | (string & {});
+export type SourceLimitName = 'converter' | 'office_parsed' | 'office_unpacked' | 'media' | 'download' | (string & {});
 
 export interface SourceLimitExceeded {
     /** The source over the limit: a blob URI or a URL. */
@@ -70,19 +104,39 @@ export function logSourceLimitExceeded(details: SourceLimitExceeded): void {
 export function getSourceLimits(): SourceLimits {
     return {
         converterMaxBytes: readMegabytes(CONVERTER_MAX_SOURCE_MB_ENV, DEFAULT_CONVERTER_MAX_SOURCE_MB) * MiB,
+        officeMaxParsedBytes: readMegabytes(OFFICE_MAX_PARSED_MB_ENV, DEFAULT_OFFICE_MAX_PARSED_MB) * MiB,
+        officeMaxUnpackedBytes: readMegabytes(OFFICE_MAX_UNPACKED_MB_ENV, DEFAULT_OFFICE_MAX_UNPACKED_MB) * MiB,
+        officeMaxMemoryBytes: readMegabytes(OFFICE_MAX_MEMORY_MB_ENV, DEFAULT_OFFICE_MAX_MEMORY_MB) * MiB,
         mediaMaxBytes: readMegabytes(MEDIA_MAX_SOURCE_MB_ENV, DEFAULT_MEDIA_MAX_SOURCE_MB) * MiB,
     };
 }
 
+/** How many markitdown conversions a worker process runs at a time. */
+export function getOfficeMaxConcurrent(): number {
+    return readPositiveInteger(OFFICE_MAX_CONCURRENT_ENV, DEFAULT_OFFICE_MAX_CONCURRENT, 'conversions');
+}
+
+/** Whether markitdown may run without its memory limit where `prlimit` is missing; see the variable. */
+export function allowUnlimitedOfficeMemory(): boolean {
+    const raw = typeof process !== 'undefined' ? process.env?.[OFFICE_ALLOW_UNLIMITED_MEMORY_ENV]?.trim() : undefined;
+    return raw === 'true' || raw === '1';
+}
+
 function readMegabytes(name: string, defaultMb: number): number {
+    return readPositiveInteger(name, defaultMb, 'MiB');
+}
+
+function readPositiveInteger(name: string, defaultValue: number, unit: string): number {
     const raw = typeof process !== 'undefined' ? process.env?.[name]?.trim() : undefined;
     if (!raw) {
-        return defaultMb;
+        return defaultValue;
     }
     // A plain positive integer: a typo or a unit suffix keeps the default rather than lifting the limit.
     if (!/^\d+$/.test(raw) || Number.parseInt(raw, 10) <= 0) {
-        console.warn(`[workflow] Invalid ${name}="${raw}"; expected a positive integer of MiB. Using ${defaultMb}`);
-        return defaultMb;
+        console.warn(
+            `[workflow] Invalid ${name}="${raw}"; expected a positive integer of ${unit}. Using ${defaultValue}`,
+        );
+        return defaultValue;
     }
     return Number.parseInt(raw, 10);
 }

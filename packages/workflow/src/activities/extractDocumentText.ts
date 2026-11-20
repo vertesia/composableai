@@ -185,11 +185,21 @@ const MiB = 1024 * 1024;
 /** A source of any other type is sniffed for text only up to this size. */
 const SNIFF_MAX_BYTES = 500 * 1024;
 
+/**
+ * A converter's output is read back up to one byte over {@link MAX_EXTRACTED_TEXT_BYTES}: enough for the text to be
+ * truncated as it would be after a full read, without loading a huge output whole.
+ */
+const OUTPUT = { maxOutputBytes: MAX_EXTRACTED_TEXT_BYTES + 1 };
+
 /** A converter to text, run by an external tool on a copy of the source downloaded to disk. */
 interface Converter {
     /** Extension of the downloaded copy, from which markitdown picks its converter. */
     ext: string;
-    convert: (file: string) => Promise<string>;
+    /**
+     * @param file the downloaded copy
+     * @param source the blob the copy was downloaded from, named in logs and errors
+     */
+    convert: (file: string, source: string) => Promise<string>;
 }
 
 /**
@@ -197,21 +207,24 @@ interface Converter {
  * `constructor`) is not mistaken for a converter.
  */
 const CONVERTERS = new Map<string, Converter>([
-    ['application/pdf', { ext: 'pdf', convert: (file) => mutoolPdfToText(file) }],
+    ['application/pdf', { ext: 'pdf', convert: (file) => mutoolPdfToText(file, OUTPUT) }],
     //docx
     [
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        { ext: 'docx', convert: (file) => markdownWithMarkitdown(file) },
+        { ext: 'docx', convert: (file, source) => markdownWithMarkitdown(file, 'docx', { ...OUTPUT, source }) },
     ],
     //pptx
     [
         'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        { ext: 'pptx', convert: (file) => markdownWithMarkitdown(file) },
+        { ext: 'pptx', convert: (file, source) => markdownWithMarkitdown(file, 'pptx', { ...OUTPUT, source }) },
     ],
-    ['text/html', { ext: 'html', convert: (file) => markdownWithPandoc(file, 'html') }],
+    ['text/html', { ext: 'html', convert: (file) => markdownWithPandoc(file, 'html', OUTPUT) }],
     //opendocument
-    ['application/vnd.oasis.opendocument.text', { ext: 'odt', convert: (file) => markdownWithPandoc(file, 'odt') }],
-    ['application/rtf', { ext: 'rtf', convert: (file) => markdownWithPandoc(file, 'rtf') }],
+    [
+        'application/vnd.oasis.opendocument.text',
+        { ext: 'odt', convert: (file) => markdownWithPandoc(file, 'odt', OUTPUT) },
+    ],
+    ['application/rtf', { ext: 'rtf', convert: (file) => markdownWithPandoc(file, 'rtf', OUTPUT) }],
 ]);
 
 /** Types whose source is the text itself. */
@@ -244,17 +257,23 @@ async function extractTextFromSource(client: VertesiaClient, source: string, mim
     if (converter) {
         const maxBytes = getSourceLimits().converterMaxBytes;
         try {
-            const text = await withBlobTempFile(client, source, converter.ext, (file) => converter.convert(file), {
-                maxBytes,
-                limit: 'converter',
-            });
+            const text = await withBlobTempFile(
+                client,
+                source,
+                converter.ext,
+                (file) => converter.convert(file, source),
+                {
+                    maxBytes,
+                    limit: 'converter',
+                },
+            );
             return { text };
         } catch (err: unknown) {
             if (!(err instanceof SourceTooLargeError)) {
                 throw err;
             }
-            // The download logged the source over the limit.
-            return { text: null, skipped: `Source too large for text extraction: over ${maxBytes / MiB} MiB` };
+            // The download, or the converter's own check, logged the source over the limit it went over.
+            return { text: null, skipped: `Source too large for text extraction: over ${err.maxBytes / MiB} MiB` };
         }
     }
 
