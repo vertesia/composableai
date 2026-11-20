@@ -1,5 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CONVERTER_MAX_SOURCE_MB_ENV, getSourceLimits, MEDIA_MAX_SOURCE_MB_ENV } from './source-limits.js';
+import {
+    allowUnlimitedOfficeMemory,
+    CONVERTER_MAX_SOURCE_MB_ENV,
+    getOfficeMaxConcurrent,
+    getSourceLimits,
+    MEDIA_MAX_SOURCE_MB_ENV,
+    OFFICE_ALLOW_UNLIMITED_MEMORY_ENV,
+    OFFICE_MAX_CONCURRENT_ENV,
+    OFFICE_MAX_MEMORY_MB_ENV,
+    OFFICE_MAX_PARSED_MB_ENV,
+    OFFICE_MAX_UNPACKED_MB_ENV,
+} from './source-limits.js';
 
 const MiB = 1024 * 1024;
 
@@ -9,16 +20,34 @@ afterEach(() => {
 });
 
 describe('getSourceLimits', () => {
-    it('defaults to 1 GiB for converters and 8 GiB for media', () => {
+    it('defaults to 1 GiB for converters, 100 MiB parsed, 512 MiB unpacked and 1.5 GiB of memory for Office documents, 8 GiB for media', () => {
         vi.stubEnv(CONVERTER_MAX_SOURCE_MB_ENV, '');
+        vi.stubEnv(OFFICE_MAX_PARSED_MB_ENV, '');
+        vi.stubEnv(OFFICE_MAX_UNPACKED_MB_ENV, '');
+        vi.stubEnv(OFFICE_MAX_MEMORY_MB_ENV, '');
         vi.stubEnv(MEDIA_MAX_SOURCE_MB_ENV, '');
-        expect(getSourceLimits()).toEqual({ converterMaxBytes: 1024 * MiB, mediaMaxBytes: 8192 * MiB });
+        expect(getSourceLimits()).toEqual({
+            converterMaxBytes: 1024 * MiB,
+            officeMaxParsedBytes: 100 * MiB,
+            officeMaxUnpackedBytes: 512 * MiB,
+            officeMaxMemoryBytes: 1536 * MiB,
+            mediaMaxBytes: 8192 * MiB,
+        });
     });
 
     it('reads each limit from its environment variable', () => {
         vi.stubEnv(CONVERTER_MAX_SOURCE_MB_ENV, ' 2048 ');
+        vi.stubEnv(OFFICE_MAX_PARSED_MB_ENV, '50');
+        vi.stubEnv(OFFICE_MAX_UNPACKED_MB_ENV, '256');
+        vi.stubEnv(OFFICE_MAX_MEMORY_MB_ENV, '2048');
         vi.stubEnv(MEDIA_MAX_SOURCE_MB_ENV, '4096');
-        expect(getSourceLimits()).toEqual({ converterMaxBytes: 2048 * MiB, mediaMaxBytes: 4096 * MiB });
+        expect(getSourceLimits()).toEqual({
+            converterMaxBytes: 2048 * MiB,
+            officeMaxParsedBytes: 50 * MiB,
+            officeMaxUnpackedBytes: 256 * MiB,
+            officeMaxMemoryBytes: 2048 * MiB,
+            mediaMaxBytes: 4096 * MiB,
+        });
     });
 
     it.each(['0', '-1', '1.5', '2GB', 'abc', '1e3'])('keeps the default for "%s"', (raw) => {
@@ -26,5 +55,33 @@ describe('getSourceLimits', () => {
         vi.stubEnv(MEDIA_MAX_SOURCE_MB_ENV, raw);
         expect(getSourceLimits().mediaMaxBytes).toBe(8192 * MiB);
         expect(warn).toHaveBeenCalledOnce();
+    });
+});
+
+describe('getOfficeMaxConcurrent', () => {
+    it('defaults to one conversion at a time', () => {
+        vi.stubEnv(OFFICE_MAX_CONCURRENT_ENV, '');
+        expect(getOfficeMaxConcurrent()).toBe(1);
+    });
+
+    it('reads its environment variable, and keeps the default for an invalid value', () => {
+        vi.stubEnv(OFFICE_MAX_CONCURRENT_ENV, '3');
+        expect(getOfficeMaxConcurrent()).toBe(3);
+        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        vi.stubEnv(OFFICE_MAX_CONCURRENT_ENV, '0');
+        expect(getOfficeMaxConcurrent()).toBe(1);
+    });
+});
+
+describe('allowUnlimitedOfficeMemory', () => {
+    it.each([
+        ['', false],
+        ['false', false],
+        ['yes', false],
+        ['true', true],
+        ['1', true],
+    ])('reads "%s" as %s', (raw, expected) => {
+        vi.stubEnv(OFFICE_ALLOW_UNLIMITED_MEMORY_ENV, raw);
+        expect(allowUnlimitedOfficeMemory()).toBe(expected);
     });
 });
