@@ -328,6 +328,11 @@ export interface ToolApprovalEditConfig {
 
 function holdsPlaceholder(value: unknown): boolean {
     if (value === TOOL_APPROVAL_REDACTED_PLACEHOLDER) return true;
+    if (typeof value === 'string') {
+        // JSON text: the workflow redacts the secrets inside it.
+        const decoded = decodeJsonText(value);
+        return decoded !== value && holdsPlaceholder(decoded);
+    }
     if (Array.isArray(value)) return value.some(holdsPlaceholder);
     const record = getRecord(value);
     return !!record && Object.values(record).some(holdsPlaceholder);
@@ -336,6 +341,11 @@ function holdsPlaceholder(value: unknown): boolean {
 function collectRedactedPaths(value: unknown, path: string, out: string[]): void {
     if (value === TOOL_APPROVAL_REDACTED_PLACEHOLDER) {
         out.push(path);
+        return;
+    }
+    if (typeof value === 'string') {
+        const decoded = decodeJsonText(value);
+        if (decoded !== value) collectRedactedPaths(decoded, path, out);
         return;
     }
     if (Array.isArray(value)) {
@@ -424,20 +434,22 @@ function findLockedEditProblem(shown: unknown, edited: unknown, path: string): T
     if (shown === TOOL_APPROVAL_REDACTED_PLACEHOLDER) {
         return edited === shown ? undefined : { code: 'redacted_changed', path };
     }
+    // Either side may be JSON text: the workflow redacts inside it and merges the secrets back once decoded.
+    const shownValue = decodeJsonText(shown);
     const decoded = decodeJsonText(edited);
-    if (Array.isArray(shown)) {
-        if (holdsPlaceholder(shown) && canonicalJson(decoded) !== canonicalJson(shown)) {
+    if (Array.isArray(shownValue)) {
+        if (holdsPlaceholder(shownValue) && canonicalJson(decoded) !== canonicalJson(shownValue)) {
             return { code: 'locked_array_changed', path };
         }
         if (!Array.isArray(decoded)) return undefined;
-        for (const [index, item] of shown.entries()) {
+        for (const [index, item] of shownValue.entries()) {
             if (index >= decoded.length) continue;
             const problem = findLockedEditProblem(item, decoded[index], `${path}[${index}]`);
             if (problem) return problem;
         }
         return undefined;
     }
-    const originalRecord = getRecord(shown);
+    const originalRecord = getRecord(shownValue);
     const editedRecord = getRecord(decoded);
     if (!originalRecord || !editedRecord) return undefined;
     for (const [key, child] of Object.entries(originalRecord)) {
@@ -499,11 +511,13 @@ function findAddedPlaceholder(original: unknown, edited: unknown, path: string):
         if (original === edited) return undefined;
         const decoded = decodeJsonText(edited);
         // An escaped placeholder (`\u005BREDACTED]`) only shows once the JSON text is decoded.
-        if (decoded !== edited) return findAddedPlaceholder(undefined, decoded, path);
+        if (decoded !== edited) return findAddedPlaceholder(decodeJsonText(original), decoded, path);
         return edited.includes(TOOL_APPROVAL_REDACTED_PLACEHOLDER) ? path || '$' : undefined;
     }
+    // The prompt may show JSON text that the reviewer rewrote as an object or array.
+    const shownValue = decodeJsonText(original);
     if (Array.isArray(edited)) {
-        const originalItems = Array.isArray(original) ? original : [];
+        const originalItems = Array.isArray(shownValue) ? shownValue : [];
         for (const [index, item] of edited.entries()) {
             const found = findAddedPlaceholder(originalItems[index], item, `${path}[${index}]`);
             if (found) return found;
@@ -512,7 +526,7 @@ function findAddedPlaceholder(original: unknown, edited: unknown, path: string):
     }
     const record = getRecord(edited);
     if (!record) return undefined;
-    const originalRecord = getRecord(original);
+    const originalRecord = getRecord(shownValue);
     for (const [key, child] of Object.entries(record)) {
         const childPath = path ? `${path}.${key}` : key;
         if (

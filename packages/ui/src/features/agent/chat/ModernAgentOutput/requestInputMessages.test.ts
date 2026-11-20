@@ -396,6 +396,30 @@ describe('"Edit and run" on a tool approval prompt', () => {
         expect(check({ ...shown, headers: '{"trace":"two"}' })).toHaveProperty('input');
     });
 
+    it('locks the redacted values inside JSON text the workflow redacted', () => {
+        const shown = {
+            name: 'call',
+            headers: '{"authorization":"[REDACTED]","trace":"one"}',
+            calls: '[{"token":"[REDACTED]","id":"a"}]',
+        };
+        const config = getToolApprovalEditConfig(makeEditableRequest(true, shown));
+        if (!config) throw new Error('expected an edit config');
+        expect(config.redactedPaths).toEqual(['headers.authorization', 'calls[0].token']);
+        const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
+
+        expect(check({ ...shown, headers: '{"authorization":"[REDACTED]","trace":"two"}' })).toHaveProperty('input');
+        expect(check({ ...shown, headers: { authorization: '[REDACTED]', trace: 'two' } })).toHaveProperty('input');
+        expect(check({ ...shown, headers: '{"authorization":"Bearer typed","trace":"one"}' })).toEqual({
+            problem: { code: 'redacted_changed', path: 'headers.authorization' },
+        });
+        expect(check({ ...shown, headers: '{"authorization":"[REDACTED]","note":"[REDACTED]"}' })).toEqual({
+            problem: { code: 'placeholder_added', path: 'headers.note' },
+        });
+        expect(check({ ...shown, calls: '[{"token":"[REDACTED]","id":"b"}]' })).toEqual({
+            problem: { code: 'locked_array_changed', path: 'calls' },
+        });
+    });
+
     it('marks the prompt answered once the edit is sent', () => {
         const request = makeEditableRequest();
         const metadata = getToolApprovalEditResponseMetadata(request, SHOWN_INPUT);
