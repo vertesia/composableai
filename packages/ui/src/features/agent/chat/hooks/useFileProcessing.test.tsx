@@ -179,16 +179,22 @@ describe('useFileProcessing', () => {
         const { result } = renderHook(() =>
             useFileProcessing(client, 'agent-run-1', new Map(), toast, undefined, signalUpload),
         );
+        const file = new File(['image'], 'Screenshot\u202fPM.png', { type: 'image/png' });
 
         await act(async () => {
-            await result.current.handleFileUpload([new File(['image'], 'wrong.png', { type: 'image/png' })]);
+            await result.current.handleFileUpload([file]);
         });
 
+        expect(client.agents.uploadArtifact).toHaveBeenCalledWith('agent-run-1', 'files/Screenshot PM.png', file);
         expect(signalUpload).toHaveBeenCalledTimes(1);
         expect(client.agents.sendSignal).toHaveBeenCalledWith(
             'agent-run-1',
             'FileUploaded',
-            expect.objectContaining({ name: 'wrong.png', artifact_path: 'files/wrong.png' }),
+            expect.objectContaining({
+                name: 'Screenshot PM.png',
+                artifact_path: 'files/Screenshot PM.png',
+                reference: 'artifact:files/Screenshot PM.png',
+            }),
         );
         expect(toast).not.toHaveBeenCalled();
     });

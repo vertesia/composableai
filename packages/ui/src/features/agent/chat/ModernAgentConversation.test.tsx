@@ -1041,7 +1041,7 @@ describe('ModernAgentConversation send handling', () => {
                 <ModernAgentConversation startWorkflow={startWorkflow} hideHeader initialMessage="" />,
             );
 
-            const file = new File(['pdf'], 'report.pdf', { type: 'application/pdf' });
+            const file = new File(['pdf'], 'report\u202fAM.pdf', { type: 'application/pdf' });
             const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
             expect(fileInput).not.toBeNull();
             fireEvent.change(fileInput, { target: { files: [file] } });
@@ -1050,15 +1050,16 @@ describe('ModernAgentConversation send handling', () => {
             fireEvent.click(screen.getByRole('button', { name: 'Start Agent' }));
 
             await waitFor(() => {
-                expect(mocks.uploadArtifact).toHaveBeenCalledWith('agent-run-2', 'files/report.pdf', file);
+                expect(mocks.uploadArtifact).toHaveBeenCalledWith('agent-run-2', 'files/report AM.pdf', file);
             });
             await waitFor(() => {
                 expect(mocks.sendSignal).toHaveBeenCalledWith(
                     'agent-run-2',
                     'FileUploaded',
                     expect.objectContaining({
-                        name: 'report.pdf',
-                        artifact_path: 'files/report.pdf',
+                        name: 'report AM.pdf',
+                        artifact_path: 'files/report AM.pdf',
+                        reference: 'artifact:files/report AM.pdf',
                     }),
                 );
             });
