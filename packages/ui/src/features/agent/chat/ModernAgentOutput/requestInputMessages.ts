@@ -310,6 +310,149 @@ export function getToolApprovalResponseMetadata(
     return { tool_approval_response: { decision: optionId, approval_key: approvalKey } };
 }
 
+/** The structured decision of "Edit and run": run the call once with the reviewer's arguments. */
+export const TOOL_APPROVAL_EDIT_DECISION = 'allow_edited';
+
+/** What the workflow shows in place of a secret; the reviewer edits around it, never through it. */
+export const TOOL_APPROVAL_REDACTED_PLACEHOLDER = '[REDACTED]';
+
+export interface ToolApprovalEditConfig {
+    /** The call's arguments as the prompt shows them, secrets already redacted. */
+    input: Record<string, unknown>;
+    /** Paths of the redacted values (`headers.authorization`, `items[0].token`); they cannot be changed. */
+    redactedPaths: string[];
+}
+
+function collectRedactedPaths(value: unknown, path: string, out: string[]): void {
+    if (value === TOOL_APPROVAL_REDACTED_PLACEHOLDER) {
+        out.push(path);
+        return;
+    }
+    if (Array.isArray(value)) {
+        for (const [index, item] of value.entries()) collectRedactedPaths(item, `${path}[${index}]`, out);
+        return;
+    }
+    const record = getRecord(value);
+    if (!record) return;
+    for (const [key, child] of Object.entries(record)) {
+        collectRedactedPaths(child, path ? `${path}.${key}` : key, out);
+    }
+}
+
+/**
+ * The arguments a reviewer can edit, when the prompt offers "Edit and run". Only a worker that can run an edited call
+ * sets `tool_approval.supports_edit`, so a prompt from an older worker never shows the action.
+ */
+export function getToolApprovalEditConfig(message: AgentMessage): ToolApprovalEditConfig | undefined {
+    if (message.type !== AgentMessageType.REQUEST_INPUT) return undefined;
+    const toolApproval = getRecord(getRecord(message.details)?.tool_approval);
+    if (toolApproval?.supports_edit !== true || typeof toolApproval.approval_key !== 'string') return undefined;
+    const input = getRecord(toolApproval.input);
+    if (!input) return undefined;
+    const redactedPaths: string[] = [];
+    collectRedactedPaths(input, '', redactedPaths);
+    return { input, redactedPaths };
+}
+
+/** Metadata of an "Edit and run" answer: the decision, the prompt it answers, and the edited arguments. */
+export function getToolApprovalEditResponseMetadata(
+    message: AgentMessage,
+    input: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+    const approvalKey = getToolApprovalKey(message);
+    if (!approvalKey) return undefined;
+    const requestId = getRequestInputId(message);
+    return {
+        tool_approval_response: {
+            decision: TOOL_APPROVAL_EDIT_DECISION,
+            approval_key: approvalKey,
+            ...(requestId ? { request_id: requestId } : {}),
+            input,
+        },
+    };
+}
+
+export type ToolApprovalEditProblem =
+    | { code: 'invalid_json' }
+    | { code: 'not_object' }
+    | { code: 'redacted_changed'; path: string }
+    | { code: 'placeholder_added'; path: string };
+
+function valueAtPath(root: unknown, path: string): { found: boolean; value?: unknown } {
+    const segments = path.match(/[^.[\]]+/g) ?? [];
+    let current: unknown = root;
+    for (const segment of segments) {
+        if (Array.isArray(current) && /^\d+$/.test(segment)) {
+            const index = Number(segment);
+            if (index >= current.length) return { found: false };
+            current = current[index];
+            continue;
+        }
+        const record = getRecord(current);
+        if (!record || !Object.hasOwn(record, segment)) return { found: false };
+        current = record[segment];
+    }
+    return { found: true, value: current };
+}
+
+function findAddedPlaceholder(original: unknown, edited: unknown, path: string): string | undefined {
+    if (typeof edited === 'string') {
+        if (!edited.includes(TOOL_APPROVAL_REDACTED_PLACEHOLDER)) return undefined;
+        return original === edited ? undefined : path || '$';
+    }
+    if (Array.isArray(edited)) {
+        const originalItems = Array.isArray(original) ? original : [];
+        for (const [index, item] of edited.entries()) {
+            const found = findAddedPlaceholder(originalItems[index], item, `${path}[${index}]`);
+            if (found) return found;
+        }
+        return undefined;
+    }
+    const record = getRecord(edited);
+    if (!record) return undefined;
+    const originalRecord = getRecord(original);
+    for (const [key, child] of Object.entries(record)) {
+        const childPath = path ? `${path}.${key}` : key;
+        if (
+            key.includes(TOOL_APPROVAL_REDACTED_PLACEHOLDER) &&
+            !(originalRecord && Object.hasOwn(originalRecord, key))
+        ) {
+            return childPath;
+        }
+        const found = findAddedPlaceholder(originalRecord?.[key], child, childPath);
+        if (found) return found;
+    }
+    return undefined;
+}
+
+/**
+ * Check an edit before sending it, so the reviewer sees the problem at once. The workflow checks again and is the
+ * authority: it merges the secrets back and refuses anything that would let a placeholder reach the tool.
+ */
+export function validateToolApprovalEdit(
+    config: ToolApprovalEditConfig,
+    text: string,
+): { input: Record<string, unknown> } | { problem: ToolApprovalEditProblem } {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(text);
+    } catch {
+        return { problem: { code: 'invalid_json' } };
+    }
+    const input = getRecord(parsed);
+    if (!input) return { problem: { code: 'not_object' } };
+    for (const path of config.redactedPaths) {
+        const { found, value } = valueAtPath(input, path);
+        // Removing a redacted field is allowed; changing it is not.
+        if (found && value !== TOOL_APPROVAL_REDACTED_PLACEHOLDER) {
+            return { problem: { code: 'redacted_changed', path } };
+        }
+    }
+    const added = findAddedPlaceholder(config.input, input, '');
+    if (added) return { problem: { code: 'placeholder_added', path: added } };
+    return { input };
+}
+
 function isToolApprovalOptionResponse(message: AgentMessage): boolean {
     if (message.type !== AgentMessageType.QUESTION) return false;
     const normalized = getAgentMessageText(message).trim().toLowerCase();
@@ -325,6 +468,7 @@ function isToolApprovalMetadataResponse(message: AgentMessage): boolean {
     const decision = toolApprovalResponse?.decision;
     return (
         decision === 'deny_with_feedback' ||
+        decision === TOOL_APPROVAL_EDIT_DECISION ||
         (typeof decision === 'string' && TOOL_APPROVAL_OPTION_DECISIONS.has(decision))
     );
 }

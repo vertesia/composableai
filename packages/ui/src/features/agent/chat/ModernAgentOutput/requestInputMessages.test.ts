@@ -8,9 +8,13 @@ import {
     getRequestInputMessageKey,
     getRequestInputResponseIdFromMetadata,
     getRequestInputResponseMetadata,
+    getToolApprovalEditConfig,
+    getToolApprovalEditResponseMetadata,
     getToolApprovalResponseMetadata,
     isRequestInputAnsweredForSession,
     markRequestInputIdAnsweredForSession,
+    TOOL_APPROVAL_REDACTED_PLACEHOLDER,
+    validateToolApprovalEdit,
 } from './requestInputMessages';
 
 const APPROVAL_KEY = 'create_interaction:name:JDE AR Payment Processing Agent';
@@ -212,5 +216,89 @@ describe('request input correlation', () => {
             }),
         ).toBe('request-1');
         expect(getRequestInputResponseIdFromMetadata({ request_input_response: {} })).toBeUndefined();
+    });
+});
+
+describe('"Edit and run" on a tool approval prompt', () => {
+    const SHOWN_INPUT = {
+        name: 'Quarterly plan',
+        api_key: TOOL_APPROVAL_REDACTED_PLACEHOLDER,
+        headers: { authorization: TOOL_APPROVAL_REDACTED_PLACEHOLDER, trace: 'one' },
+    };
+
+    function makeEditableRequest(supportsEdit: unknown = true): AgentMessage {
+        const request = makeApprovalRequestForToolUse('tool-1');
+        const details = request.details as Record<string, unknown>;
+        return {
+            ...request,
+            details: {
+                ...details,
+                tool_approval: {
+                    ...(details.tool_approval as Record<string, unknown>),
+                    input: SHOWN_INPUT,
+                    supports_edit: supportsEdit,
+                },
+            },
+        } as unknown as AgentMessage;
+    }
+
+    it('is offered only when the worker says the call can be edited', () => {
+        expect(getToolApprovalEditConfig(makeApprovalRequest())).toBeUndefined();
+        expect(getToolApprovalEditConfig(makeEditableRequest(false))).toBeUndefined();
+        expect(getToolApprovalEditConfig(makeEditableRequest('true'))).toBeUndefined();
+        expect(getToolApprovalEditConfig(makeEditableRequest())).toEqual({
+            input: SHOWN_INPUT,
+            redactedPaths: ['api_key', 'headers.authorization'],
+        });
+    });
+
+    it('sends the decision, the prompt it answers and the edited arguments', () => {
+        const input = { ...SHOWN_INPUT, name: 'Q4 plan' };
+        expect(getToolApprovalEditResponseMetadata(makeEditableRequest(), input)).toEqual({
+            tool_approval_response: {
+                decision: 'allow_edited',
+                approval_key: APPROVAL_KEY,
+                request_id: 'tool-1',
+                input,
+            },
+        });
+    });
+
+    it('accepts an edit that keeps or removes the locked fields', () => {
+        const config = getToolApprovalEditConfig(makeEditableRequest());
+        if (!config) throw new Error('expected an edit config');
+        const edited = { ...SHOWN_INPUT, name: 'Q4 plan' };
+        expect(validateToolApprovalEdit(config, JSON.stringify(edited))).toEqual({ input: edited });
+        const { api_key: _removed, ...withoutKey } = SHOWN_INPUT;
+        expect(validateToolApprovalEdit(config, JSON.stringify(withoutKey))).toEqual({ input: withoutKey });
+    });
+
+    it('reports each problem with an edit', () => {
+        const config = getToolApprovalEditConfig(makeEditableRequest());
+        if (!config) throw new Error('expected an edit config');
+        const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
+
+        expect(validateToolApprovalEdit(config, '{ name: ')).toEqual({ problem: { code: 'invalid_json' } });
+        expect(check(['a'])).toEqual({ problem: { code: 'not_object' } });
+        expect(check({ ...SHOWN_INPUT, api_key: 'sk-typed' })).toEqual({
+            problem: { code: 'redacted_changed', path: 'api_key' },
+        });
+        expect(check({ ...SHOWN_INPUT, headers: { authorization: 'Bearer x', trace: 'one' } })).toEqual({
+            problem: { code: 'redacted_changed', path: 'headers.authorization' },
+        });
+        expect(check({ ...SHOWN_INPUT, name: TOOL_APPROVAL_REDACTED_PLACEHOLDER })).toEqual({
+            problem: { code: 'placeholder_added', path: 'name' },
+        });
+        expect(check({ ...SHOWN_INPUT, tags: [TOOL_APPROVAL_REDACTED_PLACEHOLDER] })).toEqual({
+            problem: { code: 'placeholder_added', path: 'tags[0]' },
+        });
+    });
+
+    it('marks the prompt answered once the edit is sent', () => {
+        const request = makeEditableRequest();
+        const metadata = getToolApprovalEditResponseMetadata(request, SHOWN_INPUT);
+        const answer = makeUserAnswer('Run this action with my edited arguments.', metadata);
+        const answered = getAnsweredToolApprovalRequestInputKeys([request, answer]);
+        expect(answered.has(getRequestInputMessageKey(request))).toBe(true);
     });
 });
