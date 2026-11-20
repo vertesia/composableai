@@ -70,6 +70,8 @@ export interface AskUserWidgetProps {
     responseControlsId?: string;
     /** Hide response controls while keeping drafts and selections mounted. */
     responseControlsHidden?: boolean;
+    /** More ways to answer, shown after the options (for example "Edit and run" on a tool approval prompt). */
+    extraActions?: React.ReactNode;
 
     // Styling props for full customization
     /** Additional className for the outer container */
@@ -155,6 +157,7 @@ export function AskUserWidget({
     headerAction,
     responseControlsId,
     responseControlsHidden = false,
+    extraActions,
     // Styling props
     className,
     cardClassName,
@@ -364,6 +367,8 @@ export function AskUserWidget({
                             </div>
                         )}
 
+                        {extraActions && <div className="flex flex-col px-3 pb-3 pt-0">{extraActions}</div>}
+
                         {allowFreeResponse && (
                             <div className={cn('px-3 pb-3 pt-0', inputContainerClassName)}>
                                 <div className="flex gap-2">
@@ -516,6 +521,8 @@ export function AskUserWidget({
                             )}
                         </div>
                     )}
+
+                    {extraActions && <div className="flex flex-col px-4 pb-3 pt-1">{extraActions}</div>}
 
                     {/* Free-form input */}
                     {allowFreeResponse && (

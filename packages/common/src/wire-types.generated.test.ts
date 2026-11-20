@@ -690,6 +690,10 @@ interface Checks {
         W.McpOAuthConnectResponse,
         z.infer<typeof import('./api-schemas/apps.js').McpOAuthConnectResponseSchema>
     >;
+    McpOAuthExchangePayload: Same<
+        W.McpOAuthExchangePayload,
+        z.infer<typeof import('./api-schemas/apps.js').McpOAuthExchangePayloadSchema>
+    >;
     McpOAuthDisconnectResponse: Same<
         W.McpOAuthDisconnectResponse,
         z.infer<typeof import('./api-schemas/apps.js').McpOAuthDisconnectResponseSchema>
@@ -9640,6 +9644,10 @@ interface Checks {
         W.ApiComponentTypes['McpOAuthConnectResponse'],
         z.infer<typeof import('./api-schemas/apps.js').McpOAuthConnectResponseSchema>
     >;
+    'component:McpOAuthExchangePayload': Same<
+        W.ApiComponentTypes['McpOAuthExchangePayload'],
+        z.infer<typeof import('./api-schemas/apps.js').McpOAuthExchangePayloadSchema>
+    >;
     'component:OAuthAuthorizeResponse': Same<
         W.ApiComponentTypes['OAuthAuthorizeResponse'],
         z.infer<typeof import('./api-schemas/apps.js').OAuthAuthorizeResponseSchema>
@@ -11192,6 +11200,7 @@ const checks: Checks = {
     McpOAuthTokenRequest: true,
     McpOAuthTokenResponse: true,
     McpOAuthConnectResponse: true,
+    McpOAuthExchangePayload: true,
     McpOAuthDisconnectResponse: true,
     OAuthMetadataResponse: true,
     CompositeAppEntry: true,
@@ -13539,6 +13548,7 @@ const checks: Checks = {
     'component:OAuthMetadataResponse': true,
     'component:McpOAuthDisconnectResponse': true,
     'component:McpOAuthConnectResponse': true,
+    'component:McpOAuthExchangePayload': true,
     'component:OAuthAuthorizeResponse': true,
     'component:OAuthAuthStatusArray': true,
     'component:SetMcpApiKeyRequest': true,
@@ -13882,6 +13892,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2881);
+        expect(Object.keys(checks)).toHaveLength(2883);
     });
 });

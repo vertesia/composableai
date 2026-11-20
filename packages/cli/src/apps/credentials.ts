@@ -65,22 +65,24 @@ export function registerAppCredentialsCommands(apps: Command, program: Command) 
     connections
         .command('exchange')
         .description('Complete authorization using the code and state from the OAuth callback')
-        .requiredOption('--response-file <file>', 'JSON file with code and state from the callback')
+        .requiredOption('--response-file <file>', 'JSON file with code, state and any iss from the callback')
         .action(async (options: { responseFile: string }) => {
             const response = await readJsonInput(undefined, options.responseFile, '--response');
             if (
                 !response ||
-                Object.keys(response).some((key) => !['code', 'state'].includes(key)) ||
+                Object.keys(response).some((key) => !['code', 'state', 'iss'].includes(key)) ||
                 typeof response.code !== 'string' ||
                 !response.code.trim() ||
                 typeof response.state !== 'string' ||
-                !response.state.trim()
+                !response.state.trim() ||
+                (response.iss !== undefined && (typeof response.iss !== 'string' || !response.iss.trim()))
             ) {
-                throw new Error('OAuth response must contain nonempty code and state strings');
+                throw new Error('OAuth response must contain nonempty code and state strings, and optionally iss');
             }
             const result = await (await getClient(program)).remoteMcpConnections.exchange(
                 response.code,
                 response.state,
+                response.iss,
             );
             if (!result.success) throw new Error('OAuth authorization did not succeed');
             console.log('OAuth connection authorized.');

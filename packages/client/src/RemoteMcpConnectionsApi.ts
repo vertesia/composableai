@@ -2,12 +2,12 @@ import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     McpOAuthConnectResponse,
     McpOAuthDisconnectResponse,
+    McpOAuthExchangePayload,
     McpOAuthTokenRequest,
     McpOAuthTokenResponse,
     OAuthAuthorizeResponse,
     OAuthAuthStatus,
     OAuthMetadataResponse,
-    OAuthProviderExchangePayload,
 } from '@vertesia/common';
 
 export default class RemoteMcpConnectionsApi extends ApiTopic {
@@ -31,9 +31,13 @@ export default class RemoteMcpConnectionsApi extends ApiTopic {
         return this.get(`/authorize/${appInstallId}/${collectionId}`);
     }
 
-    exchange(code: string, state: string): Promise<McpOAuthConnectResponse> {
+    /**
+     * @param iss The `iss` parameter of the authorization response (RFC 9207), when the callback has one. A server
+     * older than this parameter rejects a request that carries it.
+     */
+    exchange(code: string, state: string, iss?: string): Promise<McpOAuthConnectResponse> {
         return this.post('/exchange', {
-            payload: { code, state } satisfies OAuthProviderExchangePayload,
+            payload: { code, state, ...(iss ? { iss } : {}) } satisfies McpOAuthExchangePayload,
         });
     }
 
