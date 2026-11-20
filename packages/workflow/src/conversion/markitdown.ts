@@ -1,9 +1,16 @@
 import { log } from '@temporalio/activity';
+import { activityCommandWindow } from '../activities/media/exec.js';
 import { DocumentConversionError, SourceTooLargeError } from '../errors.js';
-import { getOfficeMaxConcurrent, getSourceLimits, logSourceLimitExceeded } from '../utils/source-limits.js';
+import {
+    allowUnlimitedOfficeMemory,
+    getOfficeMaxConcurrent,
+    getSourceLimits,
+    logSourceLimitExceeded,
+    OFFICE_ALLOW_UNLIMITED_MEMORY_ENV,
+} from '../utils/source-limits.js';
 import { type ConvertOptions, convertWithTool } from './convert-with-tool.js';
 import { InvalidZipError, readZipEntries, type ZipEntry } from './office-zip.js';
-import { findPrlimit } from './prlimit.js';
+import { findPrlimit, limiterSupported } from './prlimit.js';
 
 /** The formats extractDocumentText converts with markitdown. */
 export type MarkitdownFormat = 'docx' | 'pptx';
@@ -65,7 +72,8 @@ const PPTX_PARSED_PART = /\.(?:xml|rels)$/i;
  * times over, and a small zip can decompress to gigabytes. A document over the `officeMaxParsedBytes` or the
  * `officeMaxUnpackedBytes` limit of {@link getSourceLimits}, or compressed by a method Office does not use, is
  * refused. On Linux, markitdown then runs under the `officeMaxMemoryBytes` address-space limit, whatever the
- * document's structure; one worker process runs {@link getOfficeMaxConcurrent} conversions at a time.
+ * document's structure; one worker process runs {@link getOfficeMaxConcurrent} conversions at a time. A conversion
+ * waiting for its turn stops waiting when the Activity is cancelled or reaches its deadline.
  *
  * @param file path of the document; markitdown picks its converter from the extension, so it must end with `.docx`
  *   or `.pptx`
@@ -73,6 +81,8 @@ const PPTX_PARSED_PART = /\.(?:xml|rels)$/i;
  * @throws SourceTooLargeError when the document decompresses to more than markitdown may parse, or markitdown runs out
  *   of its memory limit converting it
  * @throws DocumentConversionError when the file is not a valid document of its format; it is not retried
+ * @throws Error when this Linux system has no `prlimit` and the unlimited opt-out is not set: a worker configuration
+ *   error
  */
 export async function markdownWithMarkitdown(
     file: string,
@@ -80,14 +90,10 @@ export async function markdownWithMarkitdown(
     options: MarkitdownOptions = {},
 ): Promise<string> {
     const source = options.source ?? file;
+    const prlimit = memoryLimiter();
     await checkSize(file, format, source);
     const maxMemoryBytes = getSourceLimits().officeMaxMemoryBytes;
-    const prlimit = findPrlimit();
-    if (prlimit === undefined && !warnedNoPrlimit) {
-        warnedNoPrlimit = true;
-        log.warn('markitdown runs without a memory limit: prlimit is not available', { platform: process.platform });
-    }
-    const release = await acquireConversionSlot();
+    const release = await acquireConversionSlot(activityCommandWindow());
     try {
         return await convertWithTool(
             prlimit ?? 'markitdown',
@@ -123,20 +129,77 @@ export async function markdownWithMarkitdown(
     }
 }
 
-let warnedNoPrlimit = false;
+let warnedNoLimiter = false;
+
+/**
+ * The `prlimit` that enforces markitdown's memory limit, or undefined where markitdown runs without one: a system
+ * that cannot enforce it (not Linux), or a Linux system without `prlimit` whose operator opted out.
+ *
+ * @throws Error on Linux without `prlimit`, unless {@link OFFICE_ALLOW_UNLIMITED_MEMORY_ENV} is set
+ */
+function memoryLimiter(): string | undefined {
+    const prlimit = findPrlimit();
+    if (prlimit !== undefined) {
+        return prlimit;
+    }
+    if (limiterSupported() && !allowUnlimitedOfficeMemory()) {
+        throw new Error(
+            'markitdown needs prlimit (util-linux) on the PATH to limit its memory, and this worker has none. ' +
+                `Install it, or set ${OFFICE_ALLOW_UNLIMITED_MEMORY_ENV}=true for local development only.`,
+        );
+    }
+    if (!warnedNoLimiter) {
+        warnedNoLimiter = true;
+        log.warn('markitdown runs without a memory limit', { platform: process.platform });
+    }
+    return undefined;
+}
+
 let runningConversions = 0;
 const waitingConversions: (() => void)[] = [];
 
 /**
  * Wait for a conversion slot of this process, and return the function that frees it. A freed slot passes straight to
- * the next waiter, so a caller arriving meanwhile cannot take it too.
+ * the next waiter, so a caller arriving meanwhile cannot take it too. A waiter leaves the queue as soon as `signal`
+ * aborts or `timeoutMs` passes, and the promise rejects, so its caller can release what it holds.
  */
-async function acquireConversionSlot(): Promise<() => void> {
+async function acquireConversionSlot({
+    signal,
+    timeoutMs,
+}: {
+    signal: AbortSignal;
+    timeoutMs: number;
+}): Promise<() => void> {
+    signal.throwIfAborted();
     if (runningConversions < getOfficeMaxConcurrent()) {
         runningConversions++;
     } else {
         log.info('Waiting for another markitdown conversion to finish', { running: runningConversions });
-        await new Promise<void>((resolve) => waitingConversions.push(resolve));
+        await new Promise<void>((resolve, reject) => {
+            const leave = (err: unknown) => {
+                const index = waitingConversions.indexOf(take);
+                if (index >= 0) {
+                    waitingConversions.splice(index, 1);
+                }
+                stop();
+                reject(err);
+            };
+            const onAbort = () => leave(signal.reason);
+            const timer = setTimeout(
+                () => leave(new Error(`No markitdown conversion slot was free within ${timeoutMs} ms`)),
+                timeoutMs,
+            );
+            const stop = () => {
+                clearTimeout(timer);
+                signal.removeEventListener('abort', onAbort);
+            };
+            const take = () => {
+                stop();
+                resolve();
+            };
+            signal.addEventListener('abort', onAbort, { once: true });
+            waitingConversions.push(take);
+        });
     }
     let released = false;
     return () => {

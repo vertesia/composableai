@@ -17,7 +17,11 @@ const tool = vi.hoisted(() => ({
     gate: undefined as Promise<void> | undefined,
 }));
 
+/** The Activity's cancellation signal and the time left for commands, as activityCommandWindow reports them. */
+const activity = vi.hoisted(() => ({ controller: new AbortController(), timeoutMs: 60_000 }));
+
 vi.mock('../activities/media/exec.js', () => ({
+    activityCommandWindow: () => ({ signal: activity.controller.signal, timeoutMs: activity.timeoutMs }),
     execActivityFile: vi.fn(async (_tool: string, args: string[]) => {
         await tool.gate;
         if (tool.error) {
@@ -28,9 +32,9 @@ vi.mock('../activities/media/exec.js', () => ({
     }),
 }));
 
-const prlimit = vi.hoisted(() => ({ path: undefined as string | undefined }));
+const prlimit = vi.hoisted(() => ({ path: undefined as string | undefined, supported: false }));
 
-vi.mock('./prlimit.js', () => ({ findPrlimit: () => prlimit.path }));
+vi.mock('./prlimit.js', () => ({ findPrlimit: () => prlimit.path, limiterSupported: () => prlimit.supported }));
 
 const zip = vi.hoisted(() => ({
     entries: [] as { name: string; uncompressedSize: number; compressionMethod: number }[],
@@ -44,6 +48,7 @@ vi.mock('./office-zip.js', async (importOriginal) => ({
 import { execActivityFile } from '../activities/media/exec.js';
 import { DocumentConversionError, SourceTooLargeError } from '../errors.js';
 import {
+    OFFICE_ALLOW_UNLIMITED_MEMORY_ENV,
     OFFICE_MAX_CONCURRENT_ENV,
     OFFICE_MAX_MEMORY_MB_ENV,
     OFFICE_MAX_PARSED_MB_ENV,
@@ -100,6 +105,9 @@ describe('markdownWithMarkitdown', () => {
         tool.error = undefined;
         tool.gate = undefined;
         prlimit.path = undefined;
+        prlimit.supported = false;
+        activity.controller = new AbortController();
+        activity.timeoutMs = 60_000;
         zip.entries = [{ name: 'word/document.xml', uncompressedSize: 1000, compressionMethod: 8 }];
         vi.mocked(execActivityFile).mockClear();
         tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'markitdown-test-'));
@@ -201,6 +209,67 @@ describe('markdownWithMarkitdown', () => {
 
         open();
         await both;
+    });
+
+    it('should stop waiting for a slot when the Activity is cancelled, and pass the slot on', async () => {
+        let open = (): void => undefined;
+        tool.gate = new Promise((resolve) => {
+            open = resolve;
+        });
+        const first = markdownWithMarkitdown(input, 'docx');
+        await vi.waitFor(() => expect(execActivityFile).toHaveBeenCalledTimes(1));
+
+        // The second conversion queues under the Activity's signal, then the Activity is cancelled.
+        const queued = activity.controller;
+        const second = markdownWithMarkitdown(input, 'docx');
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        activity.controller = new AbortController();
+        queued.abort(new Error('Activity cancelled'));
+
+        await expect(second).rejects.toThrow('Activity cancelled');
+        open();
+        await expect(first).resolves.toBe('converted text');
+        // Its place in the queue is gone: the next conversion takes the freed slot at once.
+        await expect(markdownWithMarkitdown(input, 'docx')).resolves.toBe('converted text');
+        expect(execActivityFile).toHaveBeenCalledTimes(2);
+    });
+
+    it('should stop waiting for a slot at the Activity deadline', async () => {
+        let open = (): void => undefined;
+        tool.gate = new Promise((resolve) => {
+            open = resolve;
+        });
+        const first = markdownWithMarkitdown(input, 'docx');
+        await vi.waitFor(() => expect(execActivityFile).toHaveBeenCalledTimes(1));
+
+        activity.timeoutMs = 20;
+        await expect(markdownWithMarkitdown(input, 'docx')).rejects.toThrow('No markitdown conversion slot was free');
+
+        open();
+        await first;
+        expect(execActivityFile).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not start a conversion for an Activity already cancelled', async () => {
+        activity.controller.abort(new Error('Activity cancelled'));
+
+        await expect(markdownWithMarkitdown(input, 'docx')).rejects.toThrow('Activity cancelled');
+        expect(execActivityFile).not.toHaveBeenCalled();
+    });
+
+    it('should refuse to run unlimited on Linux without prlimit', async () => {
+        prlimit.supported = true;
+
+        await expect(markdownWithMarkitdown(input, 'docx')).rejects.toThrow('markitdown needs prlimit');
+        expect(execActivityFile).not.toHaveBeenCalled();
+    });
+
+    it('should run unlimited on Linux without prlimit when the operator opted out', async () => {
+        prlimit.supported = true;
+        vi.stubEnv(OFFICE_ALLOW_UNLIMITED_MEMORY_ENV, 'true');
+
+        await expect(markdownWithMarkitdown(input, 'docx')).resolves.toBe('converted text');
+        expect(vi.mocked(execActivityFile).mock.calls[0][0]).toBe('markitdown');
     });
 
     it('should free its slot when a conversion fails', async () => {

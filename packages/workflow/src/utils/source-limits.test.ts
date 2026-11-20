@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+    allowUnlimitedOfficeMemory,
     CONVERTER_MAX_SOURCE_MB_ENV,
     getOfficeMaxConcurrent,
     getSourceLimits,
     MEDIA_MAX_SOURCE_MB_ENV,
+    OFFICE_ALLOW_UNLIMITED_MEMORY_ENV,
     OFFICE_MAX_CONCURRENT_ENV,
     OFFICE_MAX_MEMORY_MB_ENV,
     OFFICE_MAX_PARSED_MB_ENV,
@@ -68,5 +70,18 @@ describe('getOfficeMaxConcurrent', () => {
         vi.spyOn(console, 'warn').mockImplementation(() => undefined);
         vi.stubEnv(OFFICE_MAX_CONCURRENT_ENV, '0');
         expect(getOfficeMaxConcurrent()).toBe(1);
+    });
+});
+
+describe('allowUnlimitedOfficeMemory', () => {
+    it.each([
+        ['', false],
+        ['false', false],
+        ['yes', false],
+        ['true', true],
+        ['1', true],
+    ])('reads "%s" as %s', (raw, expected) => {
+        vi.stubEnv(OFFICE_ALLOW_UNLIMITED_MEMORY_ENV, raw);
+        expect(allowUnlimitedOfficeMemory()).toBe(expected);
     });
 });

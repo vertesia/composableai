@@ -17,6 +17,11 @@ export const OFFICE_MAX_UNPACKED_MB_ENV = 'WORKFLOW_OFFICE_MAX_UNPACKED_MB';
 export const OFFICE_MAX_MEMORY_MB_ENV = 'WORKFLOW_OFFICE_MAX_MEMORY_MB';
 /** How many markitdown conversions one worker process runs at a time. */
 export const OFFICE_MAX_CONCURRENT_ENV = 'WORKFLOW_OFFICE_MAX_CONCURRENT';
+/**
+ * `true` lets markitdown run without its memory limit on a Linux system that has no `prlimit`, for local development.
+ * A worker must not set it: without the limit, one document can exhaust the worker's memory.
+ */
+export const OFFICE_ALLOW_UNLIMITED_MEMORY_ENV = 'WORKFLOW_OFFICE_ALLOW_UNLIMITED_MEMORY';
 /** Largest audio or video source downloaded for transcoding, thumbnails and metadata. */
 export const MEDIA_MAX_SOURCE_MB_ENV = 'WORKFLOW_MEDIA_MAX_SOURCE_MB';
 
@@ -109,6 +114,12 @@ export function getSourceLimits(): SourceLimits {
 /** How many markitdown conversions a worker process runs at a time. */
 export function getOfficeMaxConcurrent(): number {
     return readPositiveInteger(OFFICE_MAX_CONCURRENT_ENV, DEFAULT_OFFICE_MAX_CONCURRENT, 'conversions');
+}
+
+/** Whether markitdown may run without its memory limit where `prlimit` is missing; see the variable. */
+export function allowUnlimitedOfficeMemory(): boolean {
+    const raw = typeof process !== 'undefined' ? process.env?.[OFFICE_ALLOW_UNLIMITED_MEMORY_ENV]?.trim() : undefined;
+    return raw === 'true' || raw === '1';
 }
 
 function readMegabytes(name: string, defaultMb: number): number {
