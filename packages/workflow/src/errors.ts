@@ -103,6 +103,16 @@ export class SourceTooLargeError extends ApplicationFailure {
     }
 }
 
+/**
+ * A converter rejected a document as one it cannot read: a corrupt, encrypted or mislabeled file. Every retry would
+ * read the same bytes and fail the same way, so it is not retried.
+ */
+export class DocumentConversionError extends ApplicationFailure {
+    constructor(message: string, cause?: Error) {
+        super(message, 'DocumentConversionError', true, undefined, cause);
+    }
+}
+
 export class ImageConversionError extends ApplicationFailure {
     constructor(message: string, cause?: Error) {
         super(message, 'ImageConversionError', true, undefined, cause);
@@ -154,6 +164,7 @@ export const WF_NON_RETRYABLE_ERRORS = [
     'WorkflowParamNotFoundError',
     'InvalidContentTypeError',
     SOURCE_TOO_LARGE_ERROR,
+    'DocumentConversionError',
     'ImageConversionError',
     'TokenExpiredError',
     'ZenoClientNotFoundError',

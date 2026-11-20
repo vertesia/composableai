@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CONVERTER_MAX_SOURCE_MB_ENV, getSourceLimits, MEDIA_MAX_SOURCE_MB_ENV } from './source-limits.js';
+import {
+    CONVERTER_MAX_SOURCE_MB_ENV,
+    getSourceLimits,
+    MEDIA_MAX_SOURCE_MB_ENV,
+    OFFICE_MAX_PARSED_MB_ENV,
+} from './source-limits.js';
 
 const MiB = 1024 * 1024;
 
@@ -9,16 +14,26 @@ afterEach(() => {
 });
 
 describe('getSourceLimits', () => {
-    it('defaults to 1 GiB for converters and 8 GiB for media', () => {
+    it('defaults to 1 GiB for converters, 100 MiB parsed for Office documents and 8 GiB for media', () => {
         vi.stubEnv(CONVERTER_MAX_SOURCE_MB_ENV, '');
+        vi.stubEnv(OFFICE_MAX_PARSED_MB_ENV, '');
         vi.stubEnv(MEDIA_MAX_SOURCE_MB_ENV, '');
-        expect(getSourceLimits()).toEqual({ converterMaxBytes: 1024 * MiB, mediaMaxBytes: 8192 * MiB });
+        expect(getSourceLimits()).toEqual({
+            converterMaxBytes: 1024 * MiB,
+            officeMaxParsedBytes: 100 * MiB,
+            mediaMaxBytes: 8192 * MiB,
+        });
     });
 
     it('reads each limit from its environment variable', () => {
         vi.stubEnv(CONVERTER_MAX_SOURCE_MB_ENV, ' 2048 ');
+        vi.stubEnv(OFFICE_MAX_PARSED_MB_ENV, '50');
         vi.stubEnv(MEDIA_MAX_SOURCE_MB_ENV, '4096');
-        expect(getSourceLimits()).toEqual({ converterMaxBytes: 2048 * MiB, mediaMaxBytes: 4096 * MiB });
+        expect(getSourceLimits()).toEqual({
+            converterMaxBytes: 2048 * MiB,
+            officeMaxParsedBytes: 50 * MiB,
+            mediaMaxBytes: 4096 * MiB,
+        });
     });
 
     it.each(['0', '-1', '1.5', '2GB', 'abc', '1e3'])('keeps the default for "%s"', (raw) => {
