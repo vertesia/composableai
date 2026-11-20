@@ -53,30 +53,40 @@ export const EvaluationSeveritySchema = z.enum(['none', 'low', 'medium', 'high']
     description: 'Worst deterministic detector level. `none` means no detector fired, not success.',
 });
 
-export const TurnEvaluationFlagSchema = z
-    .enum([
-        'user_stopped_after_failure',
-        'mutation_unsuccessful',
-        'run_failed',
-        'unrecovered_tool',
-        'fail_streak',
-        'identical_retry',
-        'reread',
-        'high_gather',
-        'overhead',
-        'followup_after_answer',
-        'approval_denied',
-        'circuit_breaker',
-        'no_visible_answer',
-        'answer_in_tool_preamble',
-        'response_cut_off',
-        'llm_retried',
-        'unknown_tool',
-        'invalid_tool_arguments',
-        'context_near_full',
-        'checkpoint_forced',
-    ])
-    .meta({ id: 'TurnEvaluationFlag', description: 'Reason behind an evaluation severity.' });
+/** Flags the detectors of this release emit. Filters accept only these; readers must accept any string. */
+export const KnownTurnEvaluationFlagSchema = z.enum([
+    'user_stopped_after_failure',
+    'mutation_unsuccessful',
+    'run_failed',
+    'unrecovered_tool',
+    'fail_streak',
+    'identical_retry',
+    'reread',
+    'high_gather',
+    'overhead',
+    'followup_after_answer',
+    'approval_denied',
+    'circuit_breaker',
+    'no_visible_answer',
+    'answer_in_tool_preamble',
+    'response_cut_off',
+    'llm_retried',
+    'unknown_tool',
+    'invalid_tool_arguments',
+    'context_near_full',
+    'checkpoint_forced',
+]);
+
+/**
+ * An extensible enum: published as `type: string` with `x-extensible-enum`, so a flag a later detector adds is
+ * neither a breaking spec change nor a value a client or an older server rejects.
+ */
+export const TurnEvaluationFlagSchema = z.string().meta({
+    id: 'TurnEvaluationFlag',
+    description:
+        'Reason behind an evaluation severity. New detectors add values, so clients must accept values they do not know.',
+    'x-extensible-enum': KnownTurnEvaluationFlagSchema.options,
+});
 
 export const ToolErrorClassSchema = z
     .enum(['schema', 'unknown_tool', 'platform', 'config', 'environment', 'unknown_outcome', 'other'])
@@ -1557,8 +1567,9 @@ export const ListAgentRunsQuerySchema = z
             .array(ListAgentRunsEvaluationSeveritySchema)
             .meta({ description: 'Filter by evaluation severity; `unrated` selects runs without an evaluation' })
             .optional(),
+        // Closed: a filter value the server does not know is still a 400.
         evaluation_flag: z
-            .array(TurnEvaluationFlagSchema)
+            .array(KnownTurnEvaluationFlagSchema)
             .meta({ description: 'Filter by evaluation flag (any of)' })
             .optional(),
         feedback_rating: AgentRunFeedbackRatingSchema.meta({
