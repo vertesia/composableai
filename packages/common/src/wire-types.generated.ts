@@ -2319,6 +2319,7 @@ export type SharePointContentSource = {
     location_root: string;
     collection_id?: string | undefined;
     sync: ContentSourceSyncSettings;
+    sample_percent?: number | undefined;
     created_by?: string | undefined;
     updated_by?: string | undefined;
     created_at?: string | undefined;
@@ -2340,6 +2341,7 @@ export type BoxContentSource = {
     location_root: string;
     collection_id?: string | undefined;
     sync: ContentSourceSyncSettings;
+    sample_percent?: number | undefined;
     created_by?: string | undefined;
     updated_by?: string | undefined;
     created_at?: string | undefined;
@@ -2382,6 +2384,7 @@ export type CreateSharePointContentSourcePayload = {
     location_root?: string | undefined;
     collection_id?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
+    sample_percent?: number | undefined;
     type: 'sharepoint';
     permissions?: ContentSourcePermissionSettings | undefined;
     site_url: string;
@@ -2395,6 +2398,7 @@ export type CreateBoxContentSourcePayload = {
     location_root?: string | undefined;
     collection_id?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
+    sample_percent?: number | undefined;
     type: 'box';
     folder_id?: string | undefined;
 };
@@ -2402,6 +2406,7 @@ export type UpdateContentSourcePayload = {
     name?: string | undefined;
     description?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
+    sample_percent?: number | null | undefined;
     permissions?: ContentSourcePermissionSettings | undefined;
     root_id?: string | undefined;
     folder_id?: string | undefined;
@@ -2439,6 +2444,28 @@ export type ContentSourceSyncCounts = {
     deleted: number;
     skipped: number;
     failed: number;
+};
+/** What a content source syncs and how its sync stands, without its connection settings. */
+export type ContentSourceSummary = {
+    id: string;
+    name: string;
+    description?: string | undefined;
+    type: 'sharepoint' | 'box';
+    location_root: string;
+    site_url?: string | undefined;
+    library_name?: string | undefined;
+    folder_path: string;
+    sync: ContentSourceSyncSettings;
+    state: 'not_started' | 'running' | 'waiting' | 'stopped';
+    next_sync_at?: string | undefined;
+    last_success_at?: string | undefined;
+    last_round?: ContentSourceRoundSummary | undefined;
+};
+export type ContentSourceRoundSummary = {
+    kind: 'import' | 'update';
+    started_at: string;
+    finished_at?: string | undefined;
+    outcome: 'succeeded' | 'failed';
 };
 /** A page of the files a sync round created, updated, deleted, skipped or failed. */
 export type ContentSourceReport = {
@@ -11525,6 +11552,7 @@ export type EventDeliveryTargetInputWire = unknown;
 export type ProcessEventDeliveryTargetWire = unknown;
 export type EventIngestChannelArray = EventIngestChannel[];
 export type ExternalContentSourceArray = ExternalContentSource[];
+export type ContentSourceSummaryArray = ContentSourceSummary[];
 export type CollectionStatusWire = CollectionStatus;
 export type CollectionArray = Collection[];
 export type AgentRunArtifactPathArray = string[];
@@ -12823,6 +12851,9 @@ export interface ApiComponentTypes {
     ContentSourceSyncCounts: ContentSourceSyncCounts;
     ContentSourceSyncRound: ContentSourceSyncRound;
     ContentSourceStatus: ContentSourceStatus;
+    ContentSourceRoundSummary: ContentSourceRoundSummary;
+    ContentSourceSummary: ContentSourceSummary;
+    ContentSourceSummaryArray: ContentSourceSummaryArray;
     ContentSourceReportAction: ContentSourceReportAction;
     ContentSourceReportEntry: ContentSourceReportEntry;
     ContentSourceReportQuery: ContentSourceReportQuery;

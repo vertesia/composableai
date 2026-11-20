@@ -79,6 +79,7 @@ async function mockSetup(
         contentType?: string;
         renditions?: Rendition[];
         text?: string;
+        objectType?: { id: string; name: string };
     } = {},
 ) {
     const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
@@ -89,6 +90,7 @@ async function mockSetup(
             content: { type: options.contentType ?? 'text/plain' },
             metadata: { renditions: options.renditions },
             text: options.text ?? 'Document text',
+            ...(options.objectType ? { type: options.objectType } : {}),
         }),
     );
     const listTypes = vi.fn(() => Promise.resolve(types));
@@ -140,6 +142,30 @@ describe('generateOrAssignContentType', () => {
             expect.anything(),
         );
         expect(update).toHaveBeenCalledWith('object-1', { type: 'type-invoice-first' }, { suppressWorkflows: true });
+    });
+
+    it('skips an object that already has a type', async () => {
+        await mockSetup([typeItem('Invoice', 'active')], { objectType: { id: 'type-invoice', name: 'Invoice' } });
+
+        const result = await testEnv.run(generateOrAssignContentType, payload({ allowNewContentTypes: false }));
+
+        expect(result).toMatchObject({ status: 'skipped' });
+        expect(executeInteractionFromActivity).not.toHaveBeenCalled();
+    });
+
+    it('selects the type again for an object whose type is listed as replaceable', async () => {
+        const invoice = { ...typeItem('Invoice', 'active'), id: 'type-invoice' };
+        const { update } = await mockSetup([invoice], {
+            objectType: { id: 'sys:GenericDocument', name: 'GenericDocument' },
+        });
+        mockSelectionResult('Invoice');
+
+        await testEnv.run(
+            generateOrAssignContentType,
+            payload({ allowNewContentTypes: false, replaceableTypeIds: ['sys:GenericDocument'] }),
+        );
+
+        expect(update).toHaveBeenCalledWith('object-1', { type: 'type-invoice' }, { suppressWorkflows: true });
     });
 
     it('assigns an app-contributed type instead of generating a duplicate', async () => {

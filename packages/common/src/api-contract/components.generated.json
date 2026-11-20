@@ -38788,6 +38788,12 @@
       "sync": {
         "$ref": "#/components/schemas/ContentSourceSyncSettings"
       },
+      "sample_percent": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 99,
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Absent when the source syncs every file."
+      },
       "created_by": {
         "type": "string"
       },
@@ -38877,6 +38883,12 @@
       },
       "sync": {
         "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      },
+      "sample_percent": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 99,
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Absent when the source syncs every file."
       },
       "created_by": {
         "type": "string"
@@ -38980,6 +38992,12 @@
         "$ref": "#/components/schemas/ContentSourceSyncSettings",
         "description": "Defaults to scheduled sync disabled, every 60 minutes once enabled."
       },
+      "sample_percent": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 99,
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Leave out to sync every file."
+      },
       "type": {
         "type": "string",
         "const": "sharepoint"
@@ -39040,6 +39058,12 @@
         "$ref": "#/components/schemas/ContentSourceSyncSettings",
         "description": "Defaults to scheduled sync disabled, every 60 minutes once enabled."
       },
+      "sample_percent": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 99,
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Leave out to sync every file."
+      },
       "type": {
         "type": "string",
         "const": "box"
@@ -39094,6 +39118,19 @@
       "sync": {
         "$ref": "#/components/schemas/ContentSourceSyncSettings"
       },
+      "sample_percent": {
+        "anyOf": [
+          {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. `null` removes the sample, so that every file is synced. A change, before or after the first sync, makes the next sync an import that lists the whole folder: it imports the files that entered the sample and deletes the documents of those that left it."
+      },
       "permissions": {
         "$ref": "#/components/schemas/ContentSourcePermissionSettings"
       },
@@ -39113,7 +39150,7 @@
       }
     },
     "additionalProperties": false,
-    "description": "Changes the name, description or sync settings, and, before the first sync, the root and folder to sync. Saving sync settings also hands the sync your credentials, which restarts a sync stopped because its previous credentials were refused."
+    "description": "Changes the name, description, sync settings or sample, and, before the first sync, the root and folder to sync. Saving sync settings also hands the sync your credentials, which restarts a sync stopped because its previous credentials were refused."
   },
   "SyncContentSourcePayload": {
     "type": "object",
@@ -39158,7 +39195,7 @@
         "type": "integer",
         "minimum": -9007199254740991,
         "maximum": 9007199254740991,
-        "description": "Files that are not synced (unsupported types, packages)."
+        "description": "Files that are not synced (unsupported types, packages, files outside the sample)."
       },
       "failed": {
         "type": "integer",
@@ -39210,7 +39247,7 @@
           "minimum": -9007199254740991,
           "maximum": 9007199254740991
         },
-        "description": "The skipped files by reason: `package`, `not_a_file`, `too_large`, `unsupported_type`, or another reason a system reports."
+        "description": "The skipped files by reason: `package`, `not_a_file`, `too_large`, `unsupported_type`, `not_sampled` (outside the source's `sample_percent`; counted only, not listed in the report), or another reason a system reports."
       },
       "swept": {
         "type": "boolean",
@@ -39276,6 +39313,121 @@
     "additionalProperties": false,
     "description": "A content source's sync state."
   },
+  "ContentSourceRoundSummary": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "import",
+          "update"
+        ],
+        "description": "`import` lists the whole folder; `update` reads the changes since the previous sync."
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "finished_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "outcome": {
+        "type": "string",
+        "enum": [
+          "succeeded",
+          "failed"
+        ],
+        "description": "Whether the round finished without an error."
+      }
+    },
+    "required": [
+      "kind",
+      "started_at",
+      "outcome"
+    ],
+    "additionalProperties": false,
+    "description": "When a finished sync round ran, and how it ended."
+  },
+  "ContentSourceSummary": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "type": {
+        "type": "string",
+        "enum": [
+          "sharepoint",
+          "box"
+        ]
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` under which the source folder's tree is reproduced, e.g. `/sharepoint/legal`."
+      },
+      "site_url": {
+        "type": "string",
+        "description": "SharePoint only: the site URL."
+      },
+      "library_name": {
+        "type": "string",
+        "description": "SharePoint only: the document library name."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The folder synced: relative to the library root for SharePoint (empty for the whole library), the folder path below All Files for Box."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "not_started",
+          "running",
+          "waiting",
+          "stopped"
+        ],
+        "description": "`waiting` between syncs, `running` during one, `stopped` when its credentials were refused or the source is being deleted."
+      },
+      "next_sync_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "last_success_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the last round that finished without an error ended. Absent when none has."
+      },
+      "last_round": {
+        "$ref": "#/components/schemas/ContentSourceRoundSummary"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "type",
+      "location_root",
+      "folder_path",
+      "sync",
+      "state"
+    ],
+    "additionalProperties": false,
+    "description": "What a content source syncs into the project and how its sync stands, readable by every member who can read content. Holds no connection, credential or permission settings."
+  },
+  "ContentSourceSummaryArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/ContentSourceSummary"
+    }
+  },
   "ContentSourceReportAction": {
     "type": "string",
     "enum": [
@@ -39330,7 +39482,7 @@
       },
       "reason": {
         "type": "string",
-        "description": "`skipped`: why the file is not synced (`package`, `not_a_file`, `too_large`, `unsupported_type`). `deleted`: `file_deleted` (deleted, moved out or no longer synced) or `duplicate`."
+        "description": "`skipped`: why the file is not synced (`package`, `not_a_file`, `too_large`, `unsupported_type`). `deleted`: `file_deleted` (deleted, moved out or no longer synced), `duplicate`, or `not_sampled` (outside the source's `sample_percent`)."
       },
       "error": {
         "type": "string",
