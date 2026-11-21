@@ -106,6 +106,10 @@
             "types": "./lib/utils/tokens.d.ts",
             "default": "./lib/utils/tokens.js"
         },
+        "./utils/cpu-slots": {
+            "types": "./lib/utils/cpu-slots.d.ts",
+            "default": "./lib/utils/cpu-slots.js"
+        },
         "./utils/blobs": {
             "types": "./lib/utils/blobs.d.ts",
             "default": "./lib/utils/blobs.js"
