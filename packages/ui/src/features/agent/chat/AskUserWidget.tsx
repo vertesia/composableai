@@ -72,6 +72,11 @@ export interface AskUserWidgetProps {
     responseControlsHidden?: boolean;
     /** More ways to answer, shown after the options (for example "Edit and run" on a tool approval prompt). */
     extraActions?: React.ReactNode;
+    /**
+     * What the user should read before answering, shown under the question and above the options (for example the
+     * arguments of a tool call waiting for approval). Hidden with the response controls.
+     */
+    body?: React.ReactNode;
 
     // Styling props for full customization
     /** Additional className for the outer container */
@@ -158,6 +163,7 @@ export function AskUserWidget({
     responseControlsId,
     responseControlsHidden = false,
     extraActions,
+    body,
     // Styling props
     className,
     cardClassName,
@@ -279,6 +285,7 @@ export function AskUserWidget({
                     </div>
 
                     <div id={responseControlsId} hidden={responseControlsHidden}>
+                        {body && <div className="px-3 pb-2">{body}</div>}
                         {safeOptions.length > 0 && (
                             <div className={cn('flex flex-col gap-1.5 px-3 pb-3 pt-0', optionsClassName)}>
                                 {multiSelect ? (
@@ -432,6 +439,7 @@ export function AskUserWidget({
                 </div>
 
                 <div id={responseControlsId} hidden={responseControlsHidden}>
+                    {body && <div className="px-4 pb-3">{body}</div>}
                     {/* Options */}
                     {safeOptions.length > 0 && (
                         <div className={`px-4 pb-3 pt-1 ${optionsClassName || ''}`}>
