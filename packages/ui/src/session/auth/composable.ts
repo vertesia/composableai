@@ -237,6 +237,8 @@ export async function fetchComposableToken(
                     Authorization: `Bearer ${idToken}`,
                     'Content-Type': 'application/json',
                 },
+                // Provision only the invited account selected for this login, not another pending invite.
+                body: JSON.stringify({ account_id: accountId, project_id: projectId }),
             });
 
             if (ensureResponse.status === 412) {
