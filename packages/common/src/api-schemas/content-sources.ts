@@ -1,11 +1,14 @@
 import { z } from 'zod';
 import {
+    CONTENT_SOURCE_FILE_READ_MAX_BYTES,
+    CONTENT_SOURCE_MAX_SAMPLE_ITEM_IDS,
     CONTENT_SOURCE_MAX_SAMPLE_PERCENT,
     CONTENT_SOURCE_MAX_SYNC_INTERVAL_MINUTES,
     CONTENT_SOURCE_MIN_SAMPLE_PERCENT,
     CONTENT_SOURCE_MIN_SYNC_INTERVAL_MINUTES,
     CONTENT_SOURCE_REPORT_MAX_LIMIT,
     CONTENT_SOURCE_REPORT_ROUNDS,
+    CONTENT_SOURCE_SAMPLE_ITEM_IDS_GUARD_PERCENT,
     CONTENT_SOURCE_SAMPLE_MAX_LIMIT,
 } from '../content-sources.js';
 import { OBJECT_ID_PATTERN } from './schema-primitives.js';
@@ -71,6 +74,13 @@ const SAMPLE_PERCENT_DESCRIPTION =
 
 const samplePercent = z.number().int().min(CONTENT_SOURCE_MIN_SAMPLE_PERCENT).max(CONTENT_SOURCE_MAX_SAMPLE_PERCENT);
 
+const SAMPLE_ITEM_IDS_DESCRIPTION =
+    'Sample mode with chosen files: syncs only the files with these IDs, as a sample or a file listing returned ' +
+    `them, at most ${CONTENT_SOURCE_MAX_SAMPLE_ITEM_IDS}. A file outside the list is not imported, and its document ` +
+    'is deleted if it has one.';
+
+const sampleItemIds = z.array(z.string().min(1)).min(1).max(CONTENT_SOURCE_MAX_SAMPLE_ITEM_IDS);
+
 const commonSourceFields = {
     id: z.string(),
     name: z.string(),
@@ -87,7 +97,15 @@ const commonSourceFields = {
         .optional(),
     sync: ContentSourceSyncSettingsSchema,
     sample_percent: samplePercent
-        .meta({ description: `${SAMPLE_PERCENT_DESCRIPTION} Absent when the source syncs every file.` })
+        .meta({
+            description:
+                `${SAMPLE_PERCENT_DESCRIPTION} Absent when the source syncs every file. ` +
+                `${CONTENT_SOURCE_SAMPLE_ITEM_IDS_GUARD_PERCENT} beside \`sample_item_ids\`, for clients that ` +
+                'predate the list: the list decides.',
+        })
+        .optional(),
+    sample_item_ids: sampleItemIds
+        .meta({ description: `${SAMPLE_ITEM_IDS_DESCRIPTION} Absent unless the sample is of chosen files.` })
         .optional(),
     created_by: z.string().optional(),
     updated_by: z.string().optional(),
@@ -157,7 +175,14 @@ const commonCreateFields = {
         description: 'Defaults to scheduled sync disabled, every 60 minutes once enabled.',
     }),
     sample_percent: samplePercent
-        .meta({ description: `${SAMPLE_PERCENT_DESCRIPTION} Leave out to sync every file.` })
+        .meta({
+            description: `${SAMPLE_PERCENT_DESCRIPTION} Leave out to sync every file. Not with \`sample_item_ids\`.`,
+        })
+        .optional(),
+    sample_item_ids: sampleItemIds
+        .meta({
+            description: `${SAMPLE_ITEM_IDS_DESCRIPTION} Leave out to sync every file. Not with \`sample_percent\`.`,
+        })
         .optional(),
 };
 
@@ -225,10 +250,18 @@ export const UpdateContentSourcePayloadSchema = z
             .nullable()
             .meta({
                 description:
-                    `${SAMPLE_PERCENT_DESCRIPTION} \`null\` removes the sample, so that every file is synced. A ` +
+                    `${SAMPLE_PERCENT_DESCRIPTION} \`null\` removes the sample, of either kind, so that every file is synced. A ` +
                     'change, before or after the first sync, makes the next sync an import that lists the whole ' +
                     'folder: it imports the files that entered the sample and deletes the documents of those that ' +
-                    'left it.',
+                    'left it. A percentage replaces a sample of chosen files.',
+            })
+            .optional(),
+        sample_item_ids: sampleItemIds
+            .meta({
+                description:
+                    `${SAMPLE_ITEM_IDS_DESCRIPTION} The list replaces a percentage, and \`sample_percent: null\` ` +
+                    'removes either kind of sample; giving both fields in one request is refused. A change makes ' +
+                    'the next sync an import, as for `sample_percent`.',
             })
             .optional(),
         permissions: ContentSourcePermissionSettingsSchema.optional(),
@@ -576,6 +609,53 @@ export const InspectContentSourceSamplePayloadSchema = z
         description:
             'The folder to read a sample of files from, through a content source’s connection. Defaults to what ' +
             'the source syncs in its own root, and to the top of another root.',
+    });
+
+const fileItemField = {
+    item_id: z.string().min(1).meta({ description: 'The file, as a sample returned its `id`.' }),
+};
+
+export const DiscoverContentSourceFilePayloadSchema = z
+    .strictObject({
+        ...discoverConnectionFields,
+        root_id: z.string().min(1).meta({
+            description:
+                'The document library of the file, as a sample returned its `root_id`. It must be a library of the site.',
+        }),
+        ...fileItemField,
+    })
+    .meta({
+        id: 'DiscoverContentSourceFilePayload',
+        description: 'A file of a document library to read without importing it. No content source needs to exist.',
+    });
+
+export const InspectContentSourceFilePayloadSchema = z.strictObject({ ...inspectRootField, ...fileItemField }).meta({
+    id: 'InspectContentSourceFilePayload',
+    description: 'A file to read without importing it, through a content source’s connection.',
+});
+
+export const ContentSourceFileDownloadSchema = z
+    .strictObject({
+        id: z.string(),
+        name: z.string(),
+        size: z.number().int().optional(),
+        mime_type: z.string().optional(),
+        too_large: z.boolean().meta({
+            description: `True when the file is larger than \`max_bytes\`: no download URL is given.`,
+        }),
+        max_bytes: z.number().int().meta({ description: 'The largest file a download URL is given for.' }),
+        download_url: z
+            .string()
+            .meta({
+                description:
+                    'The system’s short-lived, pre-authenticated URL of the file’s content. It grants access on its ' +
+                    'own: never store or log it. Absent when the file is too large.',
+            })
+            .optional(),
+    })
+    .meta({
+        id: 'ContentSourceFileDownload',
+        description: `A file to read without importing it, up to ${CONTENT_SOURCE_FILE_READ_MAX_BYTES / (1024 * 1024)} MiB.`,
     });
 
 export const ContentSourceRootSchema = z

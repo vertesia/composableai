@@ -16,6 +16,16 @@ export const CONTENT_SOURCE_SAMPLE_MAX_LIMIT = 500;
 export const CONTENT_SOURCE_MIN_SAMPLE_PERCENT = 1;
 /** The largest share of a sample mode: 100 would be every file, which is a source without a sample. */
 export const CONTENT_SOURCE_MAX_SAMPLE_PERCENT = 99;
+/** The most files a sample of chosen files (`sample_item_ids`) can name. */
+export const CONTENT_SOURCE_MAX_SAMPLE_ITEM_IDS = 200;
+/**
+ * The `sample_percent` stored and returned beside `sample_item_ids`. A worker or client that predates the list then
+ * syncs about 1% of the files instead of every file; one that knows the list syncs the listed files, and only while
+ * the percentage is this value, so a sample changed by a server that predates the list is not overruled by it.
+ */
+export const CONTENT_SOURCE_SAMPLE_ITEM_IDS_GUARD_PERCENT = 1;
+/** The largest file `discover/file` hands a download URL for: a file read to understand it, not to import it. */
+export const CONTENT_SOURCE_FILE_READ_MAX_BYTES = 20 * 1024 * 1024;
 
 /** A folder of an external content system whose files are synced into the project without copies. */
 export type ExternalContentSource = Wire.ExternalContentSource;
@@ -58,6 +68,10 @@ export type DiscoverContentSourceFoldersPayload = Wire.DiscoverContentSourceFold
 export type InspectContentSourceFoldersPayload = Wire.InspectContentSourceFoldersPayload;
 export type InspectContentSourceSchemaPayload = Wire.InspectContentSourceSchemaPayload;
 export type InspectContentSourceSamplePayload = Wire.InspectContentSourceSamplePayload;
+export type DiscoverContentSourceFilePayload = Wire.DiscoverContentSourceFilePayload;
+export type InspectContentSourceFilePayload = Wire.InspectContentSourceFilePayload;
+/** A file of the system to read without importing it: its metadata, and a short-lived URL to download it. */
+export type ContentSourceFileDownload = Wire.ContentSourceFileDownload;
 export type ContentSourceRoot = Wire.ContentSourceRoot;
 export type ContentSourceRootsDiscovery = Wire.ContentSourceRootsDiscovery;
 

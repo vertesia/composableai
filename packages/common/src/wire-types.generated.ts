@@ -2320,6 +2320,7 @@ export type SharePointContentSource = {
     collection_id?: string | undefined;
     sync: ContentSourceSyncSettings;
     sample_percent?: number | undefined;
+    sample_item_ids?: string[] | undefined;
     created_by?: string | undefined;
     updated_by?: string | undefined;
     created_at?: string | undefined;
@@ -2342,6 +2343,7 @@ export type BoxContentSource = {
     collection_id?: string | undefined;
     sync: ContentSourceSyncSettings;
     sample_percent?: number | undefined;
+    sample_item_ids?: string[] | undefined;
     created_by?: string | undefined;
     updated_by?: string | undefined;
     created_at?: string | undefined;
@@ -2385,6 +2387,7 @@ export type CreateSharePointContentSourcePayload = {
     collection_id?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
     sample_percent?: number | undefined;
+    sample_item_ids?: string[] | undefined;
     type: 'sharepoint';
     permissions?: ContentSourcePermissionSettings | undefined;
     site_url: string;
@@ -2399,6 +2402,7 @@ export type CreateBoxContentSourcePayload = {
     collection_id?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
     sample_percent?: number | undefined;
+    sample_item_ids?: string[] | undefined;
     type: 'box';
     folder_id?: string | undefined;
 };
@@ -2407,6 +2411,7 @@ export type UpdateContentSourcePayload = {
     description?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
     sample_percent?: number | null | undefined;
+    sample_item_ids?: string[] | undefined;
     permissions?: ContentSourcePermissionSettings | undefined;
     root_id?: string | undefined;
     folder_id?: string | undefined;
@@ -2530,6 +2535,27 @@ export type InspectContentSourceSamplePayload = {
     folder_id?: string | undefined;
     folder_path?: string | undefined;
     limit?: number | undefined;
+};
+export type DiscoverContentSourceFilePayload = {
+    type: 'sharepoint';
+    oauth_provider_id: string;
+    site_url: string;
+    root_id: string;
+    item_id: string;
+};
+export type InspectContentSourceFilePayload = {
+    root_id?: string | undefined;
+    item_id: string;
+};
+/** A file of the system to read without importing it: its metadata, and a short-lived URL to download it. */
+export type ContentSourceFileDownload = {
+    id: string;
+    name: string;
+    size?: number | undefined;
+    mime_type?: string | undefined;
+    too_large: boolean;
+    max_bytes: number;
+    download_url?: string | undefined;
 };
 export type ContentSourceRoot = {
     id: string;
@@ -12862,6 +12888,9 @@ export interface ApiComponentTypes {
     InspectContentSourceFoldersPayload: InspectContentSourceFoldersPayload;
     InspectContentSourceSchemaPayload: InspectContentSourceSchemaPayload;
     InspectContentSourceSamplePayload: InspectContentSourceSamplePayload;
+    DiscoverContentSourceFilePayload: DiscoverContentSourceFilePayload;
+    InspectContentSourceFilePayload: InspectContentSourceFilePayload;
+    ContentSourceFileDownload: ContentSourceFileDownload;
     ContentSourceRoot: ContentSourceRoot;
     ContentSourceRootsDiscovery: ContentSourceRootsDiscovery;
     ContentSourceFolder: ContentSourceFolder;

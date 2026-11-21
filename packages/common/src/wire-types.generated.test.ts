@@ -1135,6 +1135,18 @@ interface Checks {
         W.InspectContentSourceSamplePayload,
         z.infer<typeof import('./api-schemas/content-sources.js').InspectContentSourceSamplePayloadSchema>
     >;
+    DiscoverContentSourceFilePayload: Same<
+        W.DiscoverContentSourceFilePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').DiscoverContentSourceFilePayloadSchema>
+    >;
+    InspectContentSourceFilePayload: Same<
+        W.InspectContentSourceFilePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').InspectContentSourceFilePayloadSchema>
+    >;
+    ContentSourceFileDownload: Same<
+        W.ContentSourceFileDownload,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceFileDownloadSchema>
+    >;
     ContentSourceRoot: Same<
         W.ContentSourceRoot,
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceRootSchema>
@@ -8932,6 +8944,18 @@ interface Checks {
         W.ApiComponentTypes['InspectContentSourceSamplePayload'],
         z.infer<typeof import('./api-schemas/content-sources.js').InspectContentSourceSamplePayloadSchema>
     >;
+    'component:DiscoverContentSourceFilePayload': Same<
+        W.ApiComponentTypes['DiscoverContentSourceFilePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').DiscoverContentSourceFilePayloadSchema>
+    >;
+    'component:InspectContentSourceFilePayload': Same<
+        W.ApiComponentTypes['InspectContentSourceFilePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').InspectContentSourceFilePayloadSchema>
+    >;
+    'component:ContentSourceFileDownload': Same<
+        W.ApiComponentTypes['ContentSourceFileDownload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceFileDownloadSchema>
+    >;
     'component:ContentSourceRoot': Same<
         W.ApiComponentTypes['ContentSourceRoot'],
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceRootSchema>
@@ -11339,6 +11363,9 @@ const checks: Checks = {
     InspectContentSourceFoldersPayload: true,
     InspectContentSourceSchemaPayload: true,
     InspectContentSourceSamplePayload: true,
+    DiscoverContentSourceFilePayload: true,
+    InspectContentSourceFilePayload: true,
+    ContentSourceFileDownload: true,
     ContentSourceRoot: true,
     ContentSourceRootsDiscovery: true,
     ContentSourceSiteDiscovery: true,
@@ -13394,6 +13421,9 @@ const checks: Checks = {
     'component:InspectContentSourceFoldersPayload': true,
     'component:InspectContentSourceSchemaPayload': true,
     'component:InspectContentSourceSamplePayload': true,
+    'component:DiscoverContentSourceFilePayload': true,
+    'component:InspectContentSourceFilePayload': true,
+    'component:ContentSourceFileDownload': true,
     'component:ContentSourceRoot': true,
     'component:ContentSourceRootsDiscovery': true,
     'component:ContentSourceFolder': true,
@@ -13922,6 +13952,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2889);
+        expect(Object.keys(checks)).toHaveLength(2895);
     });
 });

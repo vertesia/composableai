@@ -38792,7 +38792,17 @@
         "type": "integer",
         "minimum": 1,
         "maximum": 99,
-        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Absent when the source syncs every file."
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Absent when the source syncs every file. 1 beside `sample_item_ids`, for clients that predate the list: the list decides."
+      },
+      "sample_item_ids": {
+        "minItems": 1,
+        "maxItems": 200,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Sample mode with chosen files: syncs only the files with these IDs, as a sample or a file listing returned them, at most 200. A file outside the list is not imported, and its document is deleted if it has one. Absent unless the sample is of chosen files."
       },
       "created_by": {
         "type": "string"
@@ -38888,7 +38898,17 @@
         "type": "integer",
         "minimum": 1,
         "maximum": 99,
-        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Absent when the source syncs every file."
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Absent when the source syncs every file. 1 beside `sample_item_ids`, for clients that predate the list: the list decides."
+      },
+      "sample_item_ids": {
+        "minItems": 1,
+        "maxItems": 200,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Sample mode with chosen files: syncs only the files with these IDs, as a sample or a file listing returned them, at most 200. A file outside the list is not imported, and its document is deleted if it has one. Absent unless the sample is of chosen files."
       },
       "created_by": {
         "type": "string"
@@ -38996,7 +39016,17 @@
         "type": "integer",
         "minimum": 1,
         "maximum": 99,
-        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Leave out to sync every file."
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Leave out to sync every file. Not with `sample_item_ids`."
+      },
+      "sample_item_ids": {
+        "minItems": 1,
+        "maxItems": 200,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Sample mode with chosen files: syncs only the files with these IDs, as a sample or a file listing returned them, at most 200. A file outside the list is not imported, and its document is deleted if it has one. Leave out to sync every file. Not with `sample_percent`."
       },
       "type": {
         "type": "string",
@@ -39062,7 +39092,17 @@
         "type": "integer",
         "minimum": 1,
         "maximum": 99,
-        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Leave out to sync every file."
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Leave out to sync every file. Not with `sample_item_ids`."
+      },
+      "sample_item_ids": {
+        "minItems": 1,
+        "maxItems": 200,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Sample mode with chosen files: syncs only the files with these IDs, as a sample or a file listing returned them, at most 200. A file outside the list is not imported, and its document is deleted if it has one. Leave out to sync every file. Not with `sample_percent`."
       },
       "type": {
         "type": "string",
@@ -39129,7 +39169,17 @@
             "type": "null"
           }
         ],
-        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. `null` removes the sample, so that every file is synced. A change, before or after the first sync, makes the next sync an import that lists the whole folder: it imports the files that entered the sample and deletes the documents of those that left it."
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. `null` removes the sample, of either kind, so that every file is synced. A change, before or after the first sync, makes the next sync an import that lists the whole folder: it imports the files that entered the sample and deletes the documents of those that left it. A percentage replaces a sample of chosen files."
+      },
+      "sample_item_ids": {
+        "minItems": 1,
+        "maxItems": 200,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Sample mode with chosen files: syncs only the files with these IDs, as a sample or a file listing returned them, at most 200. A file outside the list is not imported, and its document is deleted if it has one. The list replaces a percentage, and `sample_percent: null` removes either kind of sample; giving both fields in one request is refused. A change makes the next sync an import, as for `sample_percent`."
       },
       "permissions": {
         "$ref": "#/components/schemas/ContentSourcePermissionSettings"
@@ -39738,6 +39788,106 @@
     },
     "additionalProperties": false,
     "description": "The folder to read a sample of files from, through a content source’s connection. Defaults to what the source syncs in its own root, and to the top of another root."
+  },
+  "DiscoverContentSourceFilePayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "sharepoint",
+        "description": "The system to inspect. Only SharePoint can be inspected."
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+      },
+      "site_url": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`."
+      },
+      "root_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The document library of the file, as a sample returned its `root_id`. It must be a library of the site."
+      },
+      "item_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The file, as a sample returned its `id`."
+      }
+    },
+    "required": [
+      "type",
+      "oauth_provider_id",
+      "site_url",
+      "root_id",
+      "item_id"
+    ],
+    "additionalProperties": false,
+    "description": "A file of a document library to read without importing it. No content source needs to exist."
+  },
+  "InspectContentSourceFilePayload": {
+    "type": "object",
+    "properties": {
+      "root_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Another root the source’s connection reaches, as `discover/roots` returned it. Defaults to the source’s own root."
+      },
+      "item_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The file, as a sample returned its `id`."
+      }
+    },
+    "required": [
+      "item_id"
+    ],
+    "additionalProperties": false,
+    "description": "A file to read without importing it, through a content source’s connection."
+  },
+  "ContentSourceFileDownload": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "size": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "mime_type": {
+        "type": "string"
+      },
+      "too_large": {
+        "type": "boolean",
+        "description": "True when the file is larger than `max_bytes`: no download URL is given."
+      },
+      "max_bytes": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "The largest file a download URL is given for."
+      },
+      "download_url": {
+        "type": "string",
+        "description": "The system’s short-lived, pre-authenticated URL of the file’s content. It grants access on its own: never store or log it. Absent when the file is too large."
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "too_large",
+      "max_bytes"
+    ],
+    "additionalProperties": false,
+    "description": "A file to read without importing it, up to 20 MiB."
   },
   "ContentSourceRoot": {
     "type": "object",
