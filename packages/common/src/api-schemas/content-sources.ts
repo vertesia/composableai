@@ -327,6 +327,36 @@ export const ContentSourceSyncRoundSchema = z
     })
     .meta({ id: 'ContentSourceSyncRound' });
 
+export const ContentSourceNotificationStatusSchema = z
+    .strictObject({
+        state: z.enum(['active', 'unavailable']).meta({
+            description:
+                '`active` when the system notifies Vertesia of changes, so a change is synced within about a minute; ' +
+                '`unavailable` when the subscription could not be created or renewed, in which case the source ' +
+                'syncs on its schedule only and `error` says why.',
+        }),
+        expires_at: z
+            .string()
+            .meta({
+                format: 'date-time',
+                description: 'When the subscription ends unless it is renewed. It is renewed well before.',
+            })
+            .optional(),
+        last_notification_at: z
+            .string()
+            .meta({ format: 'date-time', description: 'When the system last notified a change.' })
+            .optional(),
+        error: z
+            .string()
+            .meta({ description: 'Why change notifications are unavailable, as the system reported it.' })
+            .optional(),
+    })
+    .meta({
+        id: 'ContentSourceNotificationStatus',
+        description:
+            "The state of a source's change notifications. The scheduled sync keeps running either way, as a fallback.",
+    });
+
 export const ContentSourceStatusSchema = z
     .strictObject({
         state: z.enum(['not_started', 'running', 'waiting', 'stopped']).meta({
@@ -335,6 +365,11 @@ export const ContentSourceStatusSchema = z
                 'source is being deleted.',
         }),
         permissions: ContentSourcePermissionStatusSchema.optional(),
+        notifications: ContentSourceNotificationStatusSchema.meta({
+            description:
+                "The state of the source's change notifications. Absent when its system has none, when scheduled " +
+                'sync is disabled, or before the first attempt to subscribe.',
+        }).optional(),
         current_round: ContentSourceSyncRoundSchema.optional(),
         last_round: ContentSourceSyncRoundSchema.optional(),
         recent_rounds: z

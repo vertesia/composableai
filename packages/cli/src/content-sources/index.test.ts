@@ -191,6 +191,29 @@ describe('content-sources CLI', () => {
         expect(output).toContain('skipped: package 1');
         expect(output).toContain('round-1');
     });
+
+    it('prints whether the system notifies changes', async () => {
+        mocks.status.mockResolvedValue({
+            ...STATUS,
+            notifications: { state: 'active', last_notification_at: '2026-11-22T09:14:03.000Z' },
+        });
+        expect(await run('status', 'src-1')).toContain('change notifications: active · last 2026-11-22T09:14:03.000Z');
+    });
+
+    it('prints why the system does not notify changes', async () => {
+        mocks.status.mockResolvedValue({
+            ...STATUS,
+            notifications: { state: 'unavailable', error: 'Microsoft Graph returned 403' },
+        });
+        expect(await run('status', 'src-1')).toContain(
+            'change notifications: unavailable · Microsoft Graph returned 403',
+        );
+    });
+
+    it('prints nothing about notifications for a source that has none', async () => {
+        mocks.status.mockResolvedValue(STATUS);
+        expect(await run('status', 'src-1')).not.toContain('change notifications');
+    });
 });
 
 describe('content-sources report', () => {

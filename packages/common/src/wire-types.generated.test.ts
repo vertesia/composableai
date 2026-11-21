@@ -1075,6 +1075,10 @@ interface Checks {
         W.ContentSourceStatus,
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceStatusSchema>
     >;
+    ContentSourceNotificationStatus: Same<
+        W.ContentSourceNotificationStatus,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceNotificationStatusSchema>
+    >;
     ContentSourceSyncRound: Same<
         W.ContentSourceSyncRound,
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncRoundSchema>
@@ -8824,6 +8828,10 @@ interface Checks {
         W.ApiComponentTypes['ContentSourcePermissionSettings'],
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourcePermissionSettingsSchema>
     >;
+    'component:ContentSourceNotificationStatus': Same<
+        W.ApiComponentTypes['ContentSourceNotificationStatus'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceNotificationStatusSchema>
+    >;
     'component:ContentSourcePermissionStatus': Same<
         W.ApiComponentTypes['ContentSourcePermissionStatus'],
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourcePermissionStatusSchema>
@@ -11324,6 +11332,7 @@ const checks: Checks = {
     UpdateContentSourcePayload: true,
     SyncContentSourcePayload: true,
     ContentSourceStatus: true,
+    ContentSourceNotificationStatus: true,
     ContentSourceSyncRound: true,
     ContentSourceSyncCounts: true,
     ContentSourceSummary: true,
@@ -13367,6 +13376,7 @@ const checks: Checks = {
     'component:EventIngestChannelArray': true,
     'component:ContentSourceSyncSettings': true,
     'component:ContentSourcePermissionSettings': true,
+    'component:ContentSourceNotificationStatus': true,
     'component:ContentSourcePermissionStatus': true,
     'component:SharePointContentSource': true,
     'component:BoxContentSource': true,
@@ -13922,6 +13932,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2889);
+        expect(Object.keys(checks)).toHaveLength(2891);
     });
 });
