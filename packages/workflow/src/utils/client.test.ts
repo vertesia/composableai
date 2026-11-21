@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     getVertesiaClient,
     getVertesiaClientOptions,
+    withWorkflowApiRequestHeaders,
     withWorkflowHttpExecution,
     withWorkflowOperation,
     withWorkflowRequestHeaders,
@@ -500,5 +501,42 @@ describe('withWorkflowRequestHeaders', () => {
         expect(bundled.getVertesiaClient).not.toBe(getVertesiaClient);
         const client = withWorkflowRequestHeaders({ 'x-example': 'value' }, () => bundled.getVertesiaClient(payload));
         expect(client.headers['x-example']).toBe('value');
+    });
+});
+
+describe('withWorkflowApiRequestHeaders', () => {
+    const payload = {
+        account_id: 'account',
+        project_id: 'project',
+        auth_token: TOKEN,
+        config: { studio_url: 'https://studio.example', store_url: 'https://store.example' },
+        vars: {},
+    } as WorkflowExecutionBaseParams;
+
+    it('adds the headers to both the API and the content store clients created inside it, and only those', () => {
+        const client = withWorkflowApiRequestHeaders({ 'x-example': 'value' }, () => getVertesiaClient(payload));
+        expect(client.headers['x-example']).toBe('value');
+        expect(client.store.headers['x-example']).toBe('value');
+        const outside = getVertesiaClient(payload);
+        expect(outside.headers).not.toHaveProperty(['x-example']);
+        expect(outside.store.headers).not.toHaveProperty(['x-example']);
+    });
+
+    it('keeps the API-only headers off the content store', () => {
+        const client = withWorkflowApiRequestHeaders({ 'x-both': 'both' }, () =>
+            withWorkflowRequestHeaders({ 'x-api': 'api' }, () => getVertesiaClient(payload)),
+        );
+        expect(client.headers).toMatchObject({ 'x-both': 'both', 'x-api': 'api' });
+        expect(client.store.headers['x-both']).toBe('both');
+        expect(client.store.headers).not.toHaveProperty(['x-api']);
+    });
+
+    it('reaches a second copy of this module, as a worker loads with its bundled activities', async () => {
+        vi.resetModules();
+        const bundled = await import('./client.js');
+        const client = withWorkflowApiRequestHeaders({ 'x-example': 'value' }, () =>
+            bundled.getVertesiaClient(payload),
+        );
+        expect(client.store.headers['x-example']).toBe('value');
     });
 });
