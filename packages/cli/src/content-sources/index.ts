@@ -163,6 +163,14 @@ function describeStatus(status: ContentSourceStatus): string {
     if (status.next_sync_at) {
         lines.push(`next sync: ${status.next_sync_at}`);
     }
+    if (status.notifications) {
+        const { state, last_notification_at, error } = status.notifications;
+        lines.push(
+            `change notifications: ${state}` +
+                (last_notification_at ? ` · last ${last_notification_at}` : '') +
+                (error ? ` · ${error}` : ''),
+        );
+    }
     return lines.join('\n');
 }
 

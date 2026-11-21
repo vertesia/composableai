@@ -38727,6 +38727,38 @@
       "mode"
     ]
   },
+  "ContentSourceNotificationStatus": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "type": "string",
+        "enum": [
+          "active",
+          "unavailable"
+        ],
+        "description": "`active` when the system notifies Vertesia of changes, so a change is synced within about a minute; `unavailable` when the subscription could not be created or renewed, in which case the source syncs on its schedule only and `error` says why."
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the subscription ends unless it is renewed. It is renewed well before."
+      },
+      "last_notification_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the system last notified a change."
+      },
+      "error": {
+        "type": "string",
+        "description": "Why change notifications are unavailable, as the system reported it."
+      }
+    },
+    "required": [
+      "state"
+    ],
+    "additionalProperties": false,
+    "description": "The state of a source's change notifications. The scheduled sync keeps running either way, as a fallback."
+  },
   "ContentSourcePermissionStatus": {
     "type": "object",
     "properties": {
@@ -39279,6 +39311,10 @@
       },
       "permissions": {
         "$ref": "#/components/schemas/ContentSourcePermissionStatus"
+      },
+      "notifications": {
+        "$ref": "#/components/schemas/ContentSourceNotificationStatus",
+        "description": "The state of the source's change notifications. Absent when its system has none, when scheduled sync is disabled, or before the first attempt to subscribe."
       },
       "current_round": {
         "$ref": "#/components/schemas/ContentSourceSyncRound"

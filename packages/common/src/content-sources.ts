@@ -37,6 +37,8 @@ export type SyncContentSourcePayload = Wire.SyncContentSourcePayload;
 
 /** A content source's sync state. */
 export type ContentSourceStatus = Wire.ContentSourceStatus;
+/** Whether a source's system notifies Vertesia of changes, between its scheduled syncs. */
+export type ContentSourceNotificationStatus = Wire.ContentSourceNotificationStatus;
 export type ContentSourceSyncRound = Wire.ContentSourceSyncRound;
 export type ContentSourceSyncCounts = Wire.ContentSourceSyncCounts;
 
