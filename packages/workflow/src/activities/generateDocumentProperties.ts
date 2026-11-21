@@ -122,6 +122,10 @@ export function computeExtractionFingerprint(input: {
     text_etag?: string | null;
     /** Model/profile changes must invalidate extracted properties. */
     config?: InteractionExecutionConfiguration;
+    /** The file name and folder the extraction receives as context: renaming or moving a document can change
+     *  what it names (a family, a period, a party), so they must invalidate too. Undefined (callers that do not
+     *  pass them) keeps previously stored hashes valid. */
+    file_context?: { file_name?: string; location?: string };
 }): string {
     const normalizedConfig = input.config
         ? (normalizeFingerprintValue(input.config) as Record<string, unknown>)
@@ -137,6 +141,9 @@ export function computeExtractionFingerprint(input: {
             object_schema: input.object_schema,
             ...(input.evidence ? { evidence: input.evidence } : {}),
             ...(input.text_etag !== undefined ? { text_etag: input.text_etag } : {}),
+            ...(input.file_context?.file_name || input.file_context?.location
+                ? { file_context: { file_name: input.file_context.file_name, location: input.file_context.location } }
+                : {}),
         }),
     );
 }
@@ -206,6 +213,7 @@ export async function generateDocumentProperties(
         evidence: evidenceImages?.map((image) => image.source ?? image.name ?? ''),
         // text may change under the same content etag; only vision-only extraction ignores it
         text_etag: source === 'vision' ? undefined : (doc.text_etag ?? null),
+        file_context: { file_name: doc.name || undefined, location: doc.location || undefined },
     });
 
     if (params.skip_if_fresh && !payload.vars?.forceGeneration) {
