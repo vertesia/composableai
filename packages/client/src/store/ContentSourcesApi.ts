@@ -1,5 +1,6 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    ContentSourceFileDownload,
     ContentSourceFoldersDiscovery,
     ContentSourceReport,
     ContentSourceReportQuery,
@@ -11,11 +12,13 @@ import type {
     ContentSourceSummary,
     CreateContentSourcePayload,
     DeleteCountResult,
+    DiscoverContentSourceFilePayload,
     DiscoverContentSourceFoldersPayload,
     DiscoverContentSourceSamplePayload,
     DiscoverContentSourceSchemaPayload,
     DiscoverContentSourceSitePayload,
     ExternalContentSource,
+    InspectContentSourceFilePayload,
     InspectContentSourceFoldersPayload,
     InspectContentSourceSamplePayload,
     InspectContentSourceSchemaPayload,
@@ -108,6 +111,15 @@ export class ContentSourcesApi extends ApiTopic {
     }
 
     /**
+     * A file of a document library to read without importing it: its metadata and the system's short-lived,
+     * pre-authenticated download URL, which grants access on its own and must never be stored or logged. No URL is
+     * given for a file over `max_bytes`.
+     */
+    discoverFile(payload: DiscoverContentSourceFilePayload): Promise<ContentSourceFileDownload> {
+        return this.post('/discover/file', { payload });
+    }
+
+    /**
      * What a source's connection reaches: the document libraries of its SharePoint site, or the Box folders shared
      * with its app. The caller names no OAuth provider or address: the source holds them.
      */
@@ -131,5 +143,10 @@ export class ContentSourcesApi extends ApiTopic {
     /** A bounded sample of the files under a folder the source reaches, its own folder by default. */
     inspectSample(id: string, payload: InspectContentSourceSamplePayload = {}): Promise<ContentSourceSampleDiscovery> {
         return this.post(`/${id}/discover/sample`, { payload });
+    }
+
+    /** A file the source reaches, to read without importing it, as {@link discoverFile} returns it. */
+    inspectFile(id: string, payload: InspectContentSourceFilePayload): Promise<ContentSourceFileDownload> {
+        return this.post(`/${id}/discover/file`, { payload });
     }
 }
