@@ -10112,6 +10112,7 @@ export type ServiceAccountTokenRequest = {
     roles?: (typeof SystemRoles)[keyof typeof SystemRoles][] | undefined;
     name?: string | undefined;
     email?: string | undefined;
+    expires_at?: number | undefined;
 };
 /**
  * @discriminator type
