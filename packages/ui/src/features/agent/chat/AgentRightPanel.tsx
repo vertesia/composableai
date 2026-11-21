@@ -1,5 +1,4 @@
-import type { AgentMessage, ConversationFile, Plan } from '@vertesia/common';
-import { FileProcessingStatus } from '@vertesia/common';
+import type { AgentMessage, Plan } from '@vertesia/common';
 import {
     Badge,
     Button,
@@ -13,16 +12,7 @@ import {
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import {
-    CheckCircleIcon,
-    ClipboardCopyIcon,
-    DownloadCloudIcon,
-    FileTextIcon,
-    LayoutListIcon,
-    Loader2Icon,
-    XCircleIcon,
-    XIcon,
-} from 'lucide-react';
+import { ClipboardCopyIcon, DownloadCloudIcon, FileTextIcon, LayoutListIcon, XIcon } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ArtifactsTab } from './ArtifactsTab.js';
 import { BrowserUseWidget, getLatestBrowserUseByWorkstream } from './BrowserUseWidget.js';
@@ -34,81 +24,12 @@ import { formatWorkstreamName, getWorkstreamStatusClass, type WorkstreamInfo } f
 
 export type { WorkstreamInfo } from './workstreams.js';
 
-// ---------------------------------------------------------------------------
-// UploadedDocuments (moved from WorkflowPayloadForm)
-// ---------------------------------------------------------------------------
-
-interface UploadedDocumentsProps {
-    files?: Map<string, ConversationFile>;
-}
-
 function RightPanelEmptyState({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
     return (
         <Center className="h-full min-h-[240px] flex-col text-center text-muted">
             {icon}
             <span className="text-sm">{children}</span>
         </Center>
-    );
-}
-
-function UploadedDocumentsTab({ files }: UploadedDocumentsProps) {
-    const { t } = useUITranslation();
-    const filesArray = useMemo(() => {
-        return files ? Array.from(files.values()) : [];
-    }, [files]);
-
-    const getStatusIcon = (status: FileProcessingStatus) => {
-        switch (status) {
-            case FileProcessingStatus.UPLOADING:
-            case FileProcessingStatus.PROCESSING:
-                return <Loader2Icon className="size-4 animate-spin text-info" />;
-            case FileProcessingStatus.READY:
-                return <CheckCircleIcon className="size-4 text-success" />;
-            case FileProcessingStatus.ERROR:
-                return <XCircleIcon className="size-4 text-destructive" />;
-            default:
-                return <FileTextIcon className="size-4 text-muted" />;
-        }
-    };
-
-    const getStatusBadge = (status: FileProcessingStatus) => {
-        switch (status) {
-            case FileProcessingStatus.UPLOADING:
-                return <Badge variant="info">{t('agent.uploading')}</Badge>;
-            case FileProcessingStatus.PROCESSING:
-                return <Badge variant="info">{t('agent.processing')}</Badge>;
-            case FileProcessingStatus.READY:
-                return <Badge variant="success">{t('agent.ready')}</Badge>;
-            case FileProcessingStatus.ERROR:
-                return <Badge variant="destructive">{t('agent.error')}</Badge>;
-            default:
-                return null;
-        }
-    };
-
-    return (
-        <div className="h-full min-h-0">
-            {filesArray.length === 0 ? (
-                <RightPanelEmptyState icon={<FileTextIcon className="mb-2 size-8" />}>
-                    {t('agent.noFilesUploadedYet')}
-                </RightPanelEmptyState>
-            ) : (
-                <div className="space-y-2 p-2">
-                    {filesArray.map((file) => (
-                        <div key={file.id} className="flex items-start gap-2 p-2 border border-muted rounded-md">
-                            <div className="mt-0.5">{getStatusIcon(file.status)}</div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
-                                    <span className="text-sm font-medium truncate">{file.name}</span>
-                                    {getStatusBadge(file.status)}
-                                </div>
-                                {file.error && <div className="text-xs text-destructive mt-1">{file.error}</div>}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
     );
 }
 
@@ -347,7 +268,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
 // Right panel tabs
 // ---------------------------------------------------------------------------
 
-type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'payload' | 'conversation';
+type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'artifacts' | 'payload' | 'conversation';
 
 export interface AgentRightPanelProps {
     /** Optional payload content to show as a "Payload" tab */
@@ -374,9 +295,6 @@ export interface AgentRightPanelProps {
     onUpdateDocumentTitle?: (id: string, title: string) => void;
     docRefreshKey?: number;
     runId?: string;
-
-    // Uploads
-    processingFiles?: Map<string, ConversationFile>;
 
     // Artifacts
     /** Show the Artifacts tab (opt-in, default false) */
@@ -418,9 +336,6 @@ function AgentRightPanelComponent({
     docRefreshKey = 0,
     runId,
 
-    // Uploads
-    processingFiles,
-
     // Artifacts
     showArtifacts = false,
     artifactRefreshKey = 0,
@@ -452,7 +367,6 @@ function AgentRightPanelComponent({
     // Determine which tabs have content (for badges/indicators)
     const hasWorkstreams = !hideWorkstreams && activeWorkstreams.length > 0;
     const hasDocuments = openDocuments.length > 0;
-    const hasUploads = processingFiles ? processingFiles.size > 0 : false;
     const withTabBoundary = useCallback(
         (name: string, content: React.ReactNode) => (
             <RightPanelErrorBoundary
@@ -546,18 +460,6 @@ function AgentRightPanelComponent({
                     </RightPanelEmptyState>
                 ),
             ),
-            is_allowed: true,
-        },
-        {
-            name: 'uploads',
-            label: hasUploads ? (
-                <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap">
-                    {t('agent.uploads')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" />
-                </span>
-            ) : (
-                t('agent.uploads')
-            ),
-            content: withTabBoundary(t('agent.uploads'), <UploadedDocumentsTab files={processingFiles} />),
             is_allowed: true,
         },
         {
