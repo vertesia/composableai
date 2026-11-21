@@ -464,6 +464,31 @@ describe('generateDocumentProperties', () => {
             );
         });
 
+        it('invalidates extraction when the file name or folder changes', () => {
+            const base = { source: 'text' as const, interactionName: 'sys:ExtractInformation', text_etag: 't1' };
+            const named = computeExtractionFingerprint({
+                ...base,
+                file_context: { file_name: 'Mid-Tier_Schedule_16.docx', location: '/sp/Legal/Templates' },
+            });
+            expect(named).not.toBe(computeExtractionFingerprint(base));
+            expect(
+                computeExtractionFingerprint({
+                    ...base,
+                    file_context: { file_name: 'MSC_Schedule_16.docx', location: '/sp/Legal/Templates' },
+                }),
+            ).not.toBe(named);
+            expect(
+                computeExtractionFingerprint({
+                    ...base,
+                    file_context: { file_name: 'Mid-Tier_Schedule_16.docx', location: '/sp/Legal/Archive' },
+                }),
+            ).not.toBe(named);
+            // Callers that pass no file context keep the hashes they stored before.
+            expect(computeExtractionFingerprint({ ...base, file_context: undefined })).toBe(
+                computeExtractionFingerprint(base),
+            );
+        });
+
         it('invalidates extraction when the inference profile changes', () => {
             const base = { source: 'vision' as const, interactionName: 'sys:ExtractInformation' };
             const fingerprint = computeExtractionFingerprint({ ...base, config: { inference_profile: 'profile-1' } });
