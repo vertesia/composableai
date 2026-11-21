@@ -73,6 +73,7 @@ import {
     getToolApprovalResponseMetadata,
     hasRequestInputUx,
     isRequestInputAnswered,
+    isRequestInputResolvedByToolApprovalEvent,
     isToolApprovalAnswerHidden,
     isToolApprovalRequestInput,
     isToolApprovalRequestInputHidden,
@@ -1152,7 +1153,13 @@ function buildSyntheticToolApprovalDecisionMessages(
 
         const toolApproval = getToolApprovalRecord(message);
         const approvalKey = getApprovalKeyFromToolApproval(toolApproval);
-        if (!toolApproval || !approvalKey || resolvedToolApprovalKeys.has(approvalKey)) return;
+        if (
+            !toolApproval ||
+            !approvalKey ||
+            isRequestInputResolvedByToolApprovalEvent(message, resolvedToolApprovalKeys)
+        ) {
+            return;
+        }
 
         const workstreamId = getWorkstreamId(message);
         let responseMessage: AgentMessage | undefined;
