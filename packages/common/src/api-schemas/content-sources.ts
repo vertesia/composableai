@@ -21,6 +21,16 @@ export const ContentSourceSyncSettingsSchema = z
             .min(CONTENT_SOURCE_MIN_SYNC_INTERVAL_MINUTES)
             .max(CONTENT_SOURCE_MAX_SYNC_INTERVAL_MINUTES)
             .meta({ description: 'Minutes between two scheduled syncs, from one scheduled time to the next.' }),
+        notifications: z
+            .boolean()
+            .meta({
+                description:
+                    'Also sync as soon as the system notifies a change, instead of waiting for the next scheduled ' +
+                    'sync. Off unless set to `true`. Needs `enabled`, a system that sends change notifications ' +
+                    '(SharePoint) and a region where they are available: the status says whether they are active. ' +
+                    'When absent in an update, the stored value is kept.',
+            })
+            .optional(),
     })
     .meta({
         id: 'ContentSourceSyncSettings',
@@ -367,8 +377,8 @@ export const ContentSourceStatusSchema = z
         permissions: ContentSourcePermissionStatusSchema.optional(),
         notifications: ContentSourceNotificationStatusSchema.meta({
             description:
-                "The state of the source's change notifications. Absent when its system has none, when scheduled " +
-                'sync is disabled, or before the first attempt to subscribe.',
+                "The state of the source's change notifications. Absent unless the source asks for them with " +
+                '`sync.notifications`, and before the first attempt to subscribe.',
         }).optional(),
         current_round: ContentSourceSyncRoundSchema.optional(),
         last_round: ContentSourceSyncRoundSchema.optional(),

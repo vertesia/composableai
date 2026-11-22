@@ -2374,6 +2374,7 @@ export type SharePointContentSourcePermissions = {
 export type ContentSourceSyncSettings = {
     enabled: boolean;
     interval_minutes: number;
+    notifications?: boolean | undefined;
 };
 /** Registers a content source. */
 export type CreateContentSourcePayload = CreateSharePointContentSourcePayload | CreateBoxContentSourcePayload;
