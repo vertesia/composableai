@@ -38,6 +38,59 @@ export const ContentObjectProcessingPrioritySchema = z
 
 export const CostExportCsvResponseSchema = z.string().meta({ id: 'CostExportCsvResponse' });
 
+export const ExtractionNormalizationSchema = z
+    .strictObject({
+        path: z.string().meta({ description: 'Property path of the value, such as `parties[0].name`.' }),
+        rule: z.string().meta({
+            description:
+                'What was rewritten: `enum` (case, separators or accents matched an allowed value), `type` (a number, boolean or string given in another JSON type), `format` (a date or date-time rewritten to its ISO form), `pattern` (the one substring matching the pattern was kept), `wrap` (a single value wrapped in an array) or `unknown_property` (a property the schema does not allow was dropped). New rules may be added.',
+        }),
+    })
+    .meta({
+        id: 'ExtractionNormalization',
+        description: 'A deterministic rewrite applied to an extracted value so that it conforms to the schema.',
+    });
+
+export const ExtractionValidationErrorSchema = z
+    .strictObject({
+        path: z.string().meta({ description: 'Property path of the value, such as `parties[0].name`.' }),
+        error: z.string().meta({ description: 'Why the value did not conform to the schema.' }),
+    })
+    .meta({
+        id: 'ExtractionValidationError',
+        description: 'An extracted value that did not conform to the schema and was not stored.',
+    });
+
+export const ExtractionRepairSchema = z
+    .strictObject({
+        fields: z.array(z.string()).meta({ description: 'Top-level properties the repair call was asked for.' }),
+        filled: z.array(z.string()).meta({ description: 'Properties the repair call filled with a valid value.' }),
+        failed: z
+            .boolean()
+            .meta({ description: 'True when the repair call itself failed; the first extraction was kept.' })
+            .optional(),
+    })
+    .meta({
+        id: 'ExtractionRepair',
+        description:
+            'The one extra extraction call made when the first result had invalid values, or left empty a property whose description says how to derive it from properties that were filled.',
+    });
+
+export const ExtractionReportSchema = z
+    .strictObject({
+        normalized: z.array(ExtractionNormalizationSchema).optional(),
+        cleared: z
+            .array(ExtractionValidationErrorSchema)
+            .meta({ description: 'Values that still did not conform after the repair call, and were not stored.' })
+            .optional(),
+        repair: ExtractionRepairSchema.optional(),
+    })
+    .meta({
+        id: 'ExtractionReport',
+        description:
+            'How property extraction checked the model output against the content type schema. Present only when something was rewritten, repaired or dropped.',
+    });
+
 export const GenerationRunMetadataSchema = z
     .strictObject({
         id: z.string(),
@@ -51,6 +104,7 @@ export const GenerationRunMetadataSchema = z
                     'Fingerprint of the inputs used by property extraction (content etag, type + its object schema, source, instructions, interaction). Lets a later run skip re-extraction when nothing changed.',
             })
             .optional(),
+        extraction_report: ExtractionReportSchema.optional(),
     })
     .meta({ id: 'GenerationRunMetadata' });
 

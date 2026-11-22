@@ -219,6 +219,10 @@ export interface Location {
 }
 
 export type GenerationRunMetadata = Wire.GenerationRunMetadata;
+export type ExtractionReport = Wire.ExtractionReport;
+export type ExtractionNormalization = Wire.ExtractionNormalization;
+export type ExtractionValidationError = Wire.ExtractionValidationError;
+export type ExtractionRepair = Wire.ExtractionRepair;
 
 // Base rendition interface for document and audio
 export interface Rendition {
