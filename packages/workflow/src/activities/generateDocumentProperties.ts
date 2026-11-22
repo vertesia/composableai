@@ -1,6 +1,9 @@
 import { ApplicationFailure, log } from '@temporalio/activity';
+import { ServerError } from '@vertesia/api-fetch-client';
 import {
     type ContentMetadata,
+    type ExtractionReport,
+    type GenerationRunMetadata,
     type ContentSource,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
@@ -13,6 +16,7 @@ import {
 } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { contentHash } from '../utils/blobs.js';
+import { validateAndRepairExtraction } from '../utils/extraction-validation.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
 import {
     executeInteractionFromActivity,
@@ -84,7 +88,11 @@ export interface GenerateDocumentProperties extends DSLActivitySpec<GenerateDocu
     name: 'generateDocumentProperties';
 }
 export type GenerateDocumentPropertiesResult =
-    | { status: 'completed' }
+    | {
+          status: 'completed';
+          /** How the model output was checked against the schema; absent when it conformed as returned. */
+          report?: ExtractionReport;
+      }
     | { status: 'failed'; error: string }
     | { document: string; status: 'skipped'; message: string };
 
@@ -332,24 +340,68 @@ export async function generateDocumentProperties(
 
     log.debug(`Extracted information from object ${objectId} with type ${type.name}`, { runId: infoRes.id });
     const extracted = infoRes.result.object<JSONObject>() ?? {};
+    const checked = await validateAndRepairExtraction(extracted, {
+        extractionSchema,
+        objectSchema: type.object_schema,
+        instructions: params.instructions,
+        repair: async (repairSchema, instructions) => {
+            const repairRes = await executeInteractionFromActivity(
+                client,
+                interactionName,
+                {
+                    ...params,
+                    include_previous_error: false,
+                    result_schema: repairSchema as typeof extractionSchema,
+                    validate_result: type.strict_mode,
+                },
+                { ...promptData, extraction_instructions: instructions },
+                payload.debug_mode ?? false,
+            );
+            log.info(`Ran the extraction repair call for ${objectId}`, { runId: repairRes.id, firstRunId: infoRes.id });
+            return repairRes.result.object<JSONObject>() ?? {};
+        },
+        onRepairError: (error) => {
+            log.warn(`Extraction repair call failed for ${objectId}; keeping the first extraction`, {
+                error: toRetryableError(error).message,
+            });
+        },
+    });
+    const report = checked.report;
+    if (report) {
+        log.info(`Checked extracted properties of ${objectId} against the schema of ${type.name}`, {
+            runId: infoRes.id,
+            normalized: report.normalized?.length ?? 0,
+            cleared: report.cleared?.map((entry) => entry.path),
+            repair: report.repair,
+        });
+    }
     const existing =
         doc.properties && typeof doc.properties === 'object' && !Array.isArray(doc.properties)
             ? (doc.properties as Record<string, unknown>)
             : {};
-    const properties = mergePreservingNonExtractable(existing, extracted, type.object_schema) as JSONObject;
-    await client.objects.update(
-        doc.id,
-        {
-            properties,
-            generation_run_info: {
-                id: infoRes.id,
-                date: new Date().toISOString(),
-                model: infoRes.modelId ?? '',
-                extraction_fingerprint: extractionFingerprint,
-            },
-        },
-        { suppressWorkflows: true },
-    );
+    const properties = mergePreservingNonExtractable(existing, checked.properties, type.object_schema) as JSONObject;
+    const runInfo: GenerationRunMetadata = {
+        id: infoRes.id,
+        date: new Date().toISOString(),
+        model: infoRes.modelId ?? '',
+        extraction_fingerprint: extractionFingerprint,
+    };
+    try {
+        await client.objects.update(
+            doc.id,
+            { properties, generation_run_info: report ? { ...runInfo, extraction_report: report } : runInfo },
+            { suppressWorkflows: true },
+        );
+    } catch (error: unknown) {
+        // A server older than `extraction_report` rejects the unknown field: store the properties without it.
+        if (!report || !(error instanceof ServerError) || error.status !== 400) {
+            throw error;
+        }
+        log.warn(`Server rejected the extraction report of ${objectId}; storing the properties without it`, {
+            error: error.message,
+        });
+        await client.objects.update(doc.id, { properties, generation_run_info: runInfo }, { suppressWorkflows: true });
+    }
 
-    return { status: 'completed' };
+    return report ? { status: 'completed', report } : { status: 'completed' };
 }
