@@ -8981,6 +8981,25 @@ export type GenerationRunMetadata = {
     model: string;
     target?: string | undefined;
     extraction_fingerprint?: string | undefined;
+    extraction_report?: ExtractionReport | undefined;
+};
+export type ExtractionReport = {
+    normalized?: ExtractionNormalization[] | undefined;
+    cleared?: ExtractionValidationError[] | undefined;
+    repair?: ExtractionRepair | undefined;
+};
+export type ExtractionNormalization = {
+    path: string;
+    rule: string;
+};
+export type ExtractionValidationError = {
+    path: string;
+    error: string;
+};
+export type ExtractionRepair = {
+    fields: string[];
+    filled: string[];
+    failed?: boolean | undefined;
 };
 export type Transcript = {
     text?: string | undefined;
@@ -12676,6 +12695,10 @@ export interface ApiComponentTypes {
     ProcessScriptResourceMap: ProcessScriptResourceMap;
     ProcessResourcesDefinition: ProcessResourcesDefinition;
     GenerationRunMetadata: GenerationRunMetadata;
+    ExtractionReport: ExtractionReport;
+    ExtractionNormalization: ExtractionNormalization;
+    ExtractionValidationError: ExtractionValidationError;
+    ExtractionRepair: ExtractionRepair;
     ContentObjectUserPermissions: ContentObjectUserPermissions;
     ContentSource: ContentSource;
     ContentObjectStatus: ContentObjectStatusWire;

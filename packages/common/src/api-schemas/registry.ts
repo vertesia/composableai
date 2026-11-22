@@ -1827,6 +1827,10 @@ const PROCESS_SCRIPT_SCHEMAS = {
 
 const CONTENT_OBJECT_SCHEMAS = {
     GenerationRunMetadata: ContentSchemas.GenerationRunMetadataSchema,
+    ExtractionReport: ContentSchemas.ExtractionReportSchema,
+    ExtractionNormalization: ContentSchemas.ExtractionNormalizationSchema,
+    ExtractionValidationError: ContentSchemas.ExtractionValidationErrorSchema,
+    ExtractionRepair: ContentSchemas.ExtractionRepairSchema,
     ContentObjectUserPermissions: ContentSchemas.ContentObjectUserPermissionsSchema,
     ContentSource: ContentSchemas.ContentSourceSchema,
     ContentObjectStatus: ContentSchemas.ContentObjectStatusSchema,
@@ -3229,6 +3233,10 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ProcessContextDefinition',
     'ProcessScriptInlineSource',
     'GenerationRunMetadata',
+    'ExtractionReport',
+    'ExtractionNormalization',
+    'ExtractionValidationError',
+    'ExtractionRepair',
     'ContentObjectUserPermissions',
     'RevisionInfo',
     'ContentSource',

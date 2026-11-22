@@ -22,6 +22,22 @@ describe('schemaForExtraction', () => {
         expect((filtered.properties as Record<string, unknown>).po_number).toEqual({ type: 'string' });
     });
 
+    it('drops the x-derived-from annotation from the extraction copy', () => {
+        const schema = {
+            type: 'object',
+            properties: {
+                term: { type: 'string' },
+                expiration_date: { type: 'string', format: 'date', 'x-derived-from': ['term'] },
+            },
+        };
+        const filtered = schemaForExtraction(schema);
+        expect((filtered.properties as Record<string, unknown>).expiration_date).toEqual({
+            type: 'string',
+            format: 'date',
+        });
+        expect(schema.properties.expiration_date['x-derived-from']).toEqual(['term']);
+    });
+
     it('drops nested and array-item properties with x-extract: false', () => {
         const schema = {
             type: 'object',

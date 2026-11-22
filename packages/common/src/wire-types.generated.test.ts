@@ -3859,6 +3859,22 @@ interface Checks {
         W.GenerationRunMetadata,
         z.infer<typeof import('./api-schemas/content.js').GenerationRunMetadataSchema>
     >;
+    ExtractionReport: Same<
+        W.ExtractionReport,
+        z.infer<typeof import('./api-schemas/content.js').ExtractionReportSchema>
+    >;
+    ExtractionNormalization: Same<
+        W.ExtractionNormalization,
+        z.infer<typeof import('./api-schemas/content.js').ExtractionNormalizationSchema>
+    >;
+    ExtractionValidationError: Same<
+        W.ExtractionValidationError,
+        z.infer<typeof import('./api-schemas/content.js').ExtractionValidationErrorSchema>
+    >;
+    ExtractionRepair: Same<
+        W.ExtractionRepair,
+        z.infer<typeof import('./api-schemas/content.js').ExtractionRepairSchema>
+    >;
     Transcript: Same<W.Transcript, z.infer<typeof import('./api-schemas/content.js').TranscriptSchema>>;
     TranscriptSegment: Same<
         W.TranscriptSegment,
@@ -8156,6 +8172,22 @@ interface Checks {
         W.ApiComponentTypes['GenerationRunMetadata'],
         z.infer<typeof import('./api-schemas/content.js').GenerationRunMetadataSchema>
     >;
+    'component:ExtractionReport': Same<
+        W.ApiComponentTypes['ExtractionReport'],
+        z.infer<typeof import('./api-schemas/content.js').ExtractionReportSchema>
+    >;
+    'component:ExtractionNormalization': Same<
+        W.ApiComponentTypes['ExtractionNormalization'],
+        z.infer<typeof import('./api-schemas/content.js').ExtractionNormalizationSchema>
+    >;
+    'component:ExtractionValidationError': Same<
+        W.ApiComponentTypes['ExtractionValidationError'],
+        z.infer<typeof import('./api-schemas/content.js').ExtractionValidationErrorSchema>
+    >;
+    'component:ExtractionRepair': Same<
+        W.ApiComponentTypes['ExtractionRepair'],
+        z.infer<typeof import('./api-schemas/content.js').ExtractionRepairSchema>
+    >;
     'component:ContentObjectUserPermissions': Same<
         W.ApiComponentTypes['ContentObjectUserPermissions'],
         z.infer<typeof import('./api-schemas/content.js').ContentObjectUserPermissionsSchema>
@@ -12079,6 +12111,10 @@ const checks: Checks = {
     ContentObjectApiResponse: true,
     ProjectedContentObjectApiResponse: true,
     GenerationRunMetadata: true,
+    ExtractionReport: true,
+    ExtractionNormalization: true,
+    ExtractionValidationError: true,
+    ExtractionRepair: true,
     Transcript: true,
     TranscriptSegment: true,
     ContentSource: true,
@@ -13208,6 +13244,10 @@ const checks: Checks = {
     'component:ProcessScriptResourceMap': true,
     'component:ProcessResourcesDefinition': true,
     'component:GenerationRunMetadata': true,
+    'component:ExtractionReport': true,
+    'component:ExtractionNormalization': true,
+    'component:ExtractionValidationError': true,
+    'component:ExtractionRepair': true,
     'component:ContentObjectUserPermissions': true,
     'component:ContentSource': true,
     'component:ContentObjectStatus': true,
@@ -13932,6 +13972,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2891);
+        expect(Object.keys(checks)).toHaveLength(2899);
     });
 });
