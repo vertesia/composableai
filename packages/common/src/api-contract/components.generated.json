@@ -33086,6 +33086,96 @@
       }
     }
   },
+  "ExtractionReport": {
+    "type": "object",
+    "properties": {
+      "normalized": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ExtractionNormalization"
+        }
+      },
+      "cleared": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ExtractionValidationError"
+        },
+        "description": "Values that still did not conform after the repair call, and were not stored."
+      },
+      "repair": {
+        "$ref": "#/components/schemas/ExtractionRepair"
+      }
+    },
+    "additionalProperties": false,
+    "description": "How property extraction checked the model output against the content type schema. Present only when something was rewritten, repaired or dropped."
+  },
+  "ExtractionNormalization": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "description": "Property path of the value, such as `parties[0].name`."
+      },
+      "rule": {
+        "type": "string",
+        "description": "What was rewritten: `enum` (case, separators or accents matched an allowed value), `type` (a number, boolean or string given in another JSON type), `format` (a date or date-time rewritten to its ISO form), `pattern` (the one substring matching the pattern was kept), `wrap` (a single value wrapped in an array) or `unknown_property` (a property the schema does not allow was dropped). New rules may be added."
+      }
+    },
+    "required": [
+      "path",
+      "rule"
+    ],
+    "additionalProperties": false,
+    "description": "A deterministic rewrite applied to an extracted value so that it conforms to the schema."
+  },
+  "ExtractionValidationError": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "description": "Property path of the value, such as `parties[0].name`."
+      },
+      "error": {
+        "type": "string",
+        "description": "Why the value did not conform to the schema."
+      }
+    },
+    "required": [
+      "path",
+      "error"
+    ],
+    "additionalProperties": false,
+    "description": "An extracted value that did not conform to the schema and was not stored."
+  },
+  "ExtractionRepair": {
+    "type": "object",
+    "properties": {
+      "fields": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Top-level properties the repair call was asked for."
+      },
+      "filled": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Properties the repair call filled with a valid value."
+      },
+      "failed": {
+        "type": "boolean",
+        "description": "True when the repair call itself failed; the first extraction was kept."
+      }
+    },
+    "required": [
+      "fields",
+      "filled"
+    ],
+    "additionalProperties": false,
+    "description": "The one extra extraction call made when the first result had invalid values, or left empty a property whose description says how to derive it from properties that were filled."
+  },
   "GenerationRunMetadata": {
     "type": "object",
     "properties": {
@@ -33104,6 +33194,9 @@
       "extraction_fingerprint": {
         "type": "string",
         "description": "Fingerprint of the inputs used by property extraction (content etag, type + its object schema, source, instructions, interaction). Lets a later run skip re-extraction when nothing changed."
+      },
+      "extraction_report": {
+        "$ref": "#/components/schemas/ExtractionReport"
       }
     },
     "required": [
