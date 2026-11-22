@@ -2,11 +2,11 @@ import { ApplicationFailure, log } from '@temporalio/activity';
 import { ServerError } from '@vertesia/api-fetch-client';
 import {
     type ContentMetadata,
-    type ExtractionReport,
-    type GenerationRunMetadata,
     type ContentSource,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
+    type ExtractionReport,
+    type GenerationRunMetadata,
     type InteractionExecutionConfiguration,
     type JSONObject,
     mergePreservingNonExtractable,
