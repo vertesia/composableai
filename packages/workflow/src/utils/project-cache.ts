@@ -1,6 +1,6 @@
-import { Context } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
 import type { Project } from '@vertesia/common';
+import { currentActivitySignal } from './activity-info.js';
 
 /**
  * Per-process cache of projects, keyed by project ID.
@@ -103,15 +103,6 @@ function waitUnlessAborted<T>(promise: Promise<T>, signal: AbortSignal | undefin
         signal.addEventListener('abort', onAbort, { once: true });
         void promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
     });
-}
-
-function currentActivitySignal(): AbortSignal | undefined {
-    try {
-        return Context.current().cancellationSignal;
-    } catch {
-        // Called outside an activity, e.g. by tests or utility code.
-        return undefined;
-    }
 }
 
 /** Drop every cached project. Meant for tests. */

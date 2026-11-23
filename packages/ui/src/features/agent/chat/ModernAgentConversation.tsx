@@ -682,7 +682,7 @@ export interface ModernAgentConversationProps extends AgentBudgetRequestOverride
     onAgentWorkingChange?: (isWorking: boolean) => void;
     /** Called when processingFiles state changes (for external progress display) */
     onProcessingFilesChange?: (files: Map<string, ConversationFile>) => void;
-    /** Processing files to display in the right panel Uploads tab */
+    /** @deprecated The Uploads tab has been removed. */
     processingFiles?: Map<string, ConversationFile>;
     /** Called when plans change (for external plan panel) */
     onPlansChange?: (plans: Array<{ plan: Plan; timestamp: number }>, activePlanIndex: number) => void;
@@ -731,7 +731,7 @@ export interface ModernAgentConversationProps extends AgentBudgetRequestOverride
     hidePlanPanel?: boolean;
     /** Hide workstream tabs */
     hideWorkstreamTabs?: boolean;
-    /** Enable or disable the internal right panel (plan/workstreams/documents/uploads) */
+    /** Enable or disable the internal right panel (plan/workstreams/documents) */
     showRightPanel?: boolean;
     /** Hide the default file upload */
     hideFileUpload?: boolean;
@@ -1519,7 +1519,6 @@ function ModernAgentConversationInner({
     onMessage,
     onAgentWorkingChange,
     onProcessingFilesChange,
-    processingFiles: processingFilesProp,
     // External plan panel API
     onPlansChange,
     onWorkstreamStatusChange,
@@ -2094,7 +2093,7 @@ function ModernAgentConversationInner({
     // ────────────────────────────────────────────
     // Unified right panel state
     // ────────────────────────────────────────────
-    type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'payload' | 'conversation';
+    type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'artifacts' | 'payload' | 'conversation';
     const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab | undefined>(
         conversationContent || conversationTab ? 'conversation' : undefined,
     );
@@ -3178,7 +3177,7 @@ function ModernAgentConversationInner({
                         </div>
                     )}
 
-                    {/* Unified Right Panel — Plan | Workstreams | Documents | Uploads */}
+                    {/* Unified Right Panel */}
                     {isRightPanelVisible && (
                         <>
                             {!conversationTab && (
@@ -3246,8 +3245,6 @@ function ModernAgentConversationInner({
                                     onUpdateDocumentTitle={updateDocumentTitle}
                                     docRefreshKey={docRefreshKey}
                                     runId={agentRunId}
-                                    // Uploads
-                                    processingFiles={processingFilesProp ?? processingFiles}
                                     // Artifacts
                                     showArtifacts={showArtifacts}
                                     artifactRefreshKey={selectedArtifactRefresh.key}

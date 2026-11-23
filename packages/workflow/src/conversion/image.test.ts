@@ -16,7 +16,11 @@ vi.mock('@temporalio/activity', () => ({
 }));
 
 // Record the arguments of every promisified `convert` call, then run the real command.
-const { convertCalls } = vi.hoisted(() => ({ convertCalls: [] as string[][] }));
+const { convertCalls, imageMagick } = vi.hoisted(() => ({
+    convertCalls: [] as string[][],
+    // ImageMagick commands running now, the most that ever ran at once, and the thread limit each one was given.
+    imageMagick: { running: 0, highWater: 0, threadLimits: [] as Array<string | undefined> },
+}));
 vi.mock('node:child_process', async (importOriginal) => {
     const actual = await importOriginal<typeof import('node:child_process')>();
     const { promisify } = await import('node:util');
@@ -28,13 +32,20 @@ vi.mock('node:child_process', async (importOriginal) => {
         if (file === 'convert') {
             convertCalls.push([...args]);
         }
-        return execFileAsync(file, args, options);
+        if (file !== 'convert' && file !== 'identify') {
+            return execFileAsync(file, args, options);
+        }
+        imageMagick.running++;
+        imageMagick.highWater = Math.max(imageMagick.highWater, imageMagick.running);
+        imageMagick.threadLimits.push(options.env?.MAGICK_THREAD_LIMIT);
+        return execFileAsync(file, args, options).finally(() => imageMagick.running--);
     };
     return { ...actual, execFile };
 });
 
 // Import after mocking
 import { imageResizer } from '../conversion/image.js';
+import { CPU_SLOTS_ENV } from '../utils/cpu-slots.js';
 
 const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
@@ -394,5 +405,31 @@ describe('ImageMagick image resizing', () => {
             type: 'ImageConversionError',
             nonRetryable: true,
         });
+    });
+
+    test('should run its ImageMagick commands in the shared CPU slots, one thread each', async () => {
+        const previous = process.env[CPU_SLOTS_ENV];
+        process.env[CPU_SLOTS_ENV] = '2';
+        imageMagick.highWater = 0;
+        imageMagick.threadLimits.length = 0;
+        try {
+            const inputImagePath = path.join(__dirname, '../../fixtures', 'cat-picture.jpg');
+            // Two uploads of 4 pages at once, as two activities would.
+            const outputs = await Promise.all(
+                Array.from({ length: 8 }, () => imageResizer(inputImagePath, 64, 'jpeg')),
+            );
+            for (const output of outputs) {
+                fs.rmSync(output);
+            }
+            expect(imageMagick.highWater).toBe(2);
+            expect(imageMagick.threadLimits.length).toBe(16); // identify and convert for each image
+            expect(new Set(imageMagick.threadLimits)).toEqual(new Set(['1']));
+        } finally {
+            if (previous === undefined) {
+                delete process.env[CPU_SLOTS_ENV];
+            } else {
+                process.env[CPU_SLOTS_ENV] = previous;
+            }
+        }
     });
 });
