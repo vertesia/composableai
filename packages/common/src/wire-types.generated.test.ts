@@ -5414,6 +5414,14 @@ interface Checks {
         W.ToolPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').ToolPathParamsSchema>
     >;
+    NotificationPathParams: Same<
+        W.NotificationPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').NotificationPathParamsSchema>
+    >;
+    ContentSourceRoundPathParams: Same<
+        W.ContentSourceRoundPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').ContentSourceRoundPathParamsSchema>
+    >;
     'component:CustomRoleDefinition': Same<
         W.ApiComponentTypes['CustomRoleDefinition'],
         z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionSchema>
@@ -11044,6 +11052,14 @@ interface Checks {
         W.ApiComponentTypes['ToolPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').ToolPathParamsSchema>
     >;
+    'component:NotificationPathParams': Same<
+        W.ApiComponentTypes['NotificationPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').NotificationPathParamsSchema>
+    >;
+    'component:ContentSourceRoundPathParams': Same<
+        W.ApiComponentTypes['ContentSourceRoundPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').ContentSourceRoundPathParamsSchema>
+    >;
     'component:WorkflowUsageQuery': Same<
         W.ApiComponentTypes['WorkflowUsageQuery'],
         z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageQuerySchema>
@@ -12545,6 +12561,8 @@ const checks: Checks = {
     ProjectAppCapabilityPathParams: true,
     EmbeddingTypePathParams: true,
     ToolPathParams: true,
+    NotificationPathParams: true,
+    ContentSourceRoundPathParams: true,
     'component:CustomRoleDefinition': true,
     'component:CustomRoleDefinitionArray': true,
     'component:CreateCustomRolePayload': true,
@@ -13954,6 +13972,8 @@ const checks: Checks = {
     'component:ProjectAppCapabilityPathParams': true,
     'component:EmbeddingTypePathParams': true,
     'component:ToolPathParams': true,
+    'component:NotificationPathParams': true,
+    'component:ContentSourceRoundPathParams': true,
     'component:WorkflowUsageQuery': true,
     'component:WorkflowUsageClass': true,
     'component:WorkflowUsageStanding': true,
@@ -13962,6 +13982,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2897);
+        expect(Object.keys(checks)).toHaveLength(2901);
     });
 });

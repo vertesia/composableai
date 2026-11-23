@@ -1044,7 +1044,10 @@ export const ListContentObjectExportsResponseSchema = z
 
 export const ExportPropertiesPayloadSchema = z
     .strictObject({
-        objectIds: z.array(z.string()),
+        // The export casts each ID to an ObjectId; an empty list exports every readable object.
+        objectIds: z
+            .array(z.string().regex(OBJECT_ID_PATTERN))
+            .meta({ description: 'Content object IDs, as 24 hexadecimal characters. Empty exports all objects.' }),
         // A pattern rather than an enum keeps the published type a string for existing SDK callers.
         type: z
             .string()
