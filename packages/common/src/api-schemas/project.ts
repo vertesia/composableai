@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { SupportedIntegrations } from '../integrations.js';
 import type * as Wire from '../wire-types.generated.js';
 import { ProjectConfigurationSchema } from './project-configuration.js';
+import { ManagedSharePointLibrarySchema } from './sharepoint-libraries.js';
 
 /**
  * Runtime API schemas for projects and project-scoped definitions.
@@ -202,6 +203,7 @@ export const ProjectSchema = z
         namespace: z.string(),
         description: z.string().optional(),
         account: z.string(),
+        sharepoint_library_binding: ManagedSharePointLibrarySchema.optional(),
         configuration: ProjectConfigurationSchema,
         integrations: z.record(z.string(), z.unknown()).optional(),
         plugins: z.array(z.string()),
@@ -224,7 +226,11 @@ export const ProjectSchema = z
  * added to either source schema is available to its update payload without a hand-written twin.
  * `annotations` and `last_activity_at` are vertesia-managed, so they are read-only.
  */
-export const UpdateProjectPayloadSchema = ProjectSchema.omit({ annotations: true, last_activity_at: true })
+export const UpdateProjectPayloadSchema = ProjectSchema.omit({
+    annotations: true,
+    last_activity_at: true,
+    sharepoint_library_binding: true,
+})
     .partial()
     .meta({ id: 'UpdateProjectPayload' });
 

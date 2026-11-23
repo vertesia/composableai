@@ -38,6 +38,8 @@ import { RefsApi } from './RefsApi.js';
 import RemoteMcpConnectionsApi from './RemoteMcpConnectionsApi.js';
 import { RunsApi } from './RunsApi.js';
 import SecretsApi from './SecretsApi.js';
+import { SharePointLibrariesApi } from './SharePointLibrariesApi.js';
+import SharePointOnboardingApi from './SharePointOnboardingApi.js';
 import SkillsApi from './SkillsApi.js';
 import { ZenoClient } from './store/client.js';
 import { VERSION, VERSION_HEADER } from './store/version.js';
@@ -143,6 +145,8 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     tokenServerUrl: string;
 
     oidcFederation: OidcFederationApi;
+    sharepointLibraries: SharePointLibrariesApi;
+    sharepointOnboarding: SharePointOnboardingApi;
     oauthClients: OAuthClientsApi;
     oauthGrants: OAuthGrantsApi;
     oauthServer: OAuthServerApi;
@@ -285,6 +289,8 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.onResponse = opts.onResponse;
         this.sessionTags = opts.sessionTags;
         this.oidcFederation = new OidcFederationApi(this);
+        this.sharepointLibraries = new SharePointLibrariesApi(this);
+        this.sharepointOnboarding = new SharePointOnboardingApi(this);
         this.oauthClients = new OAuthClientsApi(this);
         this.oauthGrants = new OAuthGrantsApi(this);
         this.oauthServer = new OAuthServerApi(this, this.tokenServerUrl);

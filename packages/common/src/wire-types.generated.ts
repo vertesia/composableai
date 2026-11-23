@@ -6728,6 +6728,7 @@ export type Project = {
     namespace: string;
     description?: string | undefined;
     account: string;
+    sharepoint_library_binding?: ManagedSharePointLibrary | undefined;
     configuration: ProjectConfiguration;
     integrations?: Record<string, unknown> | undefined;
     plugins: string[];
@@ -7471,6 +7472,132 @@ export type UpdateSecretRequest = {
 };
 export type DeleteSecretResponse = {
     ok: boolean;
+};
+export type ManagedSharePointLibrary = {
+    id: string;
+    tenant_id: string;
+    site_id: string;
+    site_url: string;
+    drive_id: string;
+    audience: 'uniform' | 'mirrored';
+    oauth_provider_id?: string | undefined;
+    lifecycle?: 'disconnecting' | 'disconnected' | undefined;
+};
+export type SharePointLibraryPathParams = {
+    bindingId: string;
+};
+export type ApproveSharePointLibraryPayload = {
+    manager_id: string;
+    reader_group_id: string;
+    audience: 'uniform' | 'mirrored';
+    project_name?: string | undefined;
+};
+export type ConfigureSharePointLibraryReaderPayload = {
+    oauth_provider_id: string;
+    permissions?: SharePointContentSourcePermissions | undefined;
+};
+export type SharePointLibraryApproval = {
+    manager_id: string;
+    reader_group_id: string;
+    audience: 'uniform' | 'mirrored';
+    project_name: string;
+    approved_by: string;
+    approved_at: string;
+};
+export type SharePointLibraryConnection = {
+    id: string;
+    tenant_id: string;
+    site_id: string;
+    list_id: string;
+    drive_id: string;
+    site_url: string;
+    library_url: string;
+    library_name: string;
+    project_name?: string | undefined;
+    audience?: 'uniform' | 'mirrored' | undefined;
+    can_manage: boolean;
+    stage:
+        | 'pending_approval'
+        | 'provisioning_project'
+        | 'configure_reader'
+        | 'ready'
+        | 'disconnecting'
+        | 'disconnected';
+    project_id?: string | undefined;
+    oauth_provider_id?: string | undefined;
+    source_id?: string | undefined;
+    approval?: SharePointLibraryApproval | undefined;
+    sync?: ContentSourceSummary | undefined;
+};
+export type SharePointLibraryConnectionArray = SharePointLibraryConnection[];
+export type ProjectSharePointLibraryResponse = {
+    library: SharePointLibraryConnection | null;
+};
+export type BeginSharePointOrganizationLinkPayload = {
+    tenant_id: string;
+};
+export type CompleteSharePointOrganizationLinkPayload = {
+    state: string;
+};
+export type SharePointOrganizationLinkAttempt = {
+    state: string;
+    expires_at: string;
+};
+export type SharePointOrganizations = {
+    organizations: SharePointOrganization[];
+};
+export type SharePointOrganization = {
+    tenant_id: string;
+    linked_at: string;
+};
+export type SharePointLibraryContext = {
+    site_hostname: string;
+    site_collection_id: string;
+    web_id: string;
+    list_id: string;
+};
+export type SharePointLibraryReceipt = {
+    id: string;
+    status:
+        | 'pending_resolution'
+        | 'awaiting_site_grant'
+        | 'library_unavailable'
+        | 'awaiting_approval'
+        | 'approved'
+        | 'connected'
+        | 'disconnected';
+};
+export type SharePointLibraryRequest = {
+    site_hostname: string;
+    site_collection_id: string;
+    web_id: string;
+    list_id: string;
+    id: string;
+    tenant_id: string;
+    binding_id?: string | undefined;
+    site_url?: string | undefined;
+    library_url?: string | undefined;
+    library_name?: string | undefined;
+    status:
+        | 'pending_resolution'
+        | 'awaiting_site_grant'
+        | 'library_unavailable'
+        | 'awaiting_approval'
+        | 'approved'
+        | 'connected'
+        | 'disconnected';
+    created_at: string;
+};
+export type SharePointLibraryRequests = {
+    requests: SharePointLibraryRequest[];
+    next_cursor?: string | undefined;
+};
+export type SharePointLibraryRequestsQuery = {
+    cursor?: string | undefined;
+};
+export type SharePointRequestProject = {
+    project_id: string;
+    source_id?: string | undefined;
 };
 /** Packaged workflows supported by event subscriptions. */
 export type SubscriptionWorkflowDefinition = {
@@ -12050,7 +12177,26 @@ export interface ApiComponentTypes {
     ContentTypeIntakePolicy: ContentTypeIntakePolicy;
     ProjectIntakeConfiguration: ProjectIntakeConfiguration;
     ProjectConfiguration: ProjectConfiguration;
+    ManagedSharePointLibrary: ManagedSharePointLibrary;
+    SharePointLibraryPathParams: SharePointLibraryPathParams;
+    BeginSharePointOrganizationLinkPayload: BeginSharePointOrganizationLinkPayload;
+    CompleteSharePointOrganizationLinkPayload: CompleteSharePointOrganizationLinkPayload;
+    SharePointOrganizationLinkAttempt: SharePointOrganizationLinkAttempt;
+    SharePointOrganization: SharePointOrganization;
+    SharePointOrganizations: SharePointOrganizations;
+    SharePointLibraryContext: SharePointLibraryContext;
+    SharePointLibraryReceipt: SharePointLibraryReceipt;
+    SharePointLibraryRequest: SharePointLibraryRequest;
+    SharePointLibraryRequests: SharePointLibraryRequests;
+    SharePointLibraryRequestsQuery: SharePointLibraryRequestsQuery;
+    SharePointRequestProject: SharePointRequestProject;
     Project: Project;
+    ApproveSharePointLibraryPayload: ApproveSharePointLibraryPayload;
+    ConfigureSharePointLibraryReaderPayload: ConfigureSharePointLibraryReaderPayload;
+    SharePointLibraryApproval: SharePointLibraryApproval;
+    SharePointLibraryConnection: SharePointLibraryConnection;
+    SharePointLibraryConnectionArray: SharePointLibraryConnectionArray;
+    ProjectSharePointLibraryResponse: ProjectSharePointLibraryResponse;
     UpdateProjectPayload: UpdateProjectPayload;
     UpdateProjectConfigurationPayload: UpdateProjectConfigurationPayload;
     ToolCollectionObject: ToolCollectionObject;

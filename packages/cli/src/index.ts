@@ -37,6 +37,8 @@ import { listProjects, projectInferenceBudget, useProject } from './projects/ind
 import { registerQuotaCommand } from './quota/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
+import { registerSharePointLibrariesCommand } from './sharepoint-libraries/index.js';
+import { registerSharePointOnboardingCommand } from './sharepoint-onboarding/index.js';
 import { errorMessage, getBooleanOption, hasStatus } from './utils/options.js';
 import { registerWorkflowsCommand } from './workflows/index.js';
 
@@ -149,6 +151,8 @@ authGit
 registerEnvsCommand(program);
 registerInferenceProfilesCommand(program);
 registerOidcFederationCommand(program);
+registerSharePointLibrariesCommand(program);
+registerSharePointOnboardingCommand(program);
 program
     .command('interactions [interaction]')
     .description('List the interactions available in the current project')
