@@ -22,8 +22,10 @@ interface UserSessionMenuProps {
     name?: string;
     picture?: string;
     user?: AuthTokenPayload;
+    /** Where the host app publishes its third-party notices. The menu links them only when it is set. */
+    noticesUrl?: string;
 }
-export function UserSessionMenu(_props: UserSessionMenuProps) {
+export function UserSessionMenu({ noticesUrl }: UserSessionMenuProps) {
     const { user, isLoading } = useUserSession();
     const [showModal, setShowModal] = useState(false);
 
@@ -39,7 +41,7 @@ export function UserSessionMenu(_props: UserSessionMenuProps) {
     } else {
         return (
             <div className="px-3">
-                <UserSessionPopup asMenuTrigger />
+                <UserSessionPopup asMenuTrigger noticesUrl={noticesUrl} />
             </div>
         );
     }
@@ -48,8 +50,9 @@ export function UserSessionMenu(_props: UserSessionMenuProps) {
 interface UserSessionPopupProps {
     asMenuTrigger?: boolean;
     className?: string;
+    noticesUrl?: string;
 }
-function UserSessionPopup({ className, asMenuTrigger = false }: UserSessionPopupProps) {
+function UserSessionPopup({ className, asMenuTrigger = false, noticesUrl }: UserSessionPopupProps) {
     const session = useUserSession();
     const navigate = useNavigate();
     const perms = useUserPermissions();
@@ -95,15 +98,16 @@ function UserSessionPopup({ className, asMenuTrigger = false }: UserSessionPopup
                                     Settings
                                 </MenuList.Item>
                             )}
-                            {/* The app writes its third-party notices at the root of its origin. */}
-                            <MenuList.Item
-                                className="px-2"
-                                href="/THIRD-PARTY-NOTICES.txt"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                {t('login.openSourceNotices')}
-                            </MenuList.Item>
+                            {noticesUrl && (
+                                <MenuList.Item
+                                    className="px-2"
+                                    href={noticesUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    {t('login.openSourceNotices')}
+                                </MenuList.Item>
+                            )}
                             <MenuList.Item className="px-2" onClick={() => session.logout()}>
                                 Sign out
                             </MenuList.Item>
