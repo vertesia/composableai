@@ -224,7 +224,7 @@ export const ProjectSchema = z
  *
  * `.partial()` keeps both update contracts tied to the corresponding response contract, so a field
  * added to either source schema is available to its update payload without a hand-written twin.
- * `annotations` and `last_activity_at` are vertesia-managed, so they are read-only.
+ * Annotations, last activity, and the SharePoint library binding are server-managed and read-only.
  */
 export const UpdateProjectPayloadSchema = ProjectSchema.omit({
     annotations: true,
