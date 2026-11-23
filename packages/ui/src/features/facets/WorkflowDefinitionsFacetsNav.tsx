@@ -19,6 +19,7 @@ interface WorkflowDefinitionsFacetsNavProps {
 }
 
 // Hook to create filter groups for workflow definitions
+/** @deprecated Workflow definitions are deprecated; this will be removed in a future release. */
 export function useWorkflowDefinitionsFilterGroups(facets: WorkflowDefinitionsFacetsNavProps['facets']): FilterGroup[] {
     const customFilterGroups: FilterGroup[] = [];
 
@@ -35,6 +36,8 @@ export function useWorkflowDefinitionsFilterGroups(facets: WorkflowDefinitionsFa
  * caller and passed in via `facets`; `filters`/`setFilters` are owned by the consuming
  * view, which applies them client-side (the `/definitions` endpoint returns all definitions
  * with no server filters).
+ *
+ * @deprecated Workflow definitions are deprecated; this will be removed in a future release.
  */
 export function WorkflowDefinitionsFacetsNav({ facets, filters, setFilters }: WorkflowDefinitionsFacetsNavProps) {
     const filterGroups = useWorkflowDefinitionsFilterGroups(facets);

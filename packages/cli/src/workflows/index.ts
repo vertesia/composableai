@@ -14,6 +14,11 @@ import {
 import { streamRun } from './streams.js';
 import { registerWorkflowUsage } from './usage.js';
 
+const DSL_DEPRECATION_WARNING =
+    'Warning: DSL workflow definitions are deprecated and will be removed. The server no longer creates, ' +
+    'updates or starts them; list, get and delete still work so you can export and clean up your definitions. ' +
+    'Use a workflow deployed on your own workers, an agent or a process instead.';
+
 export function registerWorkflowsCommand(program: Command) {
     const workflows = program.command('workflows');
     registerWorkflowUsage(program, workflows);
@@ -51,7 +56,14 @@ export function registerWorkflowsCommand(program: Command) {
             console.debug('Executing workflow', workflowName, 'with options', options);
             await executeWorkflowByName(program, workflowName, options);
         });
-    const definitions = workflows.command('definitions').description('Manage workflow definitions (deprecated).');
+    const definitions = workflows
+        .command('definitions')
+        .description(
+            'Manage workflow definitions (deprecated: DSL workflows can no longer be created, changed or started).',
+        );
+    definitions.hook('preAction', () => {
+        console.warn(DSL_DEPRECATION_WARNING);
+    });
 
     workflows
         .command('stream <workflowId> <runId>')

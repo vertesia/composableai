@@ -13,7 +13,7 @@ IMPORTANT: You MUST invoke the relevant skill using the Skill tool BEFORE starti
 | Adding tools, skills, interactions, types, templates, hooks, or subscriptions | `vertesia-tool-server-resource` |
 | Building or modifying React UI pages or components                            | `vertesia-ui`                   |
 | Calling the Vertesia client API (objects, workflows, interactions, files)     | `vertesia-api`                  |
-| Writing or debugging DSL workflows that call remote activities                | `vertesia-dsl-workflow`         |
+| Migrating a deprecated DSL workflow or remote activity                        | `vertesia-dsl-workflow`         |
 | Seeding the store with realistic demo objects                                 | `vertesia-demo-content`         |
 
 ### Typical "build a feature" loop
@@ -23,7 +23,7 @@ IMPORTANT: You MUST invoke the relevant skill using the Skill tool BEFORE starti
 3. Pick the implementation skill:
    - Backend resources (tools/skills/interactions/types/templates/hooks/subscriptions) → `vertesia-tool-server-resource`
    - UI page or component → `vertesia-ui`
-   - Multi-step orchestration → `vertesia-dsl-workflow`
+   - Multi-step orchestration → a process or an agent (`vertesia-tool-server-resource`); DSL workflows are deprecated
 4. Add `vertesia-api` whenever the implementation reads or writes the platform.
 5. Add `vertesia-demo-content` if you need real seed objects to exercise the feature end-to-end.
 

@@ -25,6 +25,9 @@ export type ActivityFn<ParamsT extends object = Record<string, unknown>> = (
 
 /**
  * An activity definition within an ActivityCollection.
+ *
+ * Deprecated: DSL workflows are deprecated and no longer start, so remote activities are never called. They will be
+ * removed in a future release.
  */
 export interface ActivityDefinition<ParamsT extends object = Record<string, unknown>> {
     /** Activity name (snake_case) */
@@ -48,6 +51,9 @@ export interface ActivityCollectionProperties extends CollectionProperties {
 /**
  * A collection of remote activities exposed by a tool server for DSL workflows.
  * Follows the same collection pattern as ToolCollection and SkillCollection.
+ *
+ * Deprecated: DSL workflows are deprecated and no longer start, so remote activities are never called. They will be
+ * removed in a future release.
  */
 export class ActivityCollection implements ICollection<ActivityDefinition> {
     name: string;

@@ -1,9 +1,13 @@
 ---
 name: vertesia-dsl-workflow
-description: Reference for DSL workflow definitions, remote activities, variable resolution, and conditions. Use when creating or debugging DSL workflows that call remote activities from plugins.
+description: Deprecated reference for DSL workflow definitions and remote activities. DSL workflows no longer start; use only to understand or migrate an existing definition.
 ---
 
-# DSL Workflows & Remote Activities
+# DSL Workflows & Remote Activities (deprecated)
+
+> **Deprecated.** The platform no longer creates, updates or starts DSL workflow definitions (410 Gone), so remote
+> activities are never called. Do not build new features on them: use a process, an agent, or a tool instead.
+> This skill only helps read or migrate an existing definition, and will be removed.
 
 DSL workflows are declarative step-by-step pipelines defined as JSON. They can call built-in activities and remote activities provided by plugins.
 
