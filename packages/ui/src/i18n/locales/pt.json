@@ -415,6 +415,7 @@
     "login.inviteRole": "Função: {{role}}",
     "login.invitedBy": "Convidado por {{name}}",
     "login.invitesIntro": "Você foi convidado a participar das seguintes contas. Aceite ou recuse cada convite.",
+    "login.openSourceNotices": "Avisos de código aberto",
     "login.reject": "Rejeitar",
     "login.reviewInvites": "Revisar convites",
     "login.terminal.account": "Conta",

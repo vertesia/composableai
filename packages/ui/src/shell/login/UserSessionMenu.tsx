@@ -14,6 +14,7 @@ import { useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import clsx from 'clsx';
 import { useState } from 'react';
+import { useUITranslation } from '../../i18n/index.js';
 import SignInModal from './SignInModal';
 import InfoList from './UserInfo';
 
@@ -52,6 +53,7 @@ function UserSessionPopup({ className, asMenuTrigger = false }: UserSessionPopup
     const session = useUserSession();
     const navigate = useNavigate();
     const perms = useUserPermissions();
+    const { t } = useUITranslation();
     const { user } = session;
     if (!session || !user) return null;
 
@@ -93,6 +95,15 @@ function UserSessionPopup({ className, asMenuTrigger = false }: UserSessionPopup
                                     Settings
                                 </MenuList.Item>
                             )}
+                            {/* The app writes its third-party notices at the root of its origin. */}
+                            <MenuList.Item
+                                className="px-2"
+                                href="/THIRD-PARTY-NOTICES.txt"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {t('login.openSourceNotices')}
+                            </MenuList.Item>
                             <MenuList.Item className="px-2" onClick={() => session.logout()}>
                                 Sign out
                             </MenuList.Item>
