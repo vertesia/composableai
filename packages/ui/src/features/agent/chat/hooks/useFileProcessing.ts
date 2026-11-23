@@ -2,6 +2,7 @@ import type { VertesiaClient } from '@vertesia/client';
 import { type ConversationFile, type ConversationFileRef, FileProcessingStatus } from '@vertesia/common';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { conversationFileArtifactPath, conversationFileName } from '../conversationFileName';
 
 export interface UseFileProcessingResult {
     processingFiles: Map<string, ConversationFile>;
@@ -168,7 +169,7 @@ export function useFileProcessing(
         async (files: File[]) => {
             for (const file of files) {
                 const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                const artifactPath = `files/${file.name}`;
+                const artifactPath = conversationFileArtifactPath(file.name);
                 const previewUrl = createPreviewUrl(file);
                 if (previewUrl) previewUrlsRef.current.set(fileId, previewUrl);
 
@@ -212,7 +213,7 @@ export function useFileProcessing(
                         if (removedFileIdsRef.current.has(fileId)) return;
                         await client.agents.sendSignal(agentRunId, 'FileUploaded', {
                             id: fileId,
-                            name: file.name,
+                            name: conversationFileName(file.name),
                             content_type: file.type || 'application/octet-stream',
                             reference: `artifact:${artifactPath}`,
                             artifact_path: artifactPath,
