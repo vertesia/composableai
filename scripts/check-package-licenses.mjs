@@ -15,19 +15,11 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_LICENSE = 'Apache-2.0';
 
 // Packages under another license. Add one only with the reason.
-const OTHER_LICENSES = new Map([
-    ['@koa-stack/body', { license: 'MIT', reason: 'koa-stack, an MIT library by Bogdan Stefanescu' }],
-    ['@koa-stack/router', { license: 'MIT', reason: 'koa-stack, an MIT library by Bogdan Stefanescu' }],
-    ['@koa-stack/server', { license: 'MIT', reason: 'koa-stack, an MIT library by Bogdan Stefanescu' }],
-    ['@koa-stack/tests', { license: 'MIT', reason: 'koa-stack, an MIT library by Bogdan Stefanescu' }],
-]);
+const OTHER_LICENSES = new Map([]);
 
 // Packages whose LICENSE file does not yet match their package.json. Each needs a decision; remove the
 // entry once the two agree.
-const KNOWN_MISMATCHES = new Map([
-    ['@vertesia/api-fetch-client', 'declares Apache-2.0, but its LICENSE is MIT (2023 Bogdan Stefanescu)'],
-    ['@vertesia/cli', 'declares Apache-2.0, but its LICENSE is MIT (2023 Bogdan Stefanescu)'],
-]);
+const KNOWN_MISMATCHES = new Map([]);
 
 // Folders that are not packages of this repository.
 const NOT_CHECKED = new Map([
