@@ -294,8 +294,7 @@ function mockEnvironment(info?: ConstructorParameters<typeof MockActivityEnviron
     return {
         run<P extends unknown[], R>(activity: (...parameters: P) => Promise<R>, ...args: P): Promise<R> {
             const scoped = (...parameters: P) => withWorkflowHttpExecution(() => activity(...parameters));
-            // Temporal's result type is a separate generic and is not inferred from its function constraint.
-            return environment.run<P, R, typeof scoped>(scoped, ...args);
+            return environment.run(scoped, ...args);
         },
         cancel: () => environment.cancel(),
     };
