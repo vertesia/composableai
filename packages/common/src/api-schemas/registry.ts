@@ -803,7 +803,7 @@ import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js
 import * as RunBudgetSchemas from './run-budget.js';
 import * as SecretSchemas from './secrets.js';
 import * as SharePointLibrarySchemas from './sharepoint-libraries.js';
-import * as SharePointOnboardingSchemas from './sharepoint-onboarding.js';
+import * as SharePointEntry from './sharepoint-onboarding.js';
 import {
     ColumnLayoutSchema,
     ContentObjectTypeCatalogEntryArraySchema,
@@ -1023,18 +1023,17 @@ const PROJECT_AND_APP_SCHEMAS = {
     ProjectConfiguration: ProjectConfigurationSchema,
     ManagedSharePointLibrary: SharePointLibrarySchemas.ManagedSharePointLibrarySchema,
     SharePointLibraryPathParams: SharePointLibrarySchemas.SharePointLibraryPathParamsSchema,
-    BeginSharePointOrganizationLinkPayload: SharePointOnboardingSchemas.BeginSharePointOrganizationLinkPayloadSchema,
-    CompleteSharePointOrganizationLinkPayload:
-        SharePointOnboardingSchemas.CompleteSharePointOrganizationLinkPayloadSchema,
-    SharePointOrganizationLinkAttempt: SharePointOnboardingSchemas.SharePointOrganizationLinkAttemptSchema,
-    SharePointOrganization: SharePointOnboardingSchemas.SharePointOrganizationSchema,
-    SharePointOrganizations: SharePointOnboardingSchemas.SharePointOrganizationsSchema,
-    SharePointLibraryContext: SharePointOnboardingSchemas.SharePointLibraryContextSchema,
-    SharePointLibraryReceipt: SharePointOnboardingSchemas.SharePointLibraryReceiptSchema,
-    SharePointLibraryRequest: SharePointOnboardingSchemas.SharePointLibraryRequestSchema,
-    SharePointLibraryRequests: SharePointOnboardingSchemas.SharePointLibraryRequestsSchema,
-    SharePointLibraryRequestsQuery: SharePointOnboardingSchemas.SharePointLibraryRequestsQuerySchema,
-    SharePointRequestProject: SharePointOnboardingSchemas.SharePointRequestProjectSchema,
+    BeginSharePointOrganizationLinkPayload: SharePointEntry.BeginSharePointOrganizationLinkPayloadSchema,
+    CompleteSharePointOrganizationLinkPayload: SharePointEntry.CompleteSharePointOrganizationLinkPayloadSchema,
+    SharePointOrganizationLinkAttempt: SharePointEntry.SharePointOrganizationLinkAttemptSchema,
+    SharePointOrganization: SharePointEntry.SharePointOrganizationSchema,
+    SharePointOrganizations: SharePointEntry.SharePointOrganizationsSchema,
+    SharePointLibraryContext: SharePointEntry.SharePointLibraryContextSchema,
+    SharePointLibraryReceipt: SharePointEntry.SharePointLibraryReceiptSchema,
+    SharePointLibraryRequest: SharePointEntry.SharePointLibraryRequestSchema,
+    SharePointLibraryRequests: SharePointEntry.SharePointLibraryRequestsSchema,
+    SharePointLibraryRequestsQuery: SharePointEntry.SharePointLibraryRequestsQuerySchema,
+    SharePointRequestProject: SharePointEntry.SharePointRequestProjectSchema,
     Project: ProjectSchema,
     ApproveSharePointLibraryPayload: SharePointLibrarySchemas.ApproveSharePointLibraryPayloadSchema,
     ConfigureSharePointLibraryReaderPayload: SharePointLibrarySchemas.ConfigureSharePointLibraryReaderPayloadSchema,
