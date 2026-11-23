@@ -39,6 +39,11 @@ beforeAll(() => {
         version: '0.1.0',
         licenses: [{ type: 'MIT' }, { type: 'Apache-2.0' }],
     });
+    writePackage(
+        join(modules, 'copied-runtime'),
+        { name: 'copied-runtime', version: '0.5.0', license: 'MIT' },
+        { LICENSE: 'MIT text', 'ThirdPartyNotices.txt': 'Included projects' },
+    );
     writePackage(join(modules, 'internal'), { name: 'internal', version: '1.0.0', private: true });
     writePackage(join(modules, 'proprietary'), { name: 'proprietary', version: '1.0.0', license: 'UNLICENSED' });
 });
@@ -122,5 +127,35 @@ describe('thirdPartyLicenses plugin', () => {
         );
         expect(emitted.map((f) => f.fileName)).toEqual(['THIRD-PARTY-NOTICES.txt', 'third-party-licenses.json']);
         expect(emitted[0].source).toContain('left-pad 1.3.0');
+    });
+
+    it('adds the packages copied into the output without the bundler', () => {
+        const emitted: { fileName: string; source: string }[] = [];
+        const plugin = thirdPartyLicenses({
+            title: 'bundle',
+            modules: [join(root, 'node_modules', 'copied-runtime', 'package.json')],
+        });
+        plugin.generateBundle.call(
+            {
+                emitFile: (file) => {
+                    emitted.push(file);
+                    return file.fileName;
+                },
+            },
+            {},
+            {
+                'main.js': {
+                    type: 'chunk',
+                    modules: { [join(root, 'node_modules', 'left-pad', 'lib', 'index.js')]: {} },
+                },
+            },
+        );
+        const { packages } = JSON.parse(emitted[1].source) as {
+            packages: { name: string; texts: { file: string }[] }[];
+        };
+        expect(packages.map((p) => [p.name, p.texts.map((t) => t.file)])).toEqual([
+            ['copied-runtime', ['LICENSE', 'ThirdPartyNotices.txt']],
+            ['left-pad', ['LICENSE']],
+        ]);
     });
 });

@@ -21,7 +21,9 @@ import { basename, join, sep } from 'node:path';
 export const THIRD_PARTY_NOTICES_FILE = 'THIRD-PARTY-NOTICES.txt';
 export const THIRD_PARTY_LICENSES_FILE = 'third-party-licenses.json';
 
-const LICENSE_FILE = /^(licen[cs]e|copying|notice|copyright|unlicense|patents)([._-].*)?$/i;
+// ThirdPartyNotices.txt is where Microsoft packages (monaco-editor, the TypeScript compiler) list the code
+// they include from other projects.
+const LICENSE_FILE = /^(licen[cs]e|copying|notice|copyright|unlicense|patents|third-?party-?notices)([._-].*)?$/i;
 
 export interface ThirdPartyLicenseText {
     /** File name inside the package, such as `LICENSE` or `NOTICE.md`. */
@@ -199,6 +201,11 @@ export interface ThirdPartyLicensesPluginOptions extends CollectThirdPartyLicens
     /** Output file names, relative to the output directory. */
     noticesFileName?: string;
     jsonFileName?: string;
+    /**
+     * Files of packages that reach the output without going through the bundler, such as a runtime a
+     * plugin copies as is. Any file of the package will do; its `package.json` is the usual choice.
+     */
+    modules?: string[];
 }
 
 interface EmittedAsset {
@@ -230,7 +237,7 @@ export function thirdPartyLicenses(options: ThirdPartyLicensesPluginOptions = {}
     return {
         name: 'vertesia:third-party-licenses',
         generateBundle(_outputOptions, bundle) {
-            const ids: string[] = [];
+            const ids: string[] = [...(options.modules ?? [])];
             for (const output of Object.values(bundle)) {
                 if (output.type === 'chunk' && output.modules) {
                     ids.push(...Object.keys(output.modules));
