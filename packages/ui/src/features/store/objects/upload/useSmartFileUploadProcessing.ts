@@ -40,13 +40,14 @@ export interface FileWithMetadata {
 }
 
 /**
- * Marks each file whose bytes an existing object already holds as skipped, with that object's id. A file whose hash
- * could not be computed is never marked.
+ * Marks every file whose bytes an existing object already holds as skipped, with that object's id: several files of a
+ * batch can hold the same bytes as one object. A file whose hash could not be computed is never marked.
  */
 export function markExistingByHash(files: FileWithMetadata[], existing: ExistingHashMatch[]): void {
-    for (const doc of existing) {
-        const file = files.find((f) => matchesContentHash(f.hash, doc.content));
-        if (file) {
+    for (const file of files) {
+        if (file.action === FileUploadAction.SKIP) continue;
+        const doc = existing.find((d) => matchesContentHash(file.hash, d.content));
+        if (doc) {
             file.existingId = doc.id;
             file.action = FileUploadAction.SKIP;
         }
