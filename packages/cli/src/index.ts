@@ -10,6 +10,7 @@ import { registerExportCommand } from './export/index.js';
 import { registerIamCommand } from './iam/index.js';
 import { registerInferenceProfilesCommand } from './inference-profiles/index.js';
 import { listInteractions } from './interactions/index.js';
+import { registerLicensesCommand } from './licenses/index.js';
 import { registerNotificationsCommand } from './notifications/index.js';
 import { registerObjectsCommand } from './objects/index.js';
 import { registerOidcFederationCommand } from './oidc-federation/index.js';
@@ -304,6 +305,7 @@ registerProcessTestsCommand(program);
 registerWorkflowsCommand(program);
 registerQuotaCommand(program);
 registerNotificationsCommand(program);
+registerLicensesCommand(program);
 
 program.parseAsync(process.argv).catch((err) => {
     // Fetch-client errors may retain a complete Request with authorization headers. Print only
