@@ -9357,12 +9357,23 @@
       "type": "string"
     }
   },
+  "OpenAICompatibleApi": {
+    "type": "string",
+    "enum": [
+      "responses",
+      "chat_completions"
+    ],
+    "description": "The OpenAI API an OpenAI-compatible environment calls: `responses` (the default when omitted) or `chat_completions`, for services that implement only Chat Completions."
+  },
   "ExecutionEnvironmentSettings": {
     "type": "object",
     "properties": {
       "default_headers": {
         "$ref": "#/components/schemas/StringValueMap",
         "description": "Custom HTTP headers sent by OpenAI-compatible environments."
+      },
+      "openai_api": {
+        "$ref": "#/components/schemas/OpenAICompatibleApi"
       }
     }
   },
