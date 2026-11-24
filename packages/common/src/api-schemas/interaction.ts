@@ -36,6 +36,7 @@ import {
     OBJECT_ID_PATTERN,
     OPTIONAL_OBJECT_ID_PATTERN,
     PageCountSchema,
+    positiveHttpTimeoutRule,
 } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
 
@@ -598,7 +599,7 @@ export const GenerateTestDataPayloadSchema = z
         count: z.number().optional(),
         config: InteractionExecutionConfigurationSchema,
     })
-    .meta({ id: 'GenerateTestDataPayload' });
+    .meta({ id: 'GenerateTestDataPayload', ...positiveHttpTimeoutRule });
 
 export const InteractionSearchQuerySchema = z
     .strictObject({
@@ -642,6 +643,12 @@ export const InteractionListQuerySchema = InteractionSearchQuerySchema.extend({
         .string()
         .regex(/^(?:\s*[+-]?\d[\s\S]*)?$/)
         .meta({ description: 'Filter by version number. Must start with an integer.' })
+        .optional(),
+    // The routes cast a non-empty environment to an ObjectId, and an empty one applies no filter.
+    environment: z
+        .string()
+        .regex(OPTIONAL_OBJECT_ID_PATTERN)
+        .meta({ description: 'Environment ID, as 24 hexadecimal characters. An empty string applies no filter.' })
         .optional(),
     limit: z.number().min(1).max(Number.MAX_SAFE_INTEGER).multipleOf(1).optional(),
     offset: z.number().min(0).max(Number.MAX_SAFE_INTEGER).multipleOf(1).optional(),
@@ -2177,7 +2184,7 @@ export const NamedInteractionExecutionPayloadSchema = z
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
     })
-    .meta({ id: 'NamedInteractionExecutionPayload' });
+    .meta({ id: 'NamedInteractionExecutionPayload', ...positiveHttpTimeoutRule });
 
 export const InteractionExecutionPayloadSchema = z
     .strictObject({
@@ -2220,7 +2227,7 @@ export const InteractionExecutionPayloadSchema = z
                 'Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming.',
         }).optional(),
     })
-    .meta({ id: 'InteractionExecutionPayload' });
+    .meta({ id: 'InteractionExecutionPayload', ...positiveHttpTimeoutRule });
 
 export const AsyncInteractionExecutionPayloadSchema = z
     .object({
@@ -2586,6 +2593,7 @@ export const RunCreatePayloadSchema = z
     })
     .meta({
         id: 'RunCreatePayload',
+        ...positiveHttpTimeoutRule,
         description:
             'Interaction execution payload for creating a new run It uses interaction field (from NamedInteractionExecutionPayload) to pass the interaction ID to run',
     });
