@@ -413,6 +413,7 @@
     "login.inviteRole": "角色：{{role}}",
     "login.invitedBy": "邀请人：{{name}}",
     "login.invitesIntro": "您已被邀请加入以下账户。请接受或拒绝每个邀请。",
+    "login.openSourceNotices": "开源声明",
     "login.reject": "拒绝",
     "login.reviewInvites": "查看邀请",
     "login.terminal.account": "账户",
