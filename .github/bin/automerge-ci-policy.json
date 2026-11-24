@@ -33,6 +33,15 @@
                     "Test automerge CI policy",
                     "Check codebase"
                 ]
+            },
+            {
+                "name": "^License check$",
+                "example": "License check",
+                "baseBranches": ["main"],
+                "steps": [
+                    "Check package licenses",
+                    "Check licenses of added dependencies"
+                ]
             }
         ]
     }
