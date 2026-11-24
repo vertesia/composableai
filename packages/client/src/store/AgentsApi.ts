@@ -64,6 +64,16 @@ import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream
 /** Request options for agent-run reads: extra headers, a caller abort signal, and a timeout. */
 export type AgentRunReadOptions = Pick<IRequestParams, 'headers' | 'signal' | 'timeoutMs'>;
 
+/**
+ * The read methods are also passed as callbacks (`ids.map(agents.retrieve.bind(agents))`), where the
+ * extra arguments are an index and an array. Only a plain object is read as options.
+ */
+function readOptions(options: unknown): AgentRunReadOptions | undefined {
+    return options && typeof options === 'object' && !Array.isArray(options)
+        ? (options as AgentRunReadOptions)
+        : undefined;
+}
+
 export interface AgentRunStreamMessagesOptions {
     /** Resolve the stream when the root conversation becomes idle. Headless followers should opt in. */
     closeOnIdle?: boolean;
@@ -132,8 +142,11 @@ export class AgentsApi extends ApiTopic {
     /**
      * Get agent run by id.
      */
+    retrieve<TData = Record<string, unknown>>(id: string, options?: AgentRunReadOptions): Promise<AgentRun<TData>>;
+    // Last, so it is the signature inferred from a one-argument callback such as `Array.map`.
+    retrieve<TData = Record<string, unknown>>(id: string): Promise<AgentRun<TData>>;
     retrieve<TData = Record<string, unknown>>(id: string, options?: AgentRunReadOptions): Promise<AgentRun<TData>> {
-        return this.get(`/${id}`, options);
+        return this.get(`/${id}`, readOptions(options));
     }
 
     /**
@@ -335,9 +348,15 @@ export class AgentsApi extends ApiTopic {
      * Retrieve stored messages for an agent run.
      * Returns gzip-compressed responses for large payloads.
      */
+    retrieveMessages(id: string, since?: number, options?: AgentRunReadOptions): Promise<AgentMessage[]>;
+    // Last, so it is the signature inferred from a callback such as `Array.map`.
+    retrieveMessages(id: string, since?: number): Promise<AgentMessage[]>;
     async retrieveMessages(id: string, since?: number, options?: AgentRunReadOptions): Promise<AgentMessage[]> {
         const query = since ? { since } : undefined;
-        const response = (await this.get(`/${id}/updates`, { ...options, query })) as AgentRunUpdatesResponse;
+        const response = (await this.get(`/${id}/updates`, {
+            ...readOptions(options),
+            query,
+        })) as AgentRunUpdatesResponse;
         return response.messages.map((m) => toAgentMessage(parseMessage(m), id));
     }
 
@@ -828,8 +847,11 @@ export class AgentsApi extends ApiTopic {
     /**
      * List child workflows for an agent or process run.
      */
+    listChildren(id: string, options?: AgentRunReadOptions): Promise<ListWorkflowRunsResponse>;
+    // Last, so it is the signature inferred from a one-argument callback such as `Array.map`.
+    listChildren(id: string): Promise<ListWorkflowRunsResponse>;
     listChildren(id: string, options?: AgentRunReadOptions): Promise<ListWorkflowRunsResponse> {
-        return this.get(`/${id}/children`, options);
+        return this.get(`/${id}/children`, readOptions(options));
     }
 
     /**
