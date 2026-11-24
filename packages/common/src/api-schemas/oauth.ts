@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { conditional } from './schema-primitives.js';
 
 /**
  * The OAuth *provider* contracts: Vertesia acting as an OAuth CLIENT against a third-party
@@ -204,7 +205,20 @@ export const CreateOAuthProviderPayloadSchema = oauthProviderPayloadSchema
     .meta({
         id: 'CreateOAuthProviderPayload',
         description:
-            'Payload for creating an OAuth Provider. The client_secret is accepted as plaintext on create and stored encrypted.',
+            'Payload for creating an OAuth Provider. The client_secret is accepted as plaintext on create and stored ' +
+            'encrypted. `private_key_jwt` and a non-empty `allowed_scopes` require the `client_credentials` grant; ' +
+            'the grant defaults to `authorization_code`.',
+        // The create defaults the grant to authorization_code, and refuses either setting on any grant but
+        // client_credentials. The update reads the stored grant, so the rule is the create's alone.
+        ...conditional(
+            { not: { required: ['grant_type'], properties: { grant_type: { const: 'client_credentials' } } } },
+            {
+                properties: {
+                    token_endpoint_auth_method: { not: { const: 'private_key_jwt' } },
+                    allowed_scopes: { maxItems: 0 },
+                },
+            },
+        ),
     });
 
 /**

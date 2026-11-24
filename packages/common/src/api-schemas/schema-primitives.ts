@@ -134,3 +134,30 @@ export const ExpectedEditRevisionSchema = EditRevisionSchema.optional().meta({
     description:
         'Edit revision returned by the last read. Stale revisions are rejected with HTTP 409. Omit for legacy last-write-wins behavior.',
 });
+
+/**
+ * The HTTP timeouts of an execution request's `config.http_timeout`: each one given is a positive whole number of
+ * milliseconds, at most the largest safe integer, which is what the execution routes accept. Spread into the payload's
+ * `.meta()`. Stated on the execution payloads rather than on `HttpTimeoutOptions`, which interactions, intake policies
+ * and views also store without this check.
+ */
+const POSITIVE_WHOLE_MILLISECONDS = { multipleOf: 1, minimum: 1, maximum: Number.MAX_SAFE_INTEGER };
+export const positiveHttpTimeoutRule = conditional(
+    { required: ['config'] },
+    {
+        properties: {
+            config: {
+                properties: {
+                    http_timeout: {
+                        properties: {
+                            headersTimeout: POSITIVE_WHOLE_MILLISECONDS,
+                            bodyTimeout: POSITIVE_WHOLE_MILLISECONDS,
+                            connectTimeout: POSITIVE_WHOLE_MILLISECONDS,
+                            keepAliveTimeout: POSITIVE_WHOLE_MILLISECONDS,
+                        },
+                    },
+                },
+            },
+        },
+    },
+);
