@@ -2798,6 +2798,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'SharePointLibraryRequests',
     'SharePointLibraryRequestsQuery',
     'SharePointRequestProject',
+    'ConfigureSharePointLibraryReaderPayload',
+    'ManagedSharePointLibrary',
     'InferenceBudgetSettings',
     'UpdateInferenceBudget',
     'ContentSourceSyncSettings',

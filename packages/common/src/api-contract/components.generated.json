@@ -6499,10 +6499,6 @@
           "mirrored"
         ]
       },
-      "oauth_provider_id": {
-        "type": "string",
-        "pattern": "^[0-9a-fA-F]{24}$"
-      },
       "reader_mode": {
         "type": "string",
         "const": "organization"
@@ -6523,6 +6519,7 @@
       "drive_id",
       "audience"
     ],
+    "additionalProperties": false,
     "readOnly": true
   },
   "SharePointLibraryPathParams": {
@@ -6993,10 +6990,6 @@
         "type": "string",
         "pattern": "^[0-9a-fA-F]{24}$"
       },
-      "permission_reader_provider_id": {
-        "type": "string",
-        "pattern": "^[0-9a-fA-F]{24}$"
-      },
       "tenant_group_id": {
         "type": "string",
         "pattern": "^[0-9a-fA-F]{24}$"
@@ -7015,22 +7008,18 @@
     "required": [
       "mode",
       "entra_tenant_id",
-      "scim_connection_id",
-      "permission_reader_provider_id"
+      "scim_connection_id"
     ],
     "additionalProperties": false
   },
   "ConfigureSharePointLibraryReaderPayload": {
     "type": "object",
     "properties": {
-      "oauth_provider_id": {
-        "type": "string",
-        "pattern": "^[0-9a-fA-F]{24}$"
-      },
       "permissions": {
         "$ref": "#/components/schemas/SharePointContentSourcePermissions"
       }
-    }
+    },
+    "additionalProperties": false
   },
   "SharePointLibraryApproval": {
     "type": "object",
@@ -7268,10 +7257,6 @@
           "dedicated",
           "existing"
         ]
-      },
-      "oauth_provider_id": {
-        "type": "string",
-        "pattern": "^[0-9a-fA-F]{24}$"
       },
       "reader_mode": {
         "type": "string",
@@ -8070,10 +8055,6 @@
         },
         "description": "Scopes a token request may ask for instead of default_scopes (POST /oauth-providers/{id}/token with a scope), in addition to default_scopes, which are always allowed. Only used for the client_credentials grant. Set by the provider admin: a caller cannot request a scope outside this list and default_scopes. On update, an empty array clears it."
       },
-      "sharepoint_permission_site": {
-        "type": "string",
-        "format": "uri"
-      },
       "use_pkce": {
         "type": "boolean",
         "description": "Whether to use PKCE (Proof Key for Code Exchange) in the authorization flow. Only applies to authorization_code flow. Defaults to true."
@@ -8201,11 +8182,6 @@
           "type": "string"
         },
         "description": "Extra parameters added to the URL-encoded body of every client_credentials token request for this provider, after the standard ones (e.g. Box's box_subject_type and box_subject_id). Only used for the client_credentials grant. At most 10 entries; keys match ^[A-Za-z][A-Za-z0-9_.-]{0,63}$; values are at most 512 characters; grant_type, client_id, client_secret, scope, client_assertion and client_assertion_type are reserved. Not secret: returned as stored. On update, an empty object clears them."
-      },
-      "sharepoint_permission_site": {
-        "type": "string",
-        "format": "uri",
-        "description": "Immutable SharePoint site URL for a dedicated permission reader. Create a replacement provider to change its site or credential."
       }
     },
     "required": [
@@ -39633,7 +39609,7 @@
       "reader_mode": {
         "type": "string",
         "const": "organization",
-        "description": "The managed library uses its organization reader. The provider reference is the binding ID."
+        "description": "The managed library uses its organization reader, without a project OAuth provider."
       },
       "permissions": {
         "$ref": "#/components/schemas/ContentSourcePermissionSettings"
@@ -39666,7 +39642,6 @@
     "required": [
       "id",
       "name",
-      "oauth_provider_id",
       "location_root",
       "sync",
       "type",
@@ -39801,7 +39776,7 @@
       "oauth_provider_id": {
         "type": "string",
         "minLength": 1,
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+        "description": "Required for a project OAuth source. Omitted for trusted registration of an organization-managed library."
       },
       "location_root": {
         "type": "string",
@@ -39850,7 +39825,6 @@
     },
     "required": [
       "name",
-      "oauth_provider_id",
       "type",
       "site_url"
     ],

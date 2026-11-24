@@ -2315,7 +2315,7 @@ export type SharePointContentSource = {
     id: string;
     name: string;
     description?: string | undefined;
-    oauth_provider_id: string;
+    oauth_provider_id?: string | undefined;
     location_root: string;
     collection_id?: string | undefined;
     sync: ContentSourceSyncSettings;
@@ -2367,7 +2367,6 @@ export type SharePointContentSourcePermissions = {
     mode: 'source';
     entra_tenant_id: string;
     scim_connection_id: string;
-    permission_reader_provider_id: string;
     tenant_group_id?: string | undefined;
     refresh_minutes?: number | undefined;
     max_stale_hours?: number | undefined;
@@ -2381,7 +2380,7 @@ export type CreateContentSourcePayload = CreateSharePointContentSourcePayload | 
 export type CreateSharePointContentSourcePayload = {
     name: string;
     description?: string | undefined;
-    oauth_provider_id: string;
+    oauth_provider_id?: string | undefined;
     location_root?: string | undefined;
     collection_id?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
@@ -5911,7 +5910,6 @@ export type OAuthProviderData = {
     certificate?: string | undefined;
     default_scopes?: string[] | undefined;
     allowed_scopes?: string[] | undefined;
-    sharepoint_permission_site?: string | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
@@ -5936,7 +5934,6 @@ export type OAuthProvider = {
     certificate?: string | undefined;
     default_scopes?: string[] | undefined;
     allowed_scopes?: string[] | undefined;
-    sharepoint_permission_site?: string | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
@@ -5965,7 +5962,6 @@ export type CreateOAuthProviderPayload = {
     use_pkce?: boolean | undefined;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
-    sharepoint_permission_site?: string | undefined;
 };
 /**
  * Payload for updating an OAuth Provider.
@@ -7483,7 +7479,6 @@ export type ManagedSharePointLibrary = {
     site_url: string;
     drive_id: string;
     audience: 'uniform' | 'mirrored';
-    oauth_provider_id?: string | undefined;
     reader_mode?: 'organization' | undefined;
     lifecycle?: 'disconnecting' | 'disconnected' | undefined;
 };
@@ -7502,7 +7497,6 @@ export type ApproveSharePointLibraryPayload =
           audience: 'uniform' | 'mirrored';
       };
 export type ConfigureSharePointLibraryReaderPayload = {
-    oauth_provider_id?: string | undefined;
     permissions?: SharePointContentSourcePermissions | undefined;
 };
 export type SharePointLibraryApproval = {
@@ -7534,7 +7528,6 @@ export type SharePointLibraryConnection = {
         | 'disconnected';
     project_id?: string | undefined;
     project_mode?: 'dedicated' | 'existing' | undefined;
-    oauth_provider_id?: string | undefined;
     reader_mode?: 'organization' | undefined;
     organization_reader_available?: boolean | undefined;
     source_id?: string | undefined;
