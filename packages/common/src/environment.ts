@@ -76,6 +76,8 @@ export type { TextFallbackOptions } from '@llumiverse/common';
 
 export type ExecutionEnvironmentSettings = Wire.ExecutionEnvironmentSettings;
 
+export type OpenAICompatibleApi = Wire.OpenAICompatibleApi;
+
 export type ExecutionEnvironment = Wire.ExecutionEnvironment;
 
 export type ExecutionEnvironmentRef = Wire.ExecutionEnvironmentRef;
