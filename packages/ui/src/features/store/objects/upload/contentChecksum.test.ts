@@ -60,6 +60,11 @@ describe('matchesStoredContent', () => {
         expect(matchesStoredContent({ hash: MD5, sha256: SHA256 }, { etag: 'other' })).toBe(false);
     });
 
+    it('falls back to the etag when the file has no SHA-256, even for an object that stores one', () => {
+        expect(matchesStoredContent({ hash: MD5 }, { etag: MD5, sha256: SHA256 })).toBe(true);
+        expect(matchesStoredContent({ hash: MD5 }, { etag: 'kms-etag', sha256: SHA256 })).toBe(false);
+    });
+
     it('never matches on a hash that was not computed', () => {
         expect(matchesStoredContent({}, { etag: 'legacy-etag' })).toBe(false);
         expect(matchesStoredContent({}, {})).toBe(false);

@@ -34,17 +34,18 @@ export interface FileHashes {
 }
 
 /**
- * Whether a stored object holds the same bytes as the file. An object that stores `content.sha256` is compared on it.
- * An object stored before the field is compared on its etag, which is the MD5 of its bytes on most storage (not on an
- * S3 object encrypted with a KMS key, or uploaded in parts). A hash the browser could not compute matches nothing, so
- * `undefined` never equals a missing field.
+ * Whether a stored object holds the same bytes as the file. When both have a SHA-256 they are compared on it. Otherwise
+ * (an object stored before `content.sha256`, or a browser that could not compute the file's SHA-256) the file's MD5 is
+ * compared with the object's etag, which is the MD5 of its bytes on most storage (not on an S3 object encrypted with a
+ * KMS key, or uploaded in parts). A hash that was not computed matches nothing, so `undefined` never equals a missing
+ * field.
  */
 export function matchesStoredContent(
     file: FileHashes,
     content: { etag?: string; sha256?: string } | undefined,
 ): boolean {
     if (!content) return false;
-    if (content.sha256) return !!file.sha256 && content.sha256 === file.sha256;
+    if (file.sha256 && content.sha256) return content.sha256 === file.sha256;
     return !!file.hash && content.etag === file.hash;
 }
 

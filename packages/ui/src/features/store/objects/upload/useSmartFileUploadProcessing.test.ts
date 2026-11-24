@@ -40,4 +40,10 @@ describe('markExistingByHash', () => {
         expect(copy).toMatchObject({ action: FileUploadAction.SKIP, existingId: 'kms' });
         expect(other.action).toBeUndefined();
     });
+
+    it('still recognises a stored object by its etag when the browser could not compute the SHA-256', () => {
+        const noSha256 = file('report.pdf', undefined, MD5);
+        markExistingByHash([noSha256], [{ id: 'gcs', content: { etag: MD5, sha256: SHA256 } }]);
+        expect(noSha256).toMatchObject({ action: FileUploadAction.SKIP, existingId: 'gcs' });
+    });
 });
