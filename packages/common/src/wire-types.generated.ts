@@ -9019,6 +9019,7 @@ export type ContentSource = {
     type?: string | undefined;
     name?: string | undefined;
     etag?: string | undefined;
+    sha256?: string | undefined;
 };
 export type RevisionInfo = {
     parent?: string | undefined;
