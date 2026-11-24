@@ -16,8 +16,25 @@ export const CompleteSharePointOrganizationLinkPayloadSchema = z
     .strictObject({ state })
     .meta({ id: 'CompleteSharePointOrganizationLinkPayload' });
 
+export const ConfigureSharePointOrganizationReaderPayloadSchema = z
+    .strictObject({ client_id: guid })
+    .meta({ id: 'ConfigureSharePointOrganizationReaderPayload' });
+
+export const SharePointOrganizationReaderSchema = z
+    .strictObject({
+        client_id: guid,
+        issuer: z.url(),
+        subject: z.string().min(1),
+        audience: z.string().min(1),
+    })
+    .meta({ id: 'SharePointOrganizationReader' });
+
 export const SharePointOrganizationSchema = z
-    .strictObject({ tenant_id: guid, linked_at: z.iso.datetime() })
+    .strictObject({
+        tenant_id: guid,
+        linked_at: z.iso.datetime(),
+        reader: SharePointOrganizationReaderSchema.optional(),
+    })
     .meta({ id: 'SharePointOrganization' });
 
 export const SharePointOrganizationsSchema = z

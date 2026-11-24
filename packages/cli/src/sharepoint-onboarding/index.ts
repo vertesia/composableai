@@ -25,6 +25,22 @@ export function registerSharePointOnboardingCommand(program: Command) {
             print(await (await getClient(program)).sharepointOnboarding.getOrganization(tenantId)),
         );
     command
+        .command('configure-organization-reader <tenant-id> <client-id>')
+        .description('Link the organization reader app and return the Microsoft Entra federated credential settings')
+        .action(async (tenantId: string, clientId: string) => {
+            const { sharepointOnboarding } = await getClient(program);
+            print(await sharepointOnboarding.configureOrganizationReader(tenantId, { client_id: clientId }));
+        });
+    command
+        .command('remove-organization-reader <tenant-id>')
+        .description('Remove the linked workload reader for this organization')
+        .option('--yes', 'Confirm removal of the organization reader')
+        .action(async (tenantId: string, { yes }: { yes?: boolean }) => {
+            if (!yes) throw new Error('Use --yes to confirm removing the organization reader');
+            const { sharepointOnboarding } = await getClient(program);
+            print(await sharepointOnboarding.removeOrganizationReader(tenantId));
+        });
+    command
         .command('list-requests')
         .option('--cursor <id>', 'Next-page cursor from the previous response')
         .action(async (options: { cursor?: string }) => {

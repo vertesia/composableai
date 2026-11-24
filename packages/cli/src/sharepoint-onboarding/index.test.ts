@@ -8,6 +8,8 @@ vi.mock('../client.js', () => ({ getClient }));
 const api = {
     beginOrganizationLink: vi.fn(),
     listOrganizations: vi.fn(),
+    configureOrganizationReader: vi.fn(),
+    removeOrganizationReader: vi.fn(),
     listLibraryRequests: vi.fn(),
     resolveRequestProject: vi.fn(),
 };
@@ -40,4 +42,15 @@ it('uses the service cursor and resolves a receipt through project authorization
     await run('open-request', '123456789012345678901234');
     expect(api.listLibraryRequests).toHaveBeenCalledWith({ cursor: '012345678901234567890123' });
     expect(api.resolveRequestProject).toHaveBeenCalledWith('123456789012345678901234');
+});
+
+it('configures an organization reader and requires confirmation to remove it', async () => {
+    const tenant = 'c1819196-2d83-441f-ab5d-814604361b1d';
+    const app = 'dd09df3f-6b22-454a-8b95-26793fd164d1';
+    await run('configure-organization-reader', tenant, app);
+    await expect(run('remove-organization-reader', tenant)).rejects.toThrow('Use --yes');
+    expect(api.removeOrganizationReader).not.toHaveBeenCalled();
+    await run('remove-organization-reader', tenant, '--yes');
+    expect(api.configureOrganizationReader).toHaveBeenCalledWith(tenant, { client_id: app });
+    expect(api.removeOrganizationReader).toHaveBeenCalledWith(tenant);
 });

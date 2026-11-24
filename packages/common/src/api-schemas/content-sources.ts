@@ -99,6 +99,9 @@ export const SharePointContentSourceSchema = z
     .strictObject({
         ...commonSourceFields,
         type: z.literal('sharepoint'),
+        reader_mode: z.literal('organization').optional().meta({
+            description: 'The managed library uses its organization reader. The provider reference is the binding ID.',
+        }),
         permissions: ContentSourcePermissionSettingsSchema.optional(),
         site_url: z.string().meta({ description: 'The SharePoint site URL the source was created from.' }),
         site_id: z.string().meta({ description: 'The Microsoft Graph site ID.' }),

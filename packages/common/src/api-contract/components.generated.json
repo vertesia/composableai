@@ -6503,6 +6503,10 @@
         "type": "string",
         "pattern": "^[0-9a-fA-F]{24}$"
       },
+      "reader_mode": {
+        "type": "string",
+        "const": "organization"
+      },
       "lifecycle": {
         "type": "string",
         "enum": [
@@ -6578,6 +6582,34 @@
     ],
     "additionalProperties": false
   },
+  "SharePointOrganizationReader": {
+    "type": "object",
+    "properties": {
+      "client_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "issuer": {
+        "type": "string",
+        "format": "uri"
+      },
+      "subject": {
+        "type": "string",
+        "minLength": 1
+      },
+      "audience": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "client_id",
+      "issuer",
+      "subject",
+      "audience"
+    ],
+    "additionalProperties": false
+  },
   "SharePointOrganization": {
     "type": "object",
     "properties": {
@@ -6589,11 +6621,27 @@
         "type": "string",
         "format": "date-time",
         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      },
+      "reader": {
+        "$ref": "#/components/schemas/SharePointOrganizationReader"
       }
     },
     "required": [
       "tenant_id",
       "linked_at"
+    ],
+    "additionalProperties": false
+  },
+  "ConfigureSharePointOrganizationReaderPayload": {
+    "type": "object",
+    "properties": {
+      "client_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      }
+    },
+    "required": [
+      "client_id"
     ],
     "additionalProperties": false
   },
@@ -6982,10 +7030,7 @@
       "permissions": {
         "$ref": "#/components/schemas/SharePointContentSourcePermissions"
       }
-    },
-    "required": [
-      "oauth_provider_id"
-    ]
+    }
   },
   "SharePointLibraryApproval": {
     "type": "object",
@@ -7227,6 +7272,13 @@
       "oauth_provider_id": {
         "type": "string",
         "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "reader_mode": {
+        "type": "string",
+        "const": "organization"
+      },
+      "organization_reader_available": {
+        "type": "boolean"
       },
       "source_id": {
         "type": "string",
@@ -39577,6 +39629,11 @@
       "type": {
         "type": "string",
         "const": "sharepoint"
+      },
+      "reader_mode": {
+        "type": "string",
+        "const": "organization",
+        "description": "The managed library uses its organization reader. The provider reference is the binding ID."
       },
       "permissions": {
         "$ref": "#/components/schemas/ContentSourcePermissionSettings"

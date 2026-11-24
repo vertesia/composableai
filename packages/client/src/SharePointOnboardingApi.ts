@@ -1,6 +1,7 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     BeginSharePointOrganizationLinkPayload,
+    ConfigureSharePointOrganizationReaderPayload,
     SharePointLibraryRequest,
     SharePointLibraryRequests,
     SharePointLibraryRequestsQuery,
@@ -25,6 +26,17 @@ export default class SharePointOnboardingApi extends ApiTopic {
 
     getOrganization(tenantId: string): Promise<SharePointOrganization> {
         return this.get(`/organization/${encodeURIComponent(tenantId)}`);
+    }
+
+    configureOrganizationReader(
+        tenantId: string,
+        payload: ConfigureSharePointOrganizationReaderPayload,
+    ): Promise<SharePointOrganization> {
+        return this.put(`/organization/${encodeURIComponent(tenantId)}/reader`, { payload });
+    }
+
+    removeOrganizationReader(tenantId: string): Promise<SharePointOrganization> {
+        return this.del(`/organization/${encodeURIComponent(tenantId)}/reader`);
     }
 
     listLibraryRequests(query?: SharePointLibraryRequestsQuery): Promise<SharePointLibraryRequests> {

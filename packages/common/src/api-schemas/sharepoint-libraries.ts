@@ -19,6 +19,7 @@ export const ManagedSharePointLibrarySchema = z
         drive_id: z.string(),
         audience,
         oauth_provider_id: objectId.optional(),
+        reader_mode: z.literal('organization').optional(),
         lifecycle: z.enum(['disconnecting', 'disconnected']).optional(),
     })
     .meta({ id: 'ManagedSharePointLibrary', readOnly: true });
@@ -39,7 +40,7 @@ export const ApproveSharePointLibraryPayloadSchema = z
 
 export const ConfigureSharePointLibraryReaderPayloadSchema = z
     .strictObject({
-        oauth_provider_id: objectId,
+        oauth_provider_id: objectId.optional(),
         permissions: SharePointContentSourcePermissionsSchema.optional(),
     })
     .meta({ id: 'ConfigureSharePointLibraryReaderPayload' });
@@ -77,6 +78,8 @@ export const SharePointLibraryConnectionSchema = z
         project_id: objectId.optional(),
         project_mode: z.enum(['dedicated', 'existing']).optional(),
         oauth_provider_id: objectId.optional(),
+        reader_mode: z.literal('organization').optional(),
+        organization_reader_available: z.boolean().optional(),
         source_id: objectId.optional(),
         approval: SharePointLibraryApprovalSchema.optional(),
         sync: ContentSourceSummarySchema.optional(),

@@ -3193,6 +3193,16 @@ interface Checks {
         W.SharePointOrganization,
         z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationSchema>
     >;
+    ConfigureSharePointOrganizationReaderPayload: Same<
+        W.ConfigureSharePointOrganizationReaderPayload,
+        z.infer<
+            typeof import('./api-schemas/sharepoint-onboarding.js').ConfigureSharePointOrganizationReaderPayloadSchema
+        >
+    >;
+    SharePointOrganizationReader: Same<
+        W.SharePointOrganizationReader,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationReaderSchema>
+    >;
     SharePointLibraryContext: Same<
         W.SharePointLibraryContext,
         z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointLibraryContextSchema>
@@ -5806,6 +5816,16 @@ interface Checks {
     'component:SharePointOrganization': Same<
         W.ApiComponentTypes['SharePointOrganization'],
         z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationSchema>
+    >;
+    'component:ConfigureSharePointOrganizationReaderPayload': Same<
+        W.ApiComponentTypes['ConfigureSharePointOrganizationReaderPayload'],
+        z.infer<
+            typeof import('./api-schemas/sharepoint-onboarding.js').ConfigureSharePointOrganizationReaderPayloadSchema
+        >
+    >;
+    'component:SharePointOrganizationReader': Same<
+        W.ApiComponentTypes['SharePointOrganizationReader'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationReaderSchema>
     >;
     'component:SharePointOrganizations': Same<
         W.ApiComponentTypes['SharePointOrganizations'],
@@ -12078,6 +12098,8 @@ const checks: Checks = {
     SharePointOrganizationLinkAttempt: true,
     SharePointOrganizations: true,
     SharePointOrganization: true,
+    ConfigureSharePointOrganizationReaderPayload: true,
+    SharePointOrganizationReader: true,
     SharePointLibraryContext: true,
     SharePointLibraryReceipt: true,
     SharePointLibraryRequest: true,
@@ -12796,6 +12818,8 @@ const checks: Checks = {
     'component:CompleteSharePointOrganizationLinkPayload': true,
     'component:SharePointOrganizationLinkAttempt': true,
     'component:SharePointOrganization': true,
+    'component:ConfigureSharePointOrganizationReaderPayload': true,
+    'component:SharePointOrganizationReader': true,
     'component:SharePointOrganizations': true,
     'component:SharePointLibraryContext': true,
     'component:SharePointLibraryReceipt': true,
@@ -14152,6 +14176,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2935);
+        expect(Object.keys(checks)).toHaveLength(2939);
     });
 });

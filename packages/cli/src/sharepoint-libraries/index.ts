@@ -44,7 +44,10 @@ export function registerSharePointLibrariesCommand(program: Command): void {
         });
     command
         .command('configure-reader <id>')
-        .requiredOption('--file <path>', 'Project reader configuration JSON; - reads stdin')
+        .requiredOption(
+            '--file <path>',
+            'Reader configuration JSON. Use {} for the organization reader with uniform permissions; - reads stdin',
+        )
         .action(async (id: string, options: { file: string }) => {
             const reader = validateApiRequest(
                 'ConfigureSharePointLibraryReaderPayload',

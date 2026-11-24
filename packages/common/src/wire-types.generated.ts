@@ -2325,6 +2325,7 @@ export type SharePointContentSource = {
     created_at?: string | undefined;
     updated_at?: string | undefined;
     type: 'sharepoint';
+    reader_mode?: 'organization' | undefined;
     permissions?: ContentSourcePermissionSettings | undefined;
     site_url: string;
     site_id: string;
@@ -7483,6 +7484,7 @@ export type ManagedSharePointLibrary = {
     drive_id: string;
     audience: 'uniform' | 'mirrored';
     oauth_provider_id?: string | undefined;
+    reader_mode?: 'organization' | undefined;
     lifecycle?: 'disconnecting' | 'disconnected' | undefined;
 };
 export type SharePointLibraryPathParams = {
@@ -7500,7 +7502,7 @@ export type ApproveSharePointLibraryPayload =
           audience: 'uniform' | 'mirrored';
       };
 export type ConfigureSharePointLibraryReaderPayload = {
-    oauth_provider_id: string;
+    oauth_provider_id?: string | undefined;
     permissions?: SharePointContentSourcePermissions | undefined;
 };
 export type SharePointLibraryApproval = {
@@ -7533,6 +7535,8 @@ export type SharePointLibraryConnection = {
     project_id?: string | undefined;
     project_mode?: 'dedicated' | 'existing' | undefined;
     oauth_provider_id?: string | undefined;
+    reader_mode?: 'organization' | undefined;
+    organization_reader_available?: boolean | undefined;
     source_id?: string | undefined;
     approval?: SharePointLibraryApproval | undefined;
     sync?: ContentSourceSummary | undefined;
@@ -7558,6 +7562,16 @@ export type SharePointOrganizations = {
 export type SharePointOrganization = {
     tenant_id: string;
     linked_at: string;
+    reader?: SharePointOrganizationReader | undefined;
+};
+export type ConfigureSharePointOrganizationReaderPayload = {
+    client_id: string;
+};
+export type SharePointOrganizationReader = {
+    client_id: string;
+    issuer: string;
+    subject: string;
+    audience: string;
 };
 export type SharePointLibraryContext = {
     site_hostname: string;
@@ -12193,6 +12207,8 @@ export interface ApiComponentTypes {
     CompleteSharePointOrganizationLinkPayload: CompleteSharePointOrganizationLinkPayload;
     SharePointOrganizationLinkAttempt: SharePointOrganizationLinkAttempt;
     SharePointOrganization: SharePointOrganization;
+    ConfigureSharePointOrganizationReaderPayload: ConfigureSharePointOrganizationReaderPayload;
+    SharePointOrganizationReader: SharePointOrganizationReader;
     SharePointOrganizations: SharePointOrganizations;
     SharePointLibraryContext: SharePointLibraryContext;
     SharePointLibraryReceipt: SharePointLibraryReceipt;
