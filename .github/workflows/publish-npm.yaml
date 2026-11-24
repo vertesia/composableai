@@ -173,6 +173,10 @@ jobs:
           node-version-file: ${{ hashFiles('.node-version') != '' && '.node-version' || '' }}
       - name: Install Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          # The native CLI embeds this runtime, and its notices describe this version: the notices script
+          # fails if they differ. Update it with packages/cli/licenses/BUN-LICENSE.txt and the WebKit commit.
+          bun-version-file: packages/cli/.bun-version
 
       - name: Install workspace dependencies
         timeout-minutes: 5
