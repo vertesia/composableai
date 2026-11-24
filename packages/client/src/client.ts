@@ -22,6 +22,7 @@ import AuditTrailApi from './AuditTrailApi.js';
 import CommandsApi from './CommandsApi.js';
 import DelegationGrantsApi from './DelegationGrantsApi.js';
 import EnvironmentsApi from './EnvironmentsApi.js';
+import { GoogleDriveReadersApi } from './GoogleDriveReadersApi.js';
 import { IamApi } from './IamApi.js';
 import InferenceProfilesApi from './InferenceProfilesApi.js';
 import InteractionConfigurationsApi from './InteractionConfigurationsApi.js';
@@ -145,6 +146,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     tokenServerUrl: string;
 
     oidcFederation: OidcFederationApi;
+    googleDriveReaders: GoogleDriveReadersApi;
     sharepointLibraries: SharePointLibrariesApi;
     sharepointOnboarding: SharePointOnboardingApi;
     oauthClients: OAuthClientsApi;
@@ -289,6 +291,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.onResponse = opts.onResponse;
         this.sessionTags = opts.sessionTags;
         this.oidcFederation = new OidcFederationApi(this);
+        this.googleDriveReaders = new GoogleDriveReadersApi(this);
         this.sharepointLibraries = new SharePointLibrariesApi(this);
         this.sharepointOnboarding = new SharePointOnboardingApi(this);
         this.oauthClients = new OAuthClientsApi(this);

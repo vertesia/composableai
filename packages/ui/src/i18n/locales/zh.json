@@ -766,6 +766,7 @@
     "store.syncMemberHeads": "同步成员HEAD",
     "store.syncMemberHeadsDescription": "当成员的新HEAD版本被创建时，集合将更新为指向新的HEAD。",
     "store.syncedFromBox": "从 Box 同步",
+    "store.syncedFromGoogleDrive": "从 Google Drive 同步",
     "store.syncedFromSharePoint": "从 SharePoint 同步",
     "store.tableLayout": "表格布局",
     "store.tableLayoutDescription": "定义用于在表格中显示集合的自定义布局。",

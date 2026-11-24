@@ -11,6 +11,7 @@ import {
     ResizablePanelGroup,
     Spinner,
     useFetch,
+    useToast,
     VTooltip,
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
@@ -32,6 +33,8 @@ import {
     X,
 } from 'lucide-react';
 import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useBrowserFileUrl } from '../document-viewer/useBrowserFileUrl.js';
+import { useDownloadFile } from '../store/objects/components/useDownloadFile.js';
 
 const ADVANCED_PROCESSING_PREFIX = 'magic-pdf';
 
@@ -111,7 +114,12 @@ export function useGroundedExtractionAvailable(objectId: string): boolean {
         setAvailable(false);
         client.files
             .getDownloadUrl(`${ADVANCED_PROCESSING_PREFIX}/${objectId}/grounded-extraction.json`)
-            .then((r) => fetch(r.url, { method: 'HEAD' }))
+            .then(async (r) => {
+                if (!r.authentication_required) return fetch(r.url, { method: 'HEAD' });
+                const response = await client.files.fetchDownloadUrl(r.url);
+                await response.body?.cancel();
+                return response;
+            })
             .then((res) => {
                 if (!cancelled) setAvailable(res.ok);
             })
@@ -142,7 +150,7 @@ export function useGroundedSummary(objectId: string): GroundedSummary | null {
         setSummary(null);
         client.files
             .getDownloadUrl(`${ADVANCED_PROCESSING_PREFIX}/${objectId}/grounded-extraction.json`)
-            .then((r) => fetch(r.url))
+            .then((r) => (r.authentication_required ? client.files.fetchDownloadUrl(r.url) : fetch(r.url)))
             .then((res) => (res.ok ? res.json() : null))
             .then((file: GroundedExtractionFile | null) => {
                 if (cancelled || !file?.citations) return;
@@ -181,7 +189,9 @@ export function GroundedExtractionPanel({ objectId, onClose }: GroundedExtractio
         const response = await client.files.getDownloadUrl(
             `${ADVANCED_PROCESSING_PREFIX}/${objectId}/grounded-extraction.json`,
         );
-        const result = await fetch(response.url);
+        const result = response.authentication_required
+            ? await client.files.fetchDownloadUrl(response.url)
+            : await fetch(response.url);
         if (!result.ok) {
             throw new Error(t('grounded.notFound'));
         }
@@ -248,14 +258,9 @@ function GroundedExtractionViewImpl({
         [extraction.pages],
     );
 
-    const downloadArtifact = (path: string) => {
-        client.files
-            .getDownloadUrl(`${ADVANCED_PROCESSING_PREFIX}/${objectId}/${path}`)
-            .then((r) => window.open(r.url, '_blank'))
-            .catch(() => {
-                // artifact absent for this document
-            });
-    };
+    const { downloadFromContentSource } = useDownloadFile({ client, toast: useToast() });
+    const downloadArtifact = (path: string) =>
+        void downloadFromContentSource(`${ADVANCED_PROCESSING_PREFIX}/${objectId}/${path}`, path.split('/').pop());
     const [page, setPage] = useState(pageNumbers[0] ?? 1);
     const [selectedPath, setSelectedPath] = useState<string | undefined>(undefined);
     const [showDetails, setShowDetails] = useState(false);
@@ -593,6 +598,7 @@ function PageWithOverlay({
 }) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
+    const browserUrl = useBrowserFileUrl(client.files, `${objectId}/${page}/${imageMode}`);
     const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
 
     useEffect(() => {
@@ -600,14 +606,15 @@ function PageWithOverlay({
         setImageUrl(undefined);
         client.files
             .getDownloadUrl(`${ADVANCED_PROCESSING_PREFIX}/${objectId}/pages/page-${page}.${imageMode}.jpg`)
-            .then((r) => {
-                if (!cancelled) setImageUrl(r.url);
+            .then(browserUrl)
+            .then((url) => {
+                if (!cancelled) setImageUrl(url);
             })
             .catch((err: unknown) => console.warn('Failed to load page image', err));
         return () => {
             cancelled = true;
         };
-    }, [client, imageMode, objectId, page]);
+    }, [browserUrl, client, imageMode, objectId, page]);
 
     if (!imageUrl || !dims) {
         return (

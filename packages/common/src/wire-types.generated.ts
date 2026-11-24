@@ -543,6 +543,7 @@ export type CreateAccountApiKeyPayload = {
     expires_at?: string | undefined;
     scim_entra_tenant_id?: string | undefined;
     scim_entra_members_group_id?: string | undefined;
+    scim_google_drive_reader_id?: string | undefined;
 };
 export type UpdateAccountApiKeyPayload = {
     name?: string | undefined;
@@ -2310,7 +2311,7 @@ export type ContentQueryResult = {
     took?: number | undefined;
 };
 /** A folder of an external content system whose files are synced into the project without copies. */
-export type ExternalContentSource = SharePointContentSource | BoxContentSource;
+export type ExternalContentSource = SharePointContentSource | BoxContentSource | GoogleDriveContentSource;
 export type SharePointContentSource = {
     id: string;
     name: string;
@@ -2326,13 +2327,71 @@ export type SharePointContentSource = {
     updated_at?: string | undefined;
     type: 'sharepoint';
     reader_mode?: 'organization' | undefined;
-    permissions?: ContentSourcePermissionSettings | undefined;
+    permissions?: SharePointPermissionOptions | undefined;
     site_url: string;
     site_id: string;
     drive_id: string;
     library_name: string;
     folder_path: string;
     folder_item_id: string;
+};
+export type GoogleDriveContentSourcePermissions = {
+    mode: 'source';
+    provider: 'google-drive';
+    scim_connection_id: string;
+    refresh_minutes?: number | undefined;
+    max_stale_hours?: number | undefined;
+};
+export type SingleGoogleDriveSelection = {
+    mode: 'single';
+    drive_id: string;
+};
+export type AllGoogleDrivesSelection = {
+    mode: 'all';
+};
+export type GoogleDrivePermissionOptions = ProjectContentSourcePermissions | GoogleDriveContentSourcePermissions;
+export type SharePointPermissionOptions = ProjectContentSourcePermissions | SharePointContentSourcePermissions;
+export type GoogleDriveSelection = SingleGoogleDriveSelection | AllGoogleDrivesSelection;
+export type GoogleDriveReaderConfig = {
+    audience: string;
+    service_account: string;
+};
+export type GoogleDriveReader = {
+    audience: string;
+    service_account: string;
+    id: string;
+    issuer: string;
+    subject: string;
+};
+export type GoogleDriveContentSource = {
+    id: string;
+    name: string;
+    description?: string | undefined;
+    location_root: string;
+    collection_id?: string | undefined;
+    sync: ContentSourceSyncSettings;
+    sample_percent?: number | undefined;
+    created_by?: string | undefined;
+    updated_by?: string | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+    type: 'google-drive';
+    reader_binding_id: string;
+    selection: GoogleDriveSelection;
+    permissions?: GoogleDrivePermissionOptions | undefined;
+    parent_source_id?: string | undefined;
+};
+export type CreateGoogleDriveContentSourcePayload = {
+    name: string;
+    description?: string | undefined;
+    location_root?: string | undefined;
+    collection_id?: string | undefined;
+    sync?: ContentSourceSyncSettings | undefined;
+    sample_percent?: number | undefined;
+    type: 'google-drive';
+    reader_binding_id: string;
+    selection: GoogleDriveSelection;
+    permissions?: GoogleDrivePermissionOptions | undefined;
 };
 export type BoxContentSource = {
     id: string;
@@ -2352,7 +2411,10 @@ export type BoxContentSource = {
     folder_name: string;
     folder_path: string;
 };
-export type ContentSourcePermissionSettings = ProjectContentSourcePermissions | SharePointContentSourcePermissions;
+export type ContentSourcePermissionSettings =
+    | ProjectContentSourcePermissions
+    | SharePointContentSourcePermissions
+    | GoogleDriveContentSourcePermissions;
 export type ContentSourcePermissionStatus = {
     state: string;
     version: number;
@@ -2376,7 +2438,10 @@ export type ContentSourceSyncSettings = {
     interval_minutes: number;
 };
 /** Registers a content source. */
-export type CreateContentSourcePayload = CreateSharePointContentSourcePayload | CreateBoxContentSourcePayload;
+export type CreateContentSourcePayload =
+    | CreateSharePointContentSourcePayload
+    | CreateBoxContentSourcePayload
+    | CreateGoogleDriveContentSourcePayload;
 export type CreateSharePointContentSourcePayload = {
     name: string;
     description?: string | undefined;
@@ -2387,7 +2452,7 @@ export type CreateSharePointContentSourcePayload = {
     sample_percent?: number | undefined;
     type: 'sharepoint';
     sharepoint_library_binding_id?: string | undefined;
-    permissions?: ContentSourcePermissionSettings | undefined;
+    permissions?: SharePointPermissionOptions | undefined;
     site_url: string;
     library_name?: string | undefined;
     folder_path?: string | undefined;
@@ -2404,6 +2469,7 @@ export type CreateBoxContentSourcePayload = {
     folder_id?: string | undefined;
 };
 export type UpdateContentSourcePayload = {
+    selection?: GoogleDriveSelection | undefined;
     name?: string | undefined;
     description?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
@@ -2451,7 +2517,7 @@ export type ContentSourceSummary = {
     id: string;
     name: string;
     description?: string | undefined;
-    type: 'sharepoint' | 'box';
+    type: 'sharepoint' | 'box' | 'google-drive';
     location_root: string;
     site_url?: string | undefined;
     library_name?: string | undefined;
@@ -8920,6 +8986,7 @@ export type ContentObjectTextResponse = {
 };
 export type SetObjectTextPayload = {
     text: string;
+    expected_content_etag?: string | undefined;
     etag?: string | undefined;
 };
 export type DeleteContentObjectResult = {
@@ -13026,6 +13093,16 @@ export interface ApiComponentTypes {
     ContentSourcePermissionSettings: ContentSourcePermissionSettings;
     ContentSourcePermissionStatus: ContentSourcePermissionStatus;
     SharePointContentSource: SharePointContentSource;
+    GoogleDriveContentSourcePermissions: GoogleDriveContentSourcePermissions;
+    SingleGoogleDriveSelection: SingleGoogleDriveSelection;
+    AllGoogleDrivesSelection: AllGoogleDrivesSelection;
+    SharePointPermissionOptions: SharePointPermissionOptions;
+    GoogleDrivePermissionOptions: GoogleDrivePermissionOptions;
+    GoogleDriveSelection: GoogleDriveSelection;
+    GoogleDriveReaderConfig: GoogleDriveReaderConfig;
+    GoogleDriveReader: GoogleDriveReader;
+    GoogleDriveContentSource: GoogleDriveContentSource;
+    CreateGoogleDriveContentSourcePayload: CreateGoogleDriveContentSourcePayload;
     BoxContentSource: BoxContentSource;
     ExternalContentSource: ExternalContentSource;
     ExternalContentSourceArray: ExternalContentSourceArray;

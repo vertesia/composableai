@@ -1027,6 +1027,46 @@ interface Checks {
         W.SharePointContentSource,
         z.infer<typeof import('./api-schemas/content-sources.js').SharePointContentSourceSchema>
     >;
+    GoogleDriveContentSourcePermissions: Same<
+        W.GoogleDriveContentSourcePermissions,
+        z.infer<typeof import('./api-schemas/content-sources.js').GoogleDriveContentSourcePermissionsSchema>
+    >;
+    SingleGoogleDriveSelection: Same<
+        W.SingleGoogleDriveSelection,
+        z.infer<typeof import('./api-schemas/content-sources.js').SingleGoogleDriveSelectionSchema>
+    >;
+    AllGoogleDrivesSelection: Same<
+        W.AllGoogleDrivesSelection,
+        z.infer<typeof import('./api-schemas/content-sources.js').AllGoogleDrivesSelectionSchema>
+    >;
+    GoogleDrivePermissionOptions: Same<
+        W.GoogleDrivePermissionOptions,
+        z.infer<typeof import('./api-schemas/content-sources.js').GoogleDrivePermissionOptionsSchema>
+    >;
+    SharePointPermissionOptions: Same<
+        W.SharePointPermissionOptions,
+        z.infer<typeof import('./api-schemas/content-sources.js').SharePointPermissionOptionsSchema>
+    >;
+    GoogleDriveSelection: Same<
+        W.GoogleDriveSelection,
+        z.infer<typeof import('./api-schemas/content-sources.js').GoogleDriveSelectionSchema>
+    >;
+    GoogleDriveReaderConfig: Same<
+        W.GoogleDriveReaderConfig,
+        z.infer<typeof import('./api-schemas/content-sources.js').GoogleDriveReaderConfigSchema>
+    >;
+    GoogleDriveReader: Same<
+        W.GoogleDriveReader,
+        z.infer<typeof import('./api-schemas/content-sources.js').GoogleDriveReaderSchema>
+    >;
+    GoogleDriveContentSource: Same<
+        W.GoogleDriveContentSource,
+        z.infer<typeof import('./api-schemas/content-sources.js').GoogleDriveContentSourceSchema>
+    >;
+    CreateGoogleDriveContentSourcePayload: Same<
+        W.CreateGoogleDriveContentSourcePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').CreateGoogleDriveContentSourcePayloadSchema>
+    >;
     BoxContentSource: Same<
         W.BoxContentSource,
         z.infer<typeof import('./api-schemas/content-sources.js').BoxContentSourceSchema>
@@ -9036,6 +9076,46 @@ interface Checks {
         W.ApiComponentTypes['SharePointContentSource'],
         z.infer<typeof import('./api-schemas/content-sources.js').SharePointContentSourceSchema>
     >;
+    'component:GoogleDriveContentSourcePermissions': Same<
+        W.ApiComponentTypes['GoogleDriveContentSourcePermissions'],
+        z.infer<typeof import('./api-schemas/content-sources.js').GoogleDriveContentSourcePermissionsSchema>
+    >;
+    'component:SingleGoogleDriveSelection': Same<
+        W.ApiComponentTypes['SingleGoogleDriveSelection'],
+        z.infer<typeof import('./api-schemas/content-sources.js').SingleGoogleDriveSelectionSchema>
+    >;
+    'component:AllGoogleDrivesSelection': Same<
+        W.ApiComponentTypes['AllGoogleDrivesSelection'],
+        z.infer<typeof import('./api-schemas/content-sources.js').AllGoogleDrivesSelectionSchema>
+    >;
+    'component:SharePointPermissionOptions': Same<
+        W.ApiComponentTypes['SharePointPermissionOptions'],
+        z.infer<typeof import('./api-schemas/content-sources.js').SharePointPermissionOptionsSchema>
+    >;
+    'component:GoogleDrivePermissionOptions': Same<
+        W.ApiComponentTypes['GoogleDrivePermissionOptions'],
+        z.infer<typeof import('./api-schemas/content-sources.js').GoogleDrivePermissionOptionsSchema>
+    >;
+    'component:GoogleDriveSelection': Same<
+        W.ApiComponentTypes['GoogleDriveSelection'],
+        z.infer<typeof import('./api-schemas/content-sources.js').GoogleDriveSelectionSchema>
+    >;
+    'component:GoogleDriveReaderConfig': Same<
+        W.ApiComponentTypes['GoogleDriveReaderConfig'],
+        z.infer<typeof import('./api-schemas/content-sources.js').GoogleDriveReaderConfigSchema>
+    >;
+    'component:GoogleDriveReader': Same<
+        W.ApiComponentTypes['GoogleDriveReader'],
+        z.infer<typeof import('./api-schemas/content-sources.js').GoogleDriveReaderSchema>
+    >;
+    'component:GoogleDriveContentSource': Same<
+        W.ApiComponentTypes['GoogleDriveContentSource'],
+        z.infer<typeof import('./api-schemas/content-sources.js').GoogleDriveContentSourceSchema>
+    >;
+    'component:CreateGoogleDriveContentSourcePayload': Same<
+        W.ApiComponentTypes['CreateGoogleDriveContentSourcePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').CreateGoogleDriveContentSourcePayloadSchema>
+    >;
     'component:BoxContentSource': Same<
         W.ApiComponentTypes['BoxContentSource'],
         z.infer<typeof import('./api-schemas/content-sources.js').BoxContentSourceSchema>
@@ -11516,6 +11596,16 @@ const checks: Checks = {
     ContentQueryResult: true,
     ExternalContentSource: true,
     SharePointContentSource: true,
+    GoogleDriveContentSourcePermissions: true,
+    SingleGoogleDriveSelection: true,
+    AllGoogleDrivesSelection: true,
+    GoogleDrivePermissionOptions: true,
+    SharePointPermissionOptions: true,
+    GoogleDriveSelection: true,
+    GoogleDriveReaderConfig: true,
+    GoogleDriveReader: true,
+    GoogleDriveContentSource: true,
+    CreateGoogleDriveContentSourcePayload: true,
     BoxContentSource: true,
     ContentSourcePermissionSettings: true,
     ContentSourcePermissionStatus: true,
@@ -13623,6 +13713,16 @@ const checks: Checks = {
     'component:ContentSourcePermissionSettings': true,
     'component:ContentSourcePermissionStatus': true,
     'component:SharePointContentSource': true,
+    'component:GoogleDriveContentSourcePermissions': true,
+    'component:SingleGoogleDriveSelection': true,
+    'component:AllGoogleDrivesSelection': true,
+    'component:SharePointPermissionOptions': true,
+    'component:GoogleDrivePermissionOptions': true,
+    'component:GoogleDriveSelection': true,
+    'component:GoogleDriveReaderConfig': true,
+    'component:GoogleDriveReader': true,
+    'component:GoogleDriveContentSource': true,
+    'component:CreateGoogleDriveContentSourcePayload': true,
     'component:BoxContentSource': true,
     'component:ExternalContentSource': true,
     'component:ExternalContentSourceArray': true,
@@ -14176,6 +14276,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2939);
+        expect(Object.keys(checks)).toHaveLength(2959);
     });
 });

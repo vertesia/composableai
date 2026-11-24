@@ -339,6 +339,10 @@ export const ContentObjectTextResponseSchema = z
 export const SetObjectTextPayloadSchema = z
     .strictObject({
         text: z.string().meta({ description: 'The extracted text to store for the object.' }),
+        expected_content_etag: z
+            .string()
+            .optional()
+            .meta({ description: 'Reject stale text when the current content etag differs.' }),
         etag: z
             .string()
             .meta({
@@ -720,7 +724,7 @@ export const ContentObjectIdempotencyKeySchema = z
  * opens the file before storing the object, and refuses any other scheme, a relative path, or a bucket with no
  * object (`gs://bucket/`).
  */
-const CONTENT_SOURCE_URI_PATTERN = '^(?:gs|s3|az|sharepoint|box)://[^/]+/.+';
+const CONTENT_SOURCE_URI_PATTERN = '^(?:gs|s3|az|sharepoint|box|google-drive)://[^/]+/.+';
 
 /**
  * The server opens a non-empty `content.source` as a blob URI and stores the file with its MIME type, so the source

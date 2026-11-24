@@ -111,7 +111,15 @@ export async function transcribeMedia(
     }
 
     // Get download URL for the media source
-    const { url: mediaUrl } = await client.files.getDownloadUrl(mediaSource);
+    const { url: mediaUrl, authentication_required } = await client.files.getDownloadUrl(mediaSource);
+    if (authentication_required || client.files.isAuthenticatedDownloadUrl?.(mediaUrl)) {
+        return {
+            hasText: false,
+            objectId: storageId,
+            status: TextExtractionStatus.error,
+            error: 'Gladia requires a media URL it can read without a Vertesia session.',
+        };
+    }
 
     if (!mediaUrl) {
         throw new DocumentNotFoundError(`Error fetching media URL for ${loggableSource(mediaSource)}`);

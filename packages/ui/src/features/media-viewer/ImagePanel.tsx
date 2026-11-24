@@ -3,6 +3,7 @@ import { Button, Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { useEffect, useState } from 'react';
+import { useBrowserFileUrl } from '../document-viewer/useBrowserFileUrl.js';
 import { WEB_SUPPORTED_IMAGE_FORMATS } from './formats.js';
 
 interface ImagePanelProps {
@@ -35,13 +36,14 @@ function ImagePanelContent({ url, source, object, className, onRetry }: ImagePan
     const { t } = useUITranslation();
     const [failed, setFailed] = useState(false);
     const { client } = useUserSession();
+    const browserFileUrl = useBrowserFileUrl(client.files, source ?? object?.content?.source ?? url);
     const [imageUrl, setImageUrl] = useState<string | undefined>(url);
     const [isLoading, setIsLoading] = useState<boolean>(!url && (!!source || !!object));
 
     useEffect(() => {
         let active = true;
         setFailed(false);
-        if (url) {
+        if (url && !client.files.isAuthenticatedDownloadUrl?.(url)) {
             setImageUrl(url);
             setIsLoading(false);
             return;
@@ -51,9 +53,15 @@ function ImagePanelContent({ url, source, object, className, onRetry }: ImagePan
 
         const load = async () => {
             try {
+                if (url) {
+                    const resolved = await browserFileUrl({ url });
+                    if (active) setImageUrl(resolved);
+                    return;
+                }
                 if (source) {
                     const downloadUrl = await client.files.getDownloadUrl(source);
-                    if (active) setImageUrl(downloadUrl.url);
+                    const resolved = await browserFileUrl(downloadUrl);
+                    if (active) setImageUrl(resolved);
                     return;
                 }
 
@@ -72,7 +80,8 @@ function ImagePanelContent({ url, source, object, className, onRetry }: ImagePan
                         sign_url: true,
                     });
                     if (rendition.status === 'found' && rendition.renditions?.length) {
-                        if (active) setImageUrl(rendition.renditions[0]);
+                        const resolved = await browserFileUrl({ url: rendition.renditions[0] });
+                        if (active) setImageUrl(resolved);
                         return;
                     }
                 } catch {
@@ -81,7 +90,8 @@ function ImagePanelContent({ url, source, object, className, onRetry }: ImagePan
 
                 if (isOriginalWebSupported && object.content?.source) {
                     const downloadUrl = await client.files.getDownloadUrl(object.content.source);
-                    if (active) setImageUrl(downloadUrl.url);
+                    const resolved = await browserFileUrl(downloadUrl);
+                    if (active) setImageUrl(resolved);
                 } else if (active) {
                     setFailed(true);
                 }
@@ -92,7 +102,7 @@ function ImagePanelContent({ url, source, object, className, onRetry }: ImagePan
             }
         };
 
-        if (source || object) {
+        if (url || source || object) {
             setIsLoading(true);
             void load();
         } else {
@@ -101,7 +111,7 @@ function ImagePanelContent({ url, source, object, className, onRetry }: ImagePan
         return () => {
             active = false;
         };
-    }, [url, source, object, client]);
+    }, [url, source, object, client, browserFileUrl]);
 
     if (isLoading) {
         return (

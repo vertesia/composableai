@@ -3,6 +3,7 @@ import { Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { useEffect, useState } from 'react';
+import { useBrowserFileUrl } from '../document-viewer/useBrowserFileUrl.js';
 import { WEB_SUPPORTED_VIDEO_FORMATS } from './formats.js';
 
 interface VideoPanelProps {
@@ -23,6 +24,7 @@ interface VideoPanelProps {
 export function VideoPanel({ url, source, object, className }: VideoPanelProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
+    const browserFileUrl = useBrowserFileUrl(client.files, source ?? object?.content?.source ?? url);
     const [videoUrl, setVideoUrl] = useState<string | undefined>(url);
     const [posterUrl, setPosterUrl] = useState<string>();
     const [isLoading, setIsLoading] = useState<boolean>(!url && (!!source || !!object));
@@ -38,7 +40,7 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
         !!object && object.metadata?.type === ContentNature.Video && !webRendition && !isOriginalWebSupported;
 
     useEffect(() => {
-        if (url) {
+        if (url && !client.files.isAuthenticatedDownloadUrl?.(url)) {
             setVideoUrl(url);
             setIsLoading(false);
             return;
@@ -49,9 +51,13 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
 
         const load = async () => {
             try {
+                if (url) {
+                    setVideoUrl(await browserFileUrl({ url }));
+                    return;
+                }
                 if (source) {
                     const downloadUrl = await client.files.getDownloadUrl(source);
-                    setVideoUrl(downloadUrl.url);
+                    setVideoUrl(await browserFileUrl(downloadUrl));
                     return;
                 }
 
@@ -65,7 +71,7 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
                     downloadUrl = await client.files.getDownloadUrl(object.content.source);
                 }
                 if (downloadUrl) {
-                    setVideoUrl(downloadUrl.url);
+                    setVideoUrl(await browserFileUrl(downloadUrl));
                 }
             } catch (error) {
                 console.error('Failed to get video URL', error);
@@ -74,21 +80,22 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
             }
         };
 
-        if (source || object) {
+        if (url || source || object) {
             setIsLoading(true);
             void load();
         } else {
             setIsLoading(false);
         }
-    }, [url, source, object, webRendition, isOriginalWebSupported, client]);
+    }, [url, source, object, webRendition, isOriginalWebSupported, client, browserFileUrl]);
 
     useEffect(() => {
         if (!poster?.content?.source) return;
         client.files
             .getDownloadUrl(poster.content.source)
-            .then((response) => setPosterUrl(response.url))
+            .then(browserFileUrl)
+            .then(setPosterUrl)
             .catch((error) => console.error('Failed to load poster image', error));
-    }, [poster, client]);
+    }, [poster, client, browserFileUrl]);
 
     if (showsObjectFallbackEmpty) {
         return (

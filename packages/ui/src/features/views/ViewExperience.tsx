@@ -15,6 +15,7 @@ import { FullHeightLayout } from '@vertesia/ui/layout';
 import { useUserSession } from '@vertesia/ui/session';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useBrowserFileUrl } from '../document-viewer/useBrowserFileUrl.js';
 import { GenericPageNavHeader } from '../layout/GenericPageNavHeader.js';
 import { UserPermissionsContext } from '../permissions/UserPermissionsProvider.js';
 import type {
@@ -78,6 +79,7 @@ function cleanStringRecord(values: Record<string, string>): Record<string, strin
 
 function ViewExperienceWithSession(props: Omit<ViewExperienceProps, 'execute'>) {
     const { client } = useUserSession();
+    const browserFileUrl = useBrowserFileUrl(client.files, props.viewId);
     const permissions = useContext(UserPermissionsContext);
     const execute = useCallback(
         (request: ExecuteViewRequest) => client.views.execute(props.viewId, request),
@@ -96,7 +98,7 @@ function ViewExperienceWithSession(props: Omit<ViewExperienceProps, 'execute'>) 
                     sign_url: true,
                 });
                 if (rendition?.status === 'found' && rendition.renditions?.length) {
-                    return rendition.renditions[0];
+                    return browserFileUrl({ url: rendition.renditions[0] });
                 }
             } catch {
                 // A missing optional rendition falls through to the original image.
@@ -104,11 +106,11 @@ function ViewExperienceWithSession(props: Omit<ViewExperienceProps, 'execute'>) 
 
             if (content?.source && content.type?.startsWith('image/')) {
                 const download = await client.files.getDownloadUrl(content.source);
-                return download.url;
+                return browserFileUrl(download);
             }
             return undefined;
         },
-        [client],
+        [client, browserFileUrl],
     );
     const hasAnyPermission = (values: Permission[]) =>
         permissions !== undefined && values.some((permission) => permissions.hasPermission(permission));
