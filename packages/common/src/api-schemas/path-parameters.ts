@@ -191,3 +191,23 @@ export const ToolPathParamsSchema = z
     })
     .partial()
     .meta({ id: 'ToolPathParams' });
+
+/** A notification of the current user's inbox, read by its ID: the server refuses any other spelling with a 400. */
+export const NotificationPathParamsSchema = z
+    .object({ notificationId: objectId('The notification ID') })
+    .partial()
+    .meta({ id: 'NotificationPathParams' });
+
+/**
+ * A sync round of a content source: the server refuses a round ID that is not 1 to 64 letters, digits, `_` or `-`
+ * with a 400 before it looks the source up. The source ID is looked up, so a malformed one is a 404.
+ */
+export const ContentSourceRoundPathParamsSchema = z
+    .object({
+        roundId: z
+            .string()
+            .regex(/^[A-Za-z0-9_-]{1,64}$/)
+            .meta({ description: 'The sync round ID: 1 to 64 letters, digits, `_` or `-`.' }),
+    })
+    .partial()
+    .meta({ id: 'ContentSourceRoundPathParams' });
