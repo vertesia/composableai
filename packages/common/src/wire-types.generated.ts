@@ -7567,6 +7567,9 @@ export type SharePointOrganizationReader = {
     subject: string;
     audience: string;
 };
+export type SharePointRegion = {
+    region: string;
+};
 export type SharePointLibraryContext = {
     site_hostname: string;
     site_collection_id: string;
@@ -12211,6 +12214,7 @@ export interface ApiComponentTypes {
     ConfigureSharePointOrganizationReaderPayload: ConfigureSharePointOrganizationReaderPayload;
     SharePointOrganizationReader: SharePointOrganizationReader;
     SharePointOrganizations: SharePointOrganizations;
+    SharePointRegion: SharePointRegion;
     SharePointLibraryContext: SharePointLibraryContext;
     SharePointLibraryReceipt: SharePointLibraryReceipt;
     SharePointLibraryRequest: SharePointLibraryRequest;

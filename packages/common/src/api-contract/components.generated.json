@@ -6677,6 +6677,20 @@
     ],
     "additionalProperties": false
   },
+  "SharePointRegion": {
+    "type": "object",
+    "properties": {
+      "region": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Assigned Vertesia region identifier."
+      }
+    },
+    "required": [
+      "region"
+    ],
+    "additionalProperties": false
+  },
   "SharePointLibraryContext": {
     "type": "object",
     "properties": {

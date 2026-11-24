@@ -3203,6 +3203,10 @@ interface Checks {
         W.SharePointOrganizationReader,
         z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationReaderSchema>
     >;
+    SharePointRegion: Same<
+        W.SharePointRegion,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointRegionSchema>
+    >;
     SharePointLibraryContext: Same<
         W.SharePointLibraryContext,
         z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointLibraryContextSchema>
@@ -5838,6 +5842,10 @@ interface Checks {
     'component:SharePointOrganizations': Same<
         W.ApiComponentTypes['SharePointOrganizations'],
         z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationsSchema>
+    >;
+    'component:SharePointRegion': Same<
+        W.ApiComponentTypes['SharePointRegion'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointRegionSchema>
     >;
     'component:SharePointLibraryContext': Same<
         W.ApiComponentTypes['SharePointLibraryContext'],
@@ -12116,6 +12124,7 @@ const checks: Checks = {
     SharePointOrganization: true,
     ConfigureSharePointOrganizationReaderPayload: true,
     SharePointOrganizationReader: true,
+    SharePointRegion: true,
     SharePointLibraryContext: true,
     SharePointLibraryReceipt: true,
     SharePointLibraryRequest: true,
@@ -12839,6 +12848,7 @@ const checks: Checks = {
     'component:ConfigureSharePointOrganizationReaderPayload': true,
     'component:SharePointOrganizationReader': true,
     'component:SharePointOrganizations': true,
+    'component:SharePointRegion': true,
     'component:SharePointLibraryContext': true,
     'component:SharePointLibraryReceipt': true,
     'component:SharePointLibraryRequest': true,
@@ -14196,6 +14206,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2943);
+        expect(Object.keys(checks)).toHaveLength(2945);
     });
 });

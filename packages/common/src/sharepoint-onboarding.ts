@@ -7,6 +7,7 @@ export type SharePointOrganizations = Wire.SharePointOrganizations;
 export type SharePointOrganization = Wire.SharePointOrganization;
 export type ConfigureSharePointOrganizationReaderPayload = Wire.ConfigureSharePointOrganizationReaderPayload;
 export type SharePointOrganizationReader = Wire.SharePointOrganizationReader;
+export type SharePointRegion = Wire.SharePointRegion;
 export type SharePointLibraryContext = Wire.SharePointLibraryContext;
 export type SharePointLibraryReceipt = Wire.SharePointLibraryReceipt;
 export type SharePointLibraryRequest = Wire.SharePointLibraryRequest;
