@@ -10145,6 +10145,27 @@ export type IssueTokenRequest =
     | EnvironmentTokenRequest
     | AgentTokenRequest
     | ServiceAccountTokenRequest;
+export type TokenUpgradeRequest = Record<string, never>;
+export type TokenUpgradeResponse = {
+    token: string;
+    token_type: 'Bearer';
+    expires_in: number;
+    jwt_version: number;
+};
+export type TokenUpgradeErrorResponse = {
+    error: string;
+    message: string;
+    errorCode:
+        | 'TOKEN_REQUIRED'
+        | 'TOKEN_INVALID'
+        | 'TOKEN_EXPIRED'
+        | 'TOKEN_UPGRADE_FORBIDDEN'
+        | 'TOKEN_UPGRADE_UNSUPPORTED'
+        | 'TOKEN_UPGRADE_NOT_POSSIBLE'
+        | 'TOKEN_VERSION_TOO_NEW_FOR_SERVER'
+        | 'TOKEN_UPGRADE_UNAVAILABLE';
+    jwt_version: number;
+};
 export type IssueTokenResponse = {
     token: string;
     token_type: 'Bearer';
@@ -13358,6 +13379,9 @@ export interface ApiComponentTypes {
     AppInstallationWithManifestArray: AppInstallationWithManifestArray;
     AppInstallationListEntryArray: AppInstallationListEntryArray;
     BinaryFileResponse: BinaryFileResponse;
+    TokenUpgradeRequest: TokenUpgradeRequest;
+    TokenUpgradeResponse: TokenUpgradeResponse;
+    TokenUpgradeErrorResponse: TokenUpgradeErrorResponse;
     SigningAlgorithm: SigningAlgorithm;
     ApiKeyTokenRequest: ApiKeyTokenRequest;
     UserTokenRequest: UserTokenRequest;

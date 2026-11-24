@@ -73,6 +73,8 @@ export type AuthTokenResponse = Wire.AuthTokenResponse;
 export type ApiKeyListQuery = Wire.ApiKeyListQuery;
 
 export interface AuthTokenPayload {
+    /** JWT contract version. Absence means version 0, not an invalid token. */
+    version?: number;
     credential_scope?: 'project' | 'account';
     credential_profile?: 'account_admin_v1';
     delegation?: import('./delegation.js').DelegationTokenClaim;

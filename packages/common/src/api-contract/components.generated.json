@@ -28534,6 +28534,80 @@
     "type": "string",
     "format": "binary"
   },
+  "TokenUpgradeRequest": {
+    "type": "object",
+    "additionalProperties": false,
+    "description": "For migrations and JWT feature upgrades only. Optional empty body. The bearer JWT is the token to upgrade; the target is always this STS's current JWT version. This is not lifetime renewal."
+  },
+  "TokenUpgradeResponse": {
+    "type": "object",
+    "properties": {
+      "token": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The original JWT when already current, or a replacement from a supported converter. Never extends the original expiration."
+      },
+      "token_type": {
+        "type": "string",
+        "const": "Bearer"
+      },
+      "expires_in": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Remaining lifetime in seconds, not a renewed lifetime."
+      },
+      "jwt_version": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Current JWT contract. An unchanged legacy token may omit its version claim; omission means 0."
+      }
+    },
+    "required": [
+      "token",
+      "token_type",
+      "expires_in",
+      "jwt_version"
+    ],
+    "additionalProperties": false
+  },
+  "TokenUpgradeErrorResponse": {
+    "type": "object",
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "message": {
+        "type": "string"
+      },
+      "errorCode": {
+        "type": "string",
+        "enum": [
+          "TOKEN_REQUIRED",
+          "TOKEN_INVALID",
+          "TOKEN_EXPIRED",
+          "TOKEN_UPGRADE_FORBIDDEN",
+          "TOKEN_UPGRADE_UNSUPPORTED",
+          "TOKEN_UPGRADE_NOT_POSSIBLE",
+          "TOKEN_VERSION_TOO_NEW_FOR_SERVER",
+          "TOKEN_UPGRADE_UNAVAILABLE"
+        ]
+      },
+      "jwt_version": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "error",
+      "message",
+      "errorCode",
+      "jwt_version"
+    ],
+    "additionalProperties": false
+  },
   "SigningAlgorithm": {
     "type": "string",
     "enum": [

@@ -5,7 +5,7 @@ import {
     type IRequestRetryPolicy,
     type RequestIdentityProvider,
 } from '@vertesia/api-fetch-client';
-import type { AppSessionTokenRequest, AppSessionTokenResponse } from '@vertesia/common';
+import type { AppSessionTokenRequest, AppSessionTokenResponse, TokenUpgradeResponse } from '@vertesia/common';
 import {
     APP_VERSION_HEADER,
     type AuthTokenPayload,
@@ -481,6 +481,19 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      */
     async mintAppSessionToken(request: AppSessionTokenRequest): Promise<AppSessionTokenResponse> {
         return this.post<AppSessionTokenResponse>(`${this.tokenServerUrl}/token/app-session`, { payload: request });
+    }
+
+    /**
+     * Transport helper for migrations and JWT feature upgrades only. Targets the STS's current version, never extends
+     * the token's lifetime, and does not replace the client's credentials automatically.
+     * Preparation returns the original JWT when current; other versions raise TOKEN_UPGRADE_UNSUPPORTED.
+     */
+    upgradeToken(token: string, signal?: AbortSignal): Promise<TokenUpgradeResponse> {
+        return this.post<TokenUpgradeResponse>(new URL('/token/upgrade', this.tokenServerUrl).toString(), {
+            headers: { authorization: `Bearer ${token}` },
+            payload: {},
+            signal,
+        });
     }
 
     async getAuthToken(token?: string): Promise<AuthTokenResponse> {

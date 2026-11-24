@@ -9,3 +9,15 @@ export const ISSUE_TOKEN_FORBIDDEN_ERROR_CODES = [
     RESTRICTED_ENVIRONMENT_ERROR_CODE,
     TOKEN_ISSUANCE_FORBIDDEN_ERROR_CODE,
 ] as const;
+
+/** Stable outcomes for version upgrades; conversion-specific outcomes are reserved for future converters. */
+export const TOKEN_UPGRADE_ERROR_CODES = [
+    'TOKEN_REQUIRED',
+    'TOKEN_INVALID',
+    'TOKEN_EXPIRED',
+    'TOKEN_UPGRADE_FORBIDDEN',
+    'TOKEN_UPGRADE_UNSUPPORTED',
+    'TOKEN_UPGRADE_NOT_POSSIBLE',
+    'TOKEN_VERSION_TOO_NEW_FOR_SERVER',
+    'TOKEN_UPGRADE_UNAVAILABLE',
+] as const;
