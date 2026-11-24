@@ -42,7 +42,7 @@
     },
     "peerDependencies": {
         "@azure/storage-blob": "^12.34.0",
-        "@google-cloud/storage": ">=9.0.0",
+        "@google-cloud/storage": ">=8.4.0",
         "google-auth-library": ">=11.3.4"
     },
     "peerDependenciesMeta": {
