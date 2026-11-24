@@ -33,7 +33,7 @@
         "typescript": "catalog:",
         "vite": "catalog:"
     },
-    "packageManager": "pnpm@12.19.0",
+    "packageManager": "pnpm@12.21.0",
     "gitHead": "0b4dcc5c9e17a0fdb8771fee841f98efac7e2a2c",
     "releaseIdentity": {
         "source_sha": "0b4dcc5c9e17a0fdb8771fee841f98efac7e2a2c",
