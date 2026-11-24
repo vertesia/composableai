@@ -1,4 +1,4 @@
-import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase, type IRequestParams } from '@vertesia/api-fetch-client';
 import {
     type ActiveWorkstreamsQueryResult,
     type AgentArtifactContentResponse,
@@ -60,6 +60,9 @@ import { EventSourceProvider } from '../execute.js';
 import { withIdempotencyKey } from '../idempotency-key.js';
 import { fetchSignedUrl } from './signed-url.js';
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
+
+/** Request options for agent-run reads: extra headers, a caller abort signal, and a timeout. */
+export type AgentRunReadOptions = Pick<IRequestParams, 'headers' | 'signal' | 'timeoutMs'>;
 
 export interface AgentRunStreamMessagesOptions {
     /** Resolve the stream when the root conversation becomes idle. Headless followers should opt in. */
@@ -129,8 +132,8 @@ export class AgentsApi extends ApiTopic {
     /**
      * Get agent run by id.
      */
-    retrieve<TData = Record<string, unknown>>(id: string): Promise<AgentRun<TData>> {
-        return this.get(`/${id}`);
+    retrieve<TData = Record<string, unknown>>(id: string, options?: AgentRunReadOptions): Promise<AgentRun<TData>> {
+        return this.get(`/${id}`, options);
     }
 
     /**
@@ -332,9 +335,9 @@ export class AgentsApi extends ApiTopic {
      * Retrieve stored messages for an agent run.
      * Returns gzip-compressed responses for large payloads.
      */
-    async retrieveMessages(id: string, since?: number): Promise<AgentMessage[]> {
+    async retrieveMessages(id: string, since?: number, options?: AgentRunReadOptions): Promise<AgentMessage[]> {
         const query = since ? { since } : undefined;
-        const response = (await this.get(`/${id}/updates`, { query })) as AgentRunUpdatesResponse;
+        const response = (await this.get(`/${id}/updates`, { ...options, query })) as AgentRunUpdatesResponse;
         return response.messages.map((m) => toAgentMessage(parseMessage(m), id));
     }
 
@@ -825,8 +828,8 @@ export class AgentsApi extends ApiTopic {
     /**
      * List child workflows for an agent or process run.
      */
-    listChildren(id: string): Promise<ListWorkflowRunsResponse> {
-        return this.get(`/${id}/children`);
+    listChildren(id: string, options?: AgentRunReadOptions): Promise<ListWorkflowRunsResponse> {
+        return this.get(`/${id}/children`, options);
     }
 
     /**
