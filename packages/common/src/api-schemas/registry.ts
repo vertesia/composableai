@@ -467,6 +467,7 @@ import {
     MediatorEnvConfigSchema,
     MigrateInteractionsPayloadSchema,
     MigrateInteractionsResultSchema,
+    OpenAICompatibleApiSchema,
     SupportedProvidersSchema,
     VirtualEnvEntrySchema,
 } from './environment.js';
@@ -1127,6 +1128,7 @@ const ENVIRONMENT_SCHEMAS = {
     ExecutionEnvironment: ExecutionEnvironmentSchema,
     ExecutionEnvironmentArray: ExecutionEnvironmentArraySchema,
     ExecutionEnvironmentSettings: ExecutionEnvironmentSettingsSchema,
+    OpenAICompatibleApi: OpenAICompatibleApiSchema,
     ExecutionEnvironmentCreatePayload: ExecutionEnvironmentCreatePayloadSchema,
     ExecutionEnvironmentUpdatePayload: ExecutionEnvironmentUpdatePayloadSchema,
     ExecutionEnvironmentConfigUpdatePayload: ExecutionEnvironmentConfigUpdatePayloadSchema,
@@ -2678,6 +2680,8 @@ const PATH_PARAMETER_SCHEMAS = {
     ProjectAppCapabilityPathParams: PathParameterSchemas.ProjectAppCapabilityPathParamsSchema,
     EmbeddingTypePathParams: PathParameterSchemas.EmbeddingTypePathParamsSchema,
     ToolPathParams: PathParameterSchemas.ToolPathParamsSchema,
+    NotificationPathParams: PathParameterSchemas.NotificationPathParamsSchema,
+    ContentSourceRoundPathParams: PathParameterSchemas.ContentSourceRoundPathParamsSchema,
 };
 const WORKFLOW_USAGE_SCHEMAS = {
     WorkflowUsageQuery: WorkflowUsageSchemas.WorkflowUsageQuerySchema,

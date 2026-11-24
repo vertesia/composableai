@@ -1833,6 +1833,10 @@ interface Checks {
         W.ExecutionEnvironmentSettings,
         z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentSettingsSchema>
     >;
+    OpenAICompatibleApi: Same<
+        W.OpenAICompatibleApi,
+        z.infer<typeof import('./api-schemas/environment.js').OpenAICompatibleApiSchema>
+    >;
     ExecutionEnvironment: Same<
         W.ExecutionEnvironment,
         z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentSchema>
@@ -5414,6 +5418,14 @@ interface Checks {
         W.ToolPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').ToolPathParamsSchema>
     >;
+    NotificationPathParams: Same<
+        W.NotificationPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').NotificationPathParamsSchema>
+    >;
+    ContentSourceRoundPathParams: Same<
+        W.ContentSourceRoundPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').ContentSourceRoundPathParamsSchema>
+    >;
     'component:CustomRoleDefinition': Same<
         W.ApiComponentTypes['CustomRoleDefinition'],
         z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionSchema>
@@ -5994,6 +6006,10 @@ interface Checks {
     'component:ExecutionEnvironmentSettings': Same<
         W.ApiComponentTypes['ExecutionEnvironmentSettings'],
         z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentSettingsSchema>
+    >;
+    'component:OpenAICompatibleApi': Same<
+        W.ApiComponentTypes['OpenAICompatibleApi'],
+        z.infer<typeof import('./api-schemas/environment.js').OpenAICompatibleApiSchema>
     >;
     'component:ExecutionEnvironmentCreatePayload': Same<
         W.ApiComponentTypes['ExecutionEnvironmentCreatePayload'],
@@ -11044,6 +11060,14 @@ interface Checks {
         W.ApiComponentTypes['ToolPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').ToolPathParamsSchema>
     >;
+    'component:NotificationPathParams': Same<
+        W.ApiComponentTypes['NotificationPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').NotificationPathParamsSchema>
+    >;
+    'component:ContentSourceRoundPathParams': Same<
+        W.ApiComponentTypes['ContentSourceRoundPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').ContentSourceRoundPathParamsSchema>
+    >;
     'component:WorkflowUsageQuery': Same<
         W.ApiComponentTypes['WorkflowUsageQuery'],
         z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageQuerySchema>
@@ -11562,6 +11586,7 @@ const checks: Checks = {
     LoadBalancingEnvEntryConfig: true,
     MediatorEnvConfig: true,
     ExecutionEnvironmentSettings: true,
+    OpenAICompatibleApi: true,
     ExecutionEnvironment: true,
     ExecutionEnvironmentRef: true,
     ExecutionEnvironmentCreatePayload: true,
@@ -12545,6 +12570,8 @@ const checks: Checks = {
     ProjectAppCapabilityPathParams: true,
     EmbeddingTypePathParams: true,
     ToolPathParams: true,
+    NotificationPathParams: true,
+    ContentSourceRoundPathParams: true,
     'component:CustomRoleDefinition': true,
     'component:CustomRoleDefinitionArray': true,
     'component:CreateCustomRolePayload': true,
@@ -12691,6 +12718,7 @@ const checks: Checks = {
     'component:ExecutionEnvironment': true,
     'component:ExecutionEnvironmentArray': true,
     'component:ExecutionEnvironmentSettings': true,
+    'component:OpenAICompatibleApi': true,
     'component:ExecutionEnvironmentCreatePayload': true,
     'component:ExecutionEnvironmentUpdatePayload': true,
     'component:ExecutionEnvironmentConfigUpdatePayload': true,
@@ -13954,6 +13982,8 @@ const checks: Checks = {
     'component:ProjectAppCapabilityPathParams': true,
     'component:EmbeddingTypePathParams': true,
     'component:ToolPathParams': true,
+    'component:NotificationPathParams': true,
+    'component:ContentSourceRoundPathParams': true,
     'component:WorkflowUsageQuery': true,
     'component:WorkflowUsageClass': true,
     'component:WorkflowUsageStanding': true,
@@ -13962,6 +13992,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2897);
+        expect(Object.keys(checks)).toHaveLength(2903);
     });
 });

@@ -4164,8 +4164,10 @@ export type MediatorEnvConfig = {
 };
 export type ExecutionEnvironmentSettings = {
     default_headers?: StringValueMap | undefined;
+    openai_api?: OpenAICompatibleApi | undefined;
     [k: string]: unknown;
 };
+export type OpenAICompatibleApi = 'responses' | 'chat_completions';
 export type ExecutionEnvironment = {
     id: string;
     name: string;
@@ -11978,6 +11980,12 @@ export type EmbeddingTypePathParams = {
 export type ToolPathParams = {
     toolName?: string | undefined;
 };
+export type NotificationPathParams = {
+    notificationId?: string | undefined;
+};
+export type ContentSourceRoundPathParams = {
+    roundId?: string | undefined;
+};
 /** The wire type of every registry component, by component name: what `ApiComponentType<N>` resolves. */
 export interface ApiComponentTypes {
     CustomRoleDefinition: CustomRoleDefinition;
@@ -12126,6 +12134,7 @@ export interface ApiComponentTypes {
     ExecutionEnvironment: ExecutionEnvironment;
     ExecutionEnvironmentArray: ExecutionEnvironmentArray;
     ExecutionEnvironmentSettings: ExecutionEnvironmentSettings;
+    OpenAICompatibleApi: OpenAICompatibleApi;
     ExecutionEnvironmentCreatePayload: ExecutionEnvironmentCreatePayload;
     ExecutionEnvironmentUpdatePayload: ExecutionEnvironmentUpdatePayload;
     ExecutionEnvironmentConfigUpdatePayload: ExecutionEnvironmentConfigUpdatePayload;
@@ -13409,6 +13418,8 @@ export interface ApiComponentTypes {
     ProjectAppCapabilityPathParams: ProjectAppCapabilityPathParams;
     EmbeddingTypePathParams: EmbeddingTypePathParams;
     ToolPathParams: ToolPathParams;
+    NotificationPathParams: NotificationPathParams;
+    ContentSourceRoundPathParams: ContentSourceRoundPathParams;
     WorkflowUsageQuery: WorkflowUsageQuery;
     WorkflowUsageClass: WorkflowUsageClass;
     WorkflowUsageStanding: WorkflowUsageStanding;

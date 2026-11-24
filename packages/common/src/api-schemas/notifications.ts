@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PageCountSchema } from './schema-primitives.js';
+import { OBJECT_ID_PATTERN, PageCountSchema } from './schema-primitives.js';
 
 export const NotificationKindSchema = z
     .enum([
@@ -110,7 +110,27 @@ export const NotificationCountsSchema = z
     })
     .meta({ id: 'NotificationCounts' });
 
+/** A notification ID: the server refuses any other spelling with a 400. */
+const notificationIdSchema = z.string().regex(OBJECT_ID_PATTERN);
+
+/**
+ * The occurrence types the server records, and therefore the only ones `POST /notifications/read` accepts. A pattern
+ * rather than an enum keeps the published type a string, which acknowledging a `Notification.occurrence` relies on.
+ */
+export const NOTIFICATION_OCCURRENCE_TYPES = [
+    'agent_request',
+    'task',
+    'agent_run_end',
+    'agent_turn',
+    'object',
+    'inference_budget',
+] as const;
+
 export const NotificationOccurrenceAckSchema = NotificationRefSchema.extend({
+    type: z
+        .string()
+        .regex(new RegExp(`^(?:${NOTIFICATION_OCCURRENCE_TYPES.join('|')})$`))
+        .meta({ description: `The occurrence type: ${NOTIFICATION_OCCURRENCE_TYPES.join(', ')}.` }),
     as_of: z
         .string()
         .meta({
@@ -124,7 +144,11 @@ export const NotificationOccurrenceAckSchema = NotificationRefSchema.extend({
 
 export const MarkNotificationsReadPayloadSchema = z
     .strictObject({
-        ids: z.array(z.string()).max(200).optional(),
+        ids: z
+            .array(notificationIdSchema)
+            .max(200)
+            .optional()
+            .meta({ description: 'Notification IDs, as 24 hexadecimal characters.' }),
         occurrences: z
             .array(NotificationOccurrenceAckSchema)
             .max(200)
@@ -148,7 +172,11 @@ export const MarkAllNotificationsReadPayloadSchema = z
 
 export const ArchiveNotificationsPayloadSchema = z
     .strictObject({
-        ids: z.array(z.string()).min(1).max(200),
+        ids: z
+            .array(notificationIdSchema)
+            .min(1)
+            .max(200)
+            .meta({ description: 'Notification IDs, as 24 hexadecimal characters.' }),
     })
     .meta({ id: 'ArchiveNotificationsPayload' });
 
