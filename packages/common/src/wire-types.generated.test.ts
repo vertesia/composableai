@@ -1837,6 +1837,10 @@ interface Checks {
         W.ExecutionEnvironmentSettings,
         z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentSettingsSchema>
     >;
+    OpenAICompatibleApi: Same<
+        W.OpenAICompatibleApi,
+        z.infer<typeof import('./api-schemas/environment.js').OpenAICompatibleApiSchema>
+    >;
     ExecutionEnvironment: Same<
         W.ExecutionEnvironment,
         z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentSchema>
@@ -6006,6 +6010,10 @@ interface Checks {
     'component:ExecutionEnvironmentSettings': Same<
         W.ApiComponentTypes['ExecutionEnvironmentSettings'],
         z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentSettingsSchema>
+    >;
+    'component:OpenAICompatibleApi': Same<
+        W.ApiComponentTypes['OpenAICompatibleApi'],
+        z.infer<typeof import('./api-schemas/environment.js').OpenAICompatibleApiSchema>
     >;
     'component:ExecutionEnvironmentCreatePayload': Same<
         W.ApiComponentTypes['ExecutionEnvironmentCreatePayload'],
@@ -11587,6 +11595,7 @@ const checks: Checks = {
     LoadBalancingEnvEntryConfig: true,
     MediatorEnvConfig: true,
     ExecutionEnvironmentSettings: true,
+    OpenAICompatibleApi: true,
     ExecutionEnvironment: true,
     ExecutionEnvironmentRef: true,
     ExecutionEnvironmentCreatePayload: true,
@@ -12718,6 +12727,7 @@ const checks: Checks = {
     'component:ExecutionEnvironment': true,
     'component:ExecutionEnvironmentArray': true,
     'component:ExecutionEnvironmentSettings': true,
+    'component:OpenAICompatibleApi': true,
     'component:ExecutionEnvironmentCreatePayload': true,
     'component:ExecutionEnvironmentUpdatePayload': true,
     'component:ExecutionEnvironmentConfigUpdatePayload': true,
@@ -13992,6 +14002,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2903);
+        expect(Object.keys(checks)).toHaveLength(2905);
     });
 });

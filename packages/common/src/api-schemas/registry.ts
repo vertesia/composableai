@@ -467,6 +467,7 @@ import {
     MediatorEnvConfigSchema,
     MigrateInteractionsPayloadSchema,
     MigrateInteractionsResultSchema,
+    OpenAICompatibleApiSchema,
     SupportedProvidersSchema,
     VirtualEnvEntrySchema,
 } from './environment.js';
@@ -1127,6 +1128,7 @@ const ENVIRONMENT_SCHEMAS = {
     ExecutionEnvironment: ExecutionEnvironmentSchema,
     ExecutionEnvironmentArray: ExecutionEnvironmentArraySchema,
     ExecutionEnvironmentSettings: ExecutionEnvironmentSettingsSchema,
+    OpenAICompatibleApi: OpenAICompatibleApiSchema,
     ExecutionEnvironmentCreatePayload: ExecutionEnvironmentCreatePayloadSchema,
     ExecutionEnvironmentUpdatePayload: ExecutionEnvironmentUpdatePayloadSchema,
     ExecutionEnvironmentConfigUpdatePayload: ExecutionEnvironmentConfigUpdatePayloadSchema,

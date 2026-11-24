@@ -41,6 +41,13 @@ export const MediatorEnvConfigSchema = z
     })
     .meta({ id: 'MediatorEnvConfig' });
 
+export const OpenAICompatibleApiSchema = z.enum(['responses', 'chat_completions']).meta({
+    id: 'OpenAICompatibleApi',
+    description:
+        'The OpenAI API an OpenAI-compatible environment calls: `responses` (the default when omitted) or ' +
+        '`chat_completions`, for services that implement only Chat Completions.',
+});
+
 /**
  * `z.object().catchall()`, not `strictObject`: the component publishes `additionalProperties: {}`,
  * because the interface carried an index signature. Driver-specific settings are passed straight
@@ -51,6 +58,7 @@ export const ExecutionEnvironmentSettingsSchema = z
         default_headers: StringValueMapSchema.meta({
             description: 'Custom HTTP headers sent by OpenAI-compatible environments.',
         }).optional(),
+        openai_api: OpenAICompatibleApiSchema.optional(),
     })
     .catchall(z.unknown())
     .meta({ id: 'ExecutionEnvironmentSettings' });
