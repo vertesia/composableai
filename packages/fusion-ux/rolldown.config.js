@@ -1,4 +1,7 @@
 import { defineConfig } from 'rolldown';
+// Imported from source: @vertesia/build-tools depends on this workspace's packages, so a package
+// dependency on it would be a build cycle.
+import { thirdPartyLicenses } from '../build-tools/src/licenses/index.ts';
 
 // Bundles the already-built ES output (`lib/index.js`, produced by `tsc`) into a single
 // browser-friendly file. rolldown handles node resolution, CommonJS interop and
@@ -14,6 +17,14 @@ export default defineConfig({
         codeSplitting: false,
         minify: true,
     },
+    // Writes the notices of the packages this bundle inlines beside it.
+    plugins: [
+        thirdPartyLicenses({
+            title: 'vertesia-fusion-ux.js',
+            noticesFileName: 'vertesia-fusion-ux.THIRD-PARTY-NOTICES.txt',
+            jsonFileName: 'vertesia-fusion-ux.third-party-licenses.json',
+        }),
+    ],
     external: [
         // React packages (handled by CDN react-all bundle)
         'react',

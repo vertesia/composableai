@@ -11,7 +11,8 @@
         "arm64"
     ],
     "files": [
-        "bin/vertesia"
+        "bin/vertesia",
+        "THIRD-PARTY-NOTICES.txt"
     ],
     "publishConfig": {
         "executableFiles": [
