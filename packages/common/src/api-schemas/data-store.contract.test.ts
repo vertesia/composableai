@@ -36,7 +36,10 @@ describe('data-store API contracts', () => {
 
     it('publishes the table name and drop list rules the data store enforces', () => {
         const create = (name: string) =>
-            validateApiRequest('CreateTablesPayload', { message: 'm', tables: [{ name, columns: [] }] }).valid;
+            validateApiRequest('CreateTablesPayload', {
+                message: 'm',
+                tables: [{ name, columns: [{ name: 'id', type: 'INTEGER' }] }],
+            }).valid;
         expect(create('orders')).toBe(true);
         expect(create('_Orders_2')).toBe(true);
         expect(create('a'.repeat(64))).toBe(true);
@@ -44,6 +47,15 @@ describe('data-store API contracts', () => {
         expect(create('2orders')).toBe(false);
         expect(create('order-lines')).toBe(false);
         expect(create('a'.repeat(65))).toBe(false);
+        expect(
+            validateApiRequest('CreateTablesPayload', { message: 'm', tables: [{ name: 'orders', columns: [] }] })
+                .valid,
+        ).toBe(false);
+        // A schema update skips a listed table that already exists, so it may list one without columns.
+        expect(
+            validateApiRequest('UpdateSchemaPayload', { message: 'm', tables: [{ name: 'orders', columns: [] }] })
+                .valid,
+        ).toBe(true);
 
         const drop = (name: string) => validateApiRequest('UpdateSchemaPayload', { message: 'm', drop_tables: [name] });
         expect(drop('anything at all').valid).toBe(true);
