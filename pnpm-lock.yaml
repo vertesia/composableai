@@ -641,6 +641,9 @@ importers:
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
+      '@vertesia/build-tools':
+        specifier: workspace:*
+        version: link:../build-tools
       '@vertesia/tsconfig':
         specifier: workspace:*
         version: link:../../libraries/tsconfig
