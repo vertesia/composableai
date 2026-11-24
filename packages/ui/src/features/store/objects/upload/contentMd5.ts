@@ -10,6 +10,29 @@ export function withContentMd5(uploaded: ContentSource, md5: string | undefined)
     return { ...uploaded, md5 };
 }
 
+/** What uploads a file's bytes and returns its content source: `client.store.objects`. */
+export interface ContentUploader {
+    upload(file: File): Promise<ContentSource>;
+}
+
+/** Uploads a file and returns its content source, with its MD5 when the storage etag is not that MD5. */
+export async function uploadWithContentMd5(
+    uploader: ContentUploader,
+    file: File,
+    md5: string | undefined,
+): Promise<ContentSource> {
+    return withContentMd5(await uploader.upload(file), md5);
+}
+
+/**
+ * Whether a stored object holds the same bytes as a file whose MD5 is `hash`. A file whose hash could not be computed
+ * matches nothing: an object with neither field would otherwise compare `undefined` with `undefined`.
+ */
+export function matchesContentHash(hash: string | undefined, content: { etag?: string; md5?: string } | undefined) {
+    if (!hash || !content) return false;
+    return content.md5 === hash || content.etag === hash;
+}
+
 /** True when the server rejected `content.md5`: a server older than the field refuses undeclared properties. */
 export function isContentMd5Rejected(err: unknown): boolean {
     if (!(err instanceof Error) || (err as { status?: unknown }).status !== 400) return false;

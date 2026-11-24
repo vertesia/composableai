@@ -2,7 +2,7 @@ import { errorMessage, useToast } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { useDocumentSearch } from '../search/DocumentSearchContext';
-import { withContentMd5, writeWithContentMd5 } from './contentMd5';
+import { uploadWithContentMd5, writeWithContentMd5 } from './contentMd5';
 import { FileUploadAction, useSmartFileUploadProcessing } from './useSmartFileUploadProcessing';
 
 /**
@@ -181,8 +181,9 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                             if (fileInfo.action === FileUploadAction.UPDATE && fileInfo.existingId) {
                                 // UPDATE - Update the existing object
                                 const existingId = fileInfo.existingId;
-                                const content = withContentMd5(
-                                    await client.store.objects.upload(fileInfo.file),
+                                const content = await uploadWithContentMd5(
+                                    client.store.objects,
+                                    fileInfo.file,
                                     fileInfo.hash,
                                 );
                                 const updateResult = await writeWithContentMd5(content, (content) =>
@@ -223,10 +224,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                                 // CREATE - Create a new object
                                 // If collectionId is provided, pass it as an option
                                 const options = collectionId ? { collection_id: collectionId } : undefined;
-                                const content = withContentMd5(
-                                    await store.objects.upload(fileInfo.file),
-                                    fileInfo.hash,
-                                );
+                                const content = await uploadWithContentMd5(store.objects, fileInfo.file, fileInfo.hash);
                                 const createResult = await writeWithContentMd5(content, (content) =>
                                     store.objects.create(
                                         {

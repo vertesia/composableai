@@ -4,10 +4,11 @@ import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { useCallback } from 'react';
 import { Md5 } from 'ts-md5';
+import { matchesContentHash } from './contentMd5';
 
 const t = i18nInstance.getFixedT(null, NAMESPACE);
 
-interface ExistingHashMatch {
+export interface ExistingHashMatch {
     id: string;
     content?: { etag?: string; md5?: string };
 }
@@ -36,6 +37,20 @@ export interface FileWithMetadata {
     action?: FileUploadAction;
     // Any additional metadata needed
     metadata?: Record<string, unknown>;
+}
+
+/**
+ * Marks each file whose bytes an existing object already holds as skipped, with that object's id. A file whose hash
+ * could not be computed is never marked.
+ */
+export function markExistingByHash(files: FileWithMetadata[], existing: ExistingHashMatch[]): void {
+    for (const doc of existing) {
+        const file = files.find((f) => matchesContentHash(f.hash, doc.content));
+        if (file) {
+            file.existingId = doc.id;
+            file.action = FileUploadAction.SKIP;
+        }
+    }
 }
 
 /**
@@ -167,15 +182,7 @@ export function useSmartFileUploadProcessing() {
                         );
                     }
 
-                    for (const doc of res) {
-                        const file = filesWithMetadata.find(
-                            (f) => f.hash === doc.content?.md5 || f.hash === doc.content?.etag,
-                        );
-                        if (file) {
-                            file.existingId = doc.id;
-                            file.action = FileUploadAction.SKIP;
-                        }
-                    }
+                    markExistingByHash(filesWithMetadata, res);
                 };
 
                 /**

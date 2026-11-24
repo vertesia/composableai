@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { isContentMd5Rejected, withContentMd5, writeWithContentMd5 } from './contentMd5';
+import {
+    isContentMd5Rejected,
+    matchesContentHash,
+    uploadWithContentMd5,
+    withContentMd5,
+    writeWithContentMd5,
+} from './contentMd5';
 
 const MD5 = '0123456789abcdef0123456789abcdef';
 
@@ -61,5 +67,32 @@ describe('writeWithContentMd5', () => {
         const write = vi.fn().mockRejectedValue(err);
         await expect(writeWithContentMd5({ source: 'f', md5: MD5 }, write)).rejects.toBe(err);
         expect(write).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('matchesContentHash', () => {
+    it('matches the MD5 or the etag', () => {
+        expect(matchesContentHash(MD5, { md5: MD5, etag: 'kms-etag' })).toBe(true);
+        expect(matchesContentHash(MD5, { etag: MD5 })).toBe(true);
+        expect(matchesContentHash(MD5, { etag: 'other' })).toBe(false);
+    });
+
+    it('never matches without a computed hash', () => {
+        expect(matchesContentHash(undefined, { etag: 'legacy-etag' })).toBe(false);
+        expect(matchesContentHash(undefined, {})).toBe(false);
+        expect(matchesContentHash('', { etag: '' })).toBe(false);
+    });
+});
+
+describe('uploadWithContentMd5', () => {
+    it('uploads the file and adds its MD5 when the etag differs', async () => {
+        const file = new File(['x'], 'a.txt');
+        const upload = vi.fn().mockResolvedValue({ source: 'f', etag: 'kms-etag' });
+        await expect(uploadWithContentMd5({ upload }, file, MD5)).resolves.toEqual({
+            source: 'f',
+            etag: 'kms-etag',
+            md5: MD5,
+        });
+        expect(upload).toHaveBeenCalledWith(file);
     });
 });

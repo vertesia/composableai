@@ -18,6 +18,7 @@ import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from 'lucide-react';
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTypeRegistry } from '../../types/TypeRegistryProvider.js';
+import { uploadWithContentMd5, writeWithContentMd5 } from './contentMd5';
 import { FileUploadAction, type FileWithMetadata, useSmartFileUploadProcessing } from './useSmartFileUploadProcessing';
 import type { DocumentUploadResult } from './useUploadHandler';
 
@@ -385,18 +386,26 @@ export function DocumentUploadModal({
 
                             if (action === 'update' && fileInfo.existingId) {
                                 // Update existing file
-                                await client.store.objects.update(
-                                    fileInfo.existingId,
-                                    {
-                                        type: typeId || undefined,
-                                        content: fileInfo.file,
-                                        location: fileInfo.location,
-                                        name: fileInfo.name,
-                                    },
-                                    {
-                                        createRevision: true,
-                                        revisionLabel: `upload on ${new Date().toISOString()}`,
-                                    },
+                                const existingId = fileInfo.existingId;
+                                const content = await uploadWithContentMd5(
+                                    client.store.objects,
+                                    fileInfo.file,
+                                    fileInfo.hash,
+                                );
+                                await writeWithContentMd5(content, (content) =>
+                                    client.store.objects.update(
+                                        existingId,
+                                        {
+                                            type: typeId || undefined,
+                                            content,
+                                            location: fileInfo.location,
+                                            name: fileInfo.name,
+                                        },
+                                        {
+                                            createRevision: true,
+                                            revisionLabel: `upload on ${new Date().toISOString()}`,
+                                        },
+                                    ),
                                 );
 
                                 // Update status to success
@@ -419,17 +428,24 @@ export function DocumentUploadModal({
                                 });
                             } else {
                                 // Create new file
-                                const createResult = await client.store.objects.create(
-                                    {
-                                        type: typeId || undefined,
-                                        content: fileInfo.file,
-                                        location:
-                                            fileInfo.location || fileInfo.file.webkitRelativePath || fileInfo.name,
-                                        properties: defaultProperties,
-                                    },
-                                    {
-                                        collection_id: collectionId,
-                                    },
+                                const content = await uploadWithContentMd5(
+                                    client.store.objects,
+                                    fileInfo.file,
+                                    fileInfo.hash,
+                                );
+                                const createResult = await writeWithContentMd5(content, (content) =>
+                                    client.store.objects.create(
+                                        {
+                                            type: typeId || undefined,
+                                            content,
+                                            location:
+                                                fileInfo.location || fileInfo.file.webkitRelativePath || fileInfo.name,
+                                            properties: defaultProperties,
+                                        },
+                                        {
+                                            collection_id: collectionId,
+                                        },
+                                    ),
                                 );
 
                                 // Update status to success
