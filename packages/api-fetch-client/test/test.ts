@@ -1,7 +1,14 @@
 import assert from 'node:assert';
 import { mock } from 'node:test';
 import { KoaServer } from '@koa-stack/server';
-import { FetchClient, generateIdempotencyKey, RequestError, ResponseReadError, ServerError } from '../src/index.js';
+import {
+    ConnectionError,
+    FetchClient,
+    generateIdempotencyKey,
+    RequestError,
+    ResponseReadError,
+    ServerError,
+} from '../src/index.js';
 import Endpoints from './endpoints.js';
 
 const HOST = '127.0.0.1';
@@ -791,6 +798,155 @@ describe('Test requests', () => {
         const payload = (await timeoutClient.get('/slow')) as { attempts: number };
 
         assert.equal(attempts, 2);
+        assert.equal(payload.attempts, 2);
+    });
+});
+
+describe('caller abort during a retry wait', () => {
+    // Every wait below is far longer than the test allows, so a wait that ignores the caller's signal
+    // shows up as a slow rejection (and a mocha timeout), not as a pass.
+    const LONG_WAIT_MS = 10_000;
+    const ABORT_AFTER_MS = 20;
+    const PROMPT_MS = 1_000;
+
+    class CancellationError extends Error {
+        override name = 'CancellationError';
+    }
+
+    async function expectPromptAbort(
+        request: (signal: AbortSignal) => Promise<unknown>,
+        reason?: Error,
+    ): Promise<ConnectionError> {
+        const errors: unknown[][] = [];
+        const original = console.error;
+        console.error = (...args: unknown[]) => {
+            errors.push(args);
+        };
+        // Track the long wait's timer, so the test can tell whether the abort cleared it.
+        const longTimers: unknown[] = [];
+        const setTimer = globalThis.setTimeout;
+        const timerSpy = mock.method(globalThis, 'setTimeout', (callback: () => void, delay?: number) => {
+            const handle = setTimer(callback, delay);
+            if (delay === LONG_WAIT_MS) longTimers.push(handle);
+            return handle;
+        });
+        const clearSpy = mock.method(globalThis, 'clearTimeout');
+        try {
+            const controller = new AbortController();
+            const started = Date.now();
+            const pending = request(controller.signal);
+            setTimeout(() => controller.abort(reason), ABORT_AFTER_MS);
+            let caught: unknown;
+            await assert.rejects(pending, (err: unknown) => {
+                caught = err;
+                return true;
+            });
+            const elapsed = Date.now() - started;
+            assert.ok(elapsed < PROMPT_MS, `the abort took ${elapsed} ms to reject the request`);
+            assert.ok(caught instanceof ConnectionError, 'an aborted wait rejects with a ConnectionError');
+            assert.deepEqual(errors, [], 'a caller abort must not log to console.error');
+            assert.equal(longTimers.length, 1, 'the request waited once');
+            const cleared = clearSpy.mock.calls.map((call) => call.arguments[0]);
+            assert.ok(cleared.includes(longTimers[0] as never), 'the aborted wait clears its timer');
+            return caught;
+        } finally {
+            console.error = original;
+            timerSpy.mock.restore();
+            clearSpy.mock.restore();
+        }
+    }
+
+    function pacing429(): Response {
+        return new Response(JSON.stringify({ error: 'rate_limited_pacing' }), {
+            status: 429,
+            headers: {
+                'content-type': 'application/json',
+                'x-ratelimit-reason': 'pacing',
+                'x-ratelimit-retry-ms': String(LONG_WAIT_MS),
+            },
+        });
+    }
+
+    it('ends a pacing-429 wait as soon as the caller aborts', async () => {
+        let attempts = 0;
+        const pacingClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            return pacing429();
+        });
+
+        const error = await expectPromptAbort((signal) =>
+            pacingClient.get('/objects', { signal, pacingRetry: { maxWaitMs: LONG_WAIT_MS * 2 } }),
+        );
+
+        assert.equal(attempts, 1, 'no request is sent after the abort');
+        assert.equal((error.payload as Error).name, 'AbortError');
+    });
+
+    it('ends a retry-policy backoff after a retryable status as soon as the caller aborts', async () => {
+        let attempts = 0;
+        const retryClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            return new Response(JSON.stringify({ error: 'unavailable' }), {
+                status: 503,
+                headers: { 'content-type': 'application/json' },
+            });
+        }).withRetryPolicy({ attempts: 3, baseDelayMs: LONG_WAIT_MS, maxDelayMs: LONG_WAIT_MS, jitter: false });
+
+        const reason = new CancellationError('cancelled');
+        const error = await expectPromptAbort((signal) => retryClient.get('/objects', { signal }), reason);
+
+        assert.equal(attempts, 1, 'no request is sent after the abort');
+        assert.equal(error.payload, reason, 'the error carries the signal reason, as an aborted fetch does');
+    });
+
+    it('ends a retry-policy backoff after a connection error as soon as the caller aborts', async () => {
+        let attempts = 0;
+        const retryClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            throw new TypeError('connection reset');
+        }).withRetryPolicy({ attempts: 3, baseDelayMs: LONG_WAIT_MS, maxDelayMs: LONG_WAIT_MS, jitter: false });
+        // The first failure is genuine and reported; only the abort that follows must stay silent.
+        retryClient.handleConnectionError = () => {};
+
+        await expectPromptAbort((signal) => retryClient.get('/objects', { signal }));
+
+        assert.equal(attempts, 1, 'no request is sent after the abort');
+    });
+
+    it('does not wait at all when the signal is already aborted after a retryable response', async () => {
+        const controller = new AbortController();
+        let attempts = 0;
+        const pacingClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            controller.abort();
+            return pacing429();
+        });
+
+        const started = Date.now();
+        await assert.rejects(
+            pacingClient.get('/objects', { signal: controller.signal, pacingRetry: { maxWaitMs: LONG_WAIT_MS * 2 } }),
+            ConnectionError,
+        );
+        assert.ok(Date.now() - started < PROMPT_MS);
+        assert.equal(attempts, 1);
+    });
+
+    it('still retries a timeout while the caller signal stays live', async () => {
+        const controller = new AbortController();
+        let attempts = 0;
+        const retryClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            if (attempts === 1) {
+                throw new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+            }
+            return new Response(JSON.stringify({ attempts }), {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
+            });
+        }).withRetryPolicy({ attempts: 2, baseDelayMs: 1, jitter: false });
+
+        const payload = (await retryClient.get('/slow', { signal: controller.signal })) as { attempts: number };
+
         assert.equal(payload.attempts, 2);
     });
 });
