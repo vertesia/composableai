@@ -2,8 +2,6 @@ import { ApplicationFailure, log } from '@temporalio/activity';
 import { decodeJWT, VertesiaClient } from '@vertesia/client';
 import {
     ApiVersions,
-    type AuthTokenPayload,
-    type AuthTokenResponse,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
     type WebHookSpec,
@@ -50,8 +48,6 @@ export interface NotifyWebhookResult {
     message: string;
     url: string;
 }
-
-const APP_HOOK_TOKEN_REFRESH_THRESHOLD_MS = 5 * 60_000;
 
 /**
  * Why a webhook request never got an answer, as plain log fields. Node's fetch rejects with a bare
@@ -113,11 +109,7 @@ export async function notifyWebhook(
 ): Promise<NotifyWebhookResult> {
     const { params, client } = await setupActivity<NotifyWebhookParams>(payload);
     const { webhook, method, headers: defaultHeaders } = params;
-    const appHookAuthToken =
-        params.auth_mode === 'vertesia' ? await ensureFreshAppHookAuthToken(payload, client) : undefined;
-    if (appHookAuthToken && appHookAuthToken !== payload.auth_token) {
-        await client.withApiKey(appHookAuthToken);
-    }
+    const appHookAuthToken = params.auth_mode === 'vertesia' ? requireUnexpiredAppHookAuthToken(payload) : undefined;
     // resolve the url and the api version of the webhook
     let target_url: string, version: number | undefined;
     if (typeof webhook === 'string') {
@@ -305,36 +297,22 @@ function setHeader(headers: Record<string, string>, name: string, value: string)
     headers[name] = value;
 }
 
-export async function ensureFreshAppHookAuthToken(
-    payload: WorkflowExecutionBaseParams<unknown>,
-    client: VertesiaClient,
-): Promise<string> {
-    const currentToken = payload.auth_token;
-    if (!currentToken) {
+/**
+ * The app hook authenticates with the delivery's own token. It is not renewed here: the event bus mints a new one for
+ * each delivery, and the STS renews a credential only through `/token/issue`, which reloads the principal.
+ */
+export function requireUnexpiredAppHookAuthToken(payload: WorkflowExecutionBaseParams<unknown>): string {
+    const token = payload.auth_token;
+    if (!token) {
         throw new WorkflowParamNotFoundError('Authentication Token is missing from WorkflowExecutionPayload.authToken');
     }
-
-    const claims = decodeJWT(currentToken);
-    if (!shouldRefreshAppHookToken(claims)) {
-        return currentToken;
+    if (decodeJWT(token).exp * 1000 <= Date.now()) {
+        throw ApplicationFailure.nonRetryable(
+            'The app hook authentication token has expired; deliver the event again to get a new one',
+            'AppHookAuthTokenExpired',
+        );
     }
-
-    const response = await refreshAppHookToken(client, currentToken);
-    return response.token;
-}
-
-function shouldRefreshAppHookToken(claims: AuthTokenPayload): boolean {
-    return claims.exp * 1000 - Date.now() < APP_HOOK_TOKEN_REFRESH_THRESHOLD_MS;
-}
-
-async function refreshAppHookToken(client: VertesiaClient, currentToken: string): Promise<AuthTokenResponse> {
-    return client.post<AuthTokenResponse>(`${client.tokenServerUrl}/token/refresh`, {
-        headers: {
-            authorization: `Bearer ${currentToken}`,
-            'content-type': 'application/json',
-        },
-        payload: { token: currentToken },
-    });
+    return token;
 }
 
 // --------------------------------------
