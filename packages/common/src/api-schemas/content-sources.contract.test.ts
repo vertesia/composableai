@@ -17,8 +17,13 @@ describe('content source permission settings', () => {
         ).toBe(false);
     });
 
-    it('requires tenant identity and a SCIM connection in source mode', () => {
+    it('requires tenant identity and accepts an omitted SCIM connection in source mode', () => {
         expect(validateApiRequest('UpdateContentSourcePayload', { permissions: { mode: 'source' } }).valid).toBe(false);
+        expect(
+            validateApiRequest('UpdateContentSourcePayload', {
+                permissions: { mode: 'source', entra_tenant_id: source.entra_tenant_id },
+            }).valid,
+        ).toBe(true);
         expect(
             validateApiRequest('UpdateContentSourcePayload', { permissions: { ...source, mode: 'project' } }).valid,
         ).toBe(false);

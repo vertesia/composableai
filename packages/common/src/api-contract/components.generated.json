@@ -6988,7 +6988,8 @@
       },
       "scim_connection_id": {
         "type": "string",
-        "pattern": "^[0-9a-fA-F]{24}$"
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "Optional verified Entra SCIM connection. Required for tenant_group_id."
       },
       "tenant_group_id": {
         "type": "string",
@@ -7007,8 +7008,7 @@
     },
     "required": [
       "mode",
-      "entra_tenant_id",
-      "scim_connection_id"
+      "entra_tenant_id"
     ],
     "additionalProperties": false
   },

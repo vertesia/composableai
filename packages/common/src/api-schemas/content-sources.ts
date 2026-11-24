@@ -35,7 +35,9 @@ export const SharePointContentSourcePermissionsSchema = z
     .strictObject({
         mode: z.literal('source'),
         entra_tenant_id: z.uuid(),
-        scim_connection_id: z.string().regex(OBJECT_ID_PATTERN),
+        scim_connection_id: z.string().regex(OBJECT_ID_PATTERN).optional().meta({
+            description: 'Optional verified Entra SCIM connection. Required for tenant_group_id.',
+        }),
         tenant_group_id: z.string().regex(OBJECT_ID_PATTERN).optional(),
         refresh_minutes: z.number().int().min(15).max(1440).optional(),
         max_stale_hours: z.number().int().min(1).max(168).optional(),

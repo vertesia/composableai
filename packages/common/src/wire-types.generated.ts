@@ -2366,7 +2366,7 @@ export type ProjectContentSourcePermissions = {
 export type SharePointContentSourcePermissions = {
     mode: 'source';
     entra_tenant_id: string;
-    scim_connection_id: string;
+    scim_connection_id?: string | undefined;
     tenant_group_id?: string | undefined;
     refresh_minutes?: number | undefined;
     max_stale_hours?: number | undefined;
