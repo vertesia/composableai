@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { type ApiComponentName, validateApiRequest } from './registry.js';
 
 const spec = { mark: 'bar' };
+const oauthProvider = { name: 'my-provider', display_name: 'P', client_id: 'c' };
+const namedExecution = { interaction: 'Review' };
 const source = { type: 'agent', run_id: 'r' };
 const scenarios = [
     { id: 's', name: 's', initial_context: {}, actors: [], fixtures: [], human_actions: [], assertions: {} },
@@ -167,6 +169,106 @@ const rules: Array<[ApiComponentName, string, Array<[string, unknown, boolean]>]
             ['no identifier', {}, false],
             ['only empty identifiers', { run_id: '', agent_run_id: '', workflow_id: '', workflow_run_id: '' }, false],
             ['only a project', { project_id: 'p' }, false],
+        ],
+    ],
+    [
+        'CreateOAuthProviderPayload',
+        'keeps private_key_jwt and allowed scopes to the client_credentials grant',
+        [
+            [
+                'private_key_jwt with client_credentials',
+                { ...oauthProvider, grant_type: 'client_credentials', token_endpoint_auth_method: 'private_key_jwt' },
+                true,
+            ],
+            [
+                'allowed scopes with client_credentials',
+                { ...oauthProvider, grant_type: 'client_credentials', allowed_scopes: ['a'] },
+                true,
+            ],
+            [
+                'client_secret_post with the default grant',
+                { ...oauthProvider, token_endpoint_auth_method: 'client_secret_post' },
+                true,
+            ],
+            ['empty allowed scopes with the default grant', { ...oauthProvider, allowed_scopes: [] }, true],
+            [
+                'private_key_jwt with the default grant',
+                { ...oauthProvider, token_endpoint_auth_method: 'private_key_jwt' },
+                false,
+            ],
+            [
+                'private_key_jwt with authorization_code',
+                { ...oauthProvider, grant_type: 'authorization_code', token_endpoint_auth_method: 'private_key_jwt' },
+                false,
+            ],
+            ['allowed scopes with the default grant', { ...oauthProvider, allowed_scopes: ['a'] }, false],
+        ],
+    ],
+    [
+        'AuditAggregationMetric',
+        'needs the meter fields of a meter operation and the field of count_distinct',
+        [
+            ['a count', { id: 'm', operation: 'count' }, true],
+            ['a meter sum', { id: 'm', operation: 'sum_meter', meterCategory: 'c', meterType: 't' }, true],
+            ['a distinct count', { id: 'm', operation: 'count_distinct', field: 'user_id' }, true],
+            ['a meter average without its type', { id: 'm', operation: 'average_meter', meterCategory: 'c' }, false],
+            [
+                'a meter sum with empty fields',
+                { id: 'm', operation: 'sum_meter', meterCategory: '', meterType: '' },
+                false,
+            ],
+            [
+                'a meter sum with a long type',
+                { id: 'm', operation: 'sum_meter', meterCategory: 'c', meterType: 'x'.repeat(129) },
+                false,
+            ],
+            ['a distinct count without its field', { id: 'm', operation: 'count_distinct' }, false],
+        ],
+    ],
+    ...(['InteractionExecutionPayload', 'NamedInteractionExecutionPayload', 'RunCreatePayload'] as const).map(
+        (component): [ApiComponentName, string, Array<[string, unknown, boolean]>] => {
+            // Only the named payloads carry the interaction; the others take it from the path.
+            const execution = component === 'InteractionExecutionPayload' ? {} : namedExecution;
+            return [
+                component,
+                'takes HTTP timeouts as positive whole milliseconds',
+                [
+                    ['no timeout', { ...execution }, true],
+                    [
+                        'whole timeouts',
+                        { ...execution, config: { http_timeout: { headersTimeout: 1, keepAliveTimeout: 300_000 } } },
+                        true,
+                    ],
+                    [
+                        'a zero keep-alive timeout',
+                        { ...execution, config: { http_timeout: { keepAliveTimeout: 0 } } },
+                        false,
+                    ],
+                    [
+                        'a negative header timeout',
+                        { ...execution, config: { http_timeout: { headersTimeout: -5 } } },
+                        false,
+                    ],
+                    [
+                        'a fractional body timeout',
+                        { ...execution, config: { http_timeout: { bodyTimeout: 1.5 } } },
+                        false,
+                    ],
+                    [
+                        'an unsafe connect timeout',
+                        { ...execution, config: { http_timeout: { connectTimeout: 2 ** 53 } } },
+                        false,
+                    ],
+                ],
+            ];
+        },
+    ),
+    [
+        'GenerateTestDataPayload',
+        'takes HTTP timeouts as positive whole milliseconds',
+        [
+            ['a whole timeout', { config: { http_timeout: { headersTimeout: 1000 } } }, true],
+            ['a negative timeout', { config: { http_timeout: { headersTimeout: -1 } } }, false],
         ],
     ],
 ];
