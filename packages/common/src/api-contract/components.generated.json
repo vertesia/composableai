@@ -556,6 +556,26 @@
       }
     }
   },
+  "NotificationPathParams": {
+    "type": "object",
+    "properties": {
+      "notificationId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The notification ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "ContentSourceRoundPathParams": {
+    "type": "object",
+    "properties": {
+      "roundId": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$",
+        "description": "The sync round ID: 1 to 64 letters, digits, `_` or `-`."
+      }
+    }
+  },
   "CreateDelegationGrantPayload": {
     "type": "object",
     "properties": {
@@ -7425,7 +7445,31 @@
       "client_id"
     ],
     "additionalProperties": false,
-    "description": "Payload for creating an OAuth Provider. The client_secret is accepted as plaintext on create and stored encrypted."
+    "if": {
+      "not": {
+        "required": [
+          "grant_type"
+        ],
+        "properties": {
+          "grant_type": {
+            "const": "client_credentials"
+          }
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "token_endpoint_auth_method": {
+          "not": {
+            "const": "private_key_jwt"
+          }
+        },
+        "allowed_scopes": {
+          "maxItems": 0
+        }
+      }
+    },
+    "description": "Payload for creating an OAuth Provider. The client_secret is accepted as plaintext on create and stored encrypted. `private_key_jwt` and a non-empty `allowed_scopes` require the `client_credentials` grant; the grant defaults to `authorization_code`."
   },
   "UpdateOAuthProviderPayload": {
     "type": "object",
@@ -12712,7 +12756,9 @@
         "type": "string"
       },
       "environment": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:[0-9a-fA-F]{24})?$",
+        "description": "Environment ID, as 24 hexadecimal characters. An empty string applies no filter."
       },
       "is_agent": {
         "type": "boolean"
@@ -13449,7 +13495,44 @@
     "required": [
       "config"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "config"
+      ]
+    },
+    "then": {
+      "properties": {
+        "config": {
+          "properties": {
+            "http_timeout": {
+              "properties": {
+                "headersTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "bodyTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "connectTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "keepAliveTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   },
   "GeneratedTestDataRecord": {
     "type": "object"
@@ -15085,6 +15168,43 @@
       "interaction"
     ],
     "additionalProperties": false,
+    "if": {
+      "required": [
+        "config"
+      ]
+    },
+    "then": {
+      "properties": {
+        "config": {
+          "properties": {
+            "http_timeout": {
+              "properties": {
+                "headersTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "bodyTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "connectTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "keepAliveTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "description": "Interaction execution payload for creating a new run It uses interaction field (from NamedInteractionExecutionPayload) to pass the interaction ID to run"
   },
   "GetRunQuery": {
@@ -15410,7 +15530,44 @@
         "description": "Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming."
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "config"
+      ]
+    },
+    "then": {
+      "properties": {
+        "config": {
+          "properties": {
+            "http_timeout": {
+              "properties": {
+                "headersTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "bodyTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "connectTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "keepAliveTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   },
   "NamedInteractionExecutionPayload": {
     "type": "object",
@@ -15480,7 +15637,44 @@
     "required": [
       "interaction"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "config"
+      ]
+    },
+    "then": {
+      "properties": {
+        "config": {
+          "properties": {
+            "http_timeout": {
+              "properties": {
+                "headersTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "bodyTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "connectTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "keepAliveTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   },
   "InteractionExecutionResult": {
     "type": "object",
@@ -18989,7 +19183,53 @@
       "id",
       "operation"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "operation"
+      ],
+      "properties": {
+        "operation": {
+          "enum": [
+            "sum_meter",
+            "average_meter"
+          ]
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "meterCategory",
+        "meterType"
+      ],
+      "properties": {
+        "meterCategory": {
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "meterType": {
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "else": {
+      "if": {
+        "required": [
+          "operation"
+        ],
+        "properties": {
+          "operation": {
+            "const": "count_distinct"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "field"
+        ]
+      }
+    }
   },
   "AuditAggregationGroup": {
     "type": "object",
@@ -30710,7 +30950,8 @@
     "properties": {
       "type": {
         "type": "string",
-        "minLength": 1
+        "pattern": "^(?:agent_request|task|agent_run_end|agent_turn|object|inference_budget)$",
+        "description": "The occurrence type: agent_request, task, agent_run_end, agent_turn, object, inference_budget."
       },
       "id": {
         "type": "string",
@@ -30907,8 +31148,10 @@
         "maxItems": 200,
         "type": "array",
         "items": {
-          "type": "string"
-        }
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
+        },
+        "description": "Notification IDs, as 24 hexadecimal characters."
       },
       "occurrences": {
         "maxItems": 200,
@@ -30943,8 +31186,10 @@
         "maxItems": 200,
         "type": "array",
         "items": {
-          "type": "string"
-        }
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
+        },
+        "description": "Notification IDs, as 24 hexadecimal characters."
       }
     },
     "required": [
@@ -35122,8 +35367,10 @@
       "objectIds": {
         "type": "array",
         "items": {
-          "type": "string"
-        }
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
+        },
+        "description": "Content object IDs, as 24 hexadecimal characters. Empty exports all objects."
       },
       "type": {
         "type": "string",
@@ -39075,8 +39322,8 @@
       },
       "oauth_provider_id": {
         "type": "string",
-        "minLength": 1,
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system, as 24 hexadecimal characters."
       },
       "location_root": {
         "type": "string",
@@ -39141,8 +39388,8 @@
       },
       "oauth_provider_id": {
         "type": "string",
-        "minLength": 1,
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system, as 24 hexadecimal characters."
       },
       "location_root": {
         "type": "string",
@@ -39650,8 +39897,8 @@
       },
       "oauth_provider_id": {
         "type": "string",
-        "minLength": 1,
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system, as 24 hexadecimal characters."
       },
       "site_url": {
         "type": "string",
@@ -39677,8 +39924,8 @@
       },
       "oauth_provider_id": {
         "type": "string",
-        "minLength": 1,
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system, as 24 hexadecimal characters."
       },
       "site_url": {
         "type": "string",
@@ -39709,8 +39956,8 @@
       },
       "oauth_provider_id": {
         "type": "string",
-        "minLength": 1,
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system, as 24 hexadecimal characters."
       },
       "site_url": {
         "type": "string",
@@ -39751,8 +39998,8 @@
       },
       "oauth_provider_id": {
         "type": "string",
-        "minLength": 1,
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system, as 24 hexadecimal characters."
       },
       "site_url": {
         "type": "string",
@@ -49639,6 +49886,7 @@
             "items": {
               "properties": {
                 "columns": {
+                  "minItems": 1,
                   "items": {
                     "properties": {
                       "name": {
@@ -49655,7 +49903,7 @@
         }
       }
     ],
-    "description": "Payload for creating multiple tables atomically. Each column name is a SQL identifier of letters, digits and underscores, starting with a letter or underscore, at most 64 characters, and not a reserved SQL keyword."
+    "description": "Payload for creating multiple tables atomically. Each table has at least one column, and each column name is a SQL identifier of letters, digits and underscores, starting with a letter or underscore, at most 64 characters, and not a reserved SQL keyword."
   },
   "DataTable": {
     "type": "object",
