@@ -789,8 +789,8 @@ importers:
         specifier: ^2.4.9
         version: 2.4.9
       '@vercel/node':
-        specifier: 30.0.0
-        version: 30.0.0(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@vercel/build-utils@15.3.0)(supports-color@10.2.2)
+        specifier: 31.0.0
+        version: 31.0.0(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@vercel/build-utils@15.4.0)(supports-color@10.2.2)
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -4950,8 +4950,8 @@ packages:
   '@upsetjs/venn.js@2.0.0':
     resolution: {integrity: sha512-WbBhLrooyePuQ1VZxrJjtLvTc4NVfpOyKx0sKqioq9bX1C1m7Jgykkn8gLrtwumBioXIqam8DLxp88Adbue6Hw==}
 
-  '@vercel/build-utils@15.3.0':
-    resolution: {integrity: sha512-gXR/D6yFovhZd/e3t+EsVKgOdQSNS7R7s+fuvcvEqTvd8mxcw2//UTG7vPM65zfHl1vNDCafNlPQ4vGDa/QoLA==}
+  '@vercel/build-utils@15.4.0':
+    resolution: {integrity: sha512-eWgVvEjAC8ksF0TcctpT8UeSQ0Jj838yVosppDFmEZQSkB9tcYJPn3JwUTexB62o9YVIVpMkU5V5YbPfnKE+zg==}
 
   '@vercel/error-utils@2.2.1':
     resolution: {integrity: sha512-9DhP8jP7raLML4hGsBemxX5fXuQnu5xxMV+HjGygGbzEmVK/+KyJ3QP2Cw7PdF0uXdb9N0Qa4c3tRGH34ZX6vw==}
@@ -4961,10 +4961,10 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
-  '@vercel/node@30.0.0':
-    resolution: {integrity: sha512-zaQQa4h34HgtV1gBSTs49C9s3J4ZhjhhSESlMcnQf6JlOIC2+qHVgHB1vgqgaBCkpyxI64PObTlSPByxTK+wlA==}
+  '@vercel/node@31.0.0':
+    resolution: {integrity: sha512-3vNvZnopE7mS+WjrrPYZUqZqz1Yt3bKQHPl+nNfsVjBdzYB/tNaabQLn/vS0bzomZ+mFtNKSMw7U6b9FhbLn4Q==}
     peerDependencies:
-      '@vercel/build-utils': 15.3.0
+      '@vercel/build-utils': 15.4.0
 
   '@vercel/static-config@3.4.4':
     resolution: {integrity: sha512-WppaPyEKQhO8qo5gVee3mSo1QSCgDZaUcUDHrqICSlt90oYeC/SHTmKCPWY1x1NB9hU+kR2oDzJwAeRKKv5NIw==}
@@ -11627,7 +11627,7 @@ snapshots:
       d3-selection: 3.0.0
       d3-transition: 3.0.1(d3-selection@3.0.0)
 
-  '@vercel/build-utils@15.3.0':
+  '@vercel/build-utils@15.4.0':
     dependencies:
       cjs-module-lexer: 1.2.3
       es-module-lexer: 1.5.0
@@ -11653,13 +11653,13 @@ snapshots:
       - rollup
       - supports-color
 
-  '@vercel/node@30.0.0(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@vercel/build-utils@15.3.0)(supports-color@10.2.2)':
+  '@vercel/node@31.0.0(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@vercel/build-utils@15.4.0)(supports-color@10.2.2)':
     dependencies:
       '@edge-runtime/node-utils': 2.3.0
       '@edge-runtime/primitives': 4.1.0
       '@edge-runtime/vm': 3.2.0
       '@types/node': 24.19.2
-      '@vercel/build-utils': 15.3.0
+      '@vercel/build-utils': 15.4.0
       '@vercel/error-utils': 2.2.1
       '@vercel/nft': 1.10.0(supports-color@10.2.2)
       '@vercel/static-config': 3.4.4(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)
