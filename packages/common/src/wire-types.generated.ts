@@ -9155,6 +9155,7 @@ export type ContentSource = {
     type?: string | undefined;
     name?: string | undefined;
     etag?: string | undefined;
+    sha256?: string | undefined;
 };
 export type RevisionInfo = {
     parent?: string | undefined;
@@ -12119,6 +12120,12 @@ export type EmbeddingTypePathParams = {
 export type ToolPathParams = {
     toolName?: string | undefined;
 };
+export type NotificationPathParams = {
+    notificationId?: string | undefined;
+};
+export type ContentSourceRoundPathParams = {
+    roundId?: string | undefined;
+};
 /** The wire type of every registry component, by component name: what `ApiComponentType<N>` resolves. */
 export interface ApiComponentTypes {
     CustomRoleDefinition: CustomRoleDefinition;
@@ -13571,6 +13578,8 @@ export interface ApiComponentTypes {
     ProjectAppCapabilityPathParams: ProjectAppCapabilityPathParams;
     EmbeddingTypePathParams: EmbeddingTypePathParams;
     ToolPathParams: ToolPathParams;
+    NotificationPathParams: NotificationPathParams;
+    ContentSourceRoundPathParams: ContentSourceRoundPathParams;
     WorkflowUsageQuery: WorkflowUsageQuery;
     WorkflowUsageClass: WorkflowUsageClass;
     WorkflowUsageStanding: WorkflowUsageStanding;

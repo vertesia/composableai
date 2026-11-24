@@ -2701,6 +2701,8 @@ const PATH_PARAMETER_SCHEMAS = {
     ProjectAppCapabilityPathParams: PathParameterSchemas.ProjectAppCapabilityPathParamsSchema,
     EmbeddingTypePathParams: PathParameterSchemas.EmbeddingTypePathParamsSchema,
     ToolPathParams: PathParameterSchemas.ToolPathParamsSchema,
+    NotificationPathParams: PathParameterSchemas.NotificationPathParamsSchema,
+    ContentSourceRoundPathParams: PathParameterSchemas.ContentSourceRoundPathParamsSchema,
 };
 const WORKFLOW_USAGE_SCHEMAS = {
     WorkflowUsageQuery: WorkflowUsageSchemas.WorkflowUsageQuerySchema,

@@ -30,6 +30,10 @@
         "./vite": {
             "types": "./lib/vite/index.d.ts",
             "default": "./lib/vite/index.js"
+        },
+        "./licenses": {
+            "types": "./lib/licenses/index.d.ts",
+            "default": "./lib/licenses/index.js"
         }
     },
     "devDependencies": {
@@ -53,7 +57,7 @@
     },
     "peerDependencies": {
         "@hono/node-server": "^2.1.6",
-        "vite": "^8.3.7"
+        "vite": "^8.3.8"
     },
     "peerDependenciesMeta": {
         "@hono/node-server": {

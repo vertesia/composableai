@@ -1,4 +1,7 @@
 import { defineConfig } from 'rolldown';
+// Imported from source: @vertesia/build-tools depends on this workspace's packages, so a package
+// dependency on it would be a build cycle.
+import { thirdPartyLicenses } from '../../packages/build-tools/src/licenses/index.ts';
 
 // Bundles the already-built ES output (`lib/index.js`, produced by `tsc`) into a single
 // browser-friendly file. Build script: `tsc && rolldown -c rolldown.config.js`.
@@ -14,6 +17,14 @@ export default defineConfig({
         sourcemap: true,
         minify: true,
     },
+    // Writes the notices of the packages this bundle inlines (lru-cache) beside it.
+    plugins: [
+        thirdPartyLicenses({
+            title: 'vertesia-jst.js',
+            noticesFileName: 'vertesia-jst.THIRD-PARTY-NOTICES.txt',
+            jsonFileName: 'vertesia-jst.third-party-licenses.json',
+        }),
+    ],
     // Browser apps load this bundle through an import map, so every external here must also be served
     // by that map. `lru-cache` is not, so it is bundled; Node consumers still import it from `lib/index.js`.
     external: ['handlebars', 'acorn', 'acorn-walk', 'dayjs', 'papaparse'],

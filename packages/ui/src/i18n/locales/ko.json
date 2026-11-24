@@ -413,6 +413,7 @@
     "login.inviteRole": "역할: {{role}}",
     "login.invitedBy": "초대한 사람: {{name}}",
     "login.invitesIntro": "다음 계정에 참여하도록 초대받았습니다. 각 초대를 수락하거나 거절하세요.",
+    "login.openSourceNotices": "오픈 소스 고지",
     "login.reject": "거부",
     "login.reviewInvites": "초대 검토",
     "login.terminal.account": "계정",

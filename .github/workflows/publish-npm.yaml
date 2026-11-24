@@ -173,6 +173,10 @@ jobs:
           node-version-file: ${{ hashFiles('.node-version') != '' && '.node-version' || '' }}
       - name: Install Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          # The native CLI embeds this runtime, and its notices describe this version: the notices script
+          # fails if they differ. Update it with packages/cli/licenses/BUN-LICENSE.txt and the WebKit commit.
+          bun-version-file: packages/cli/.bun-version
 
       - name: Install workspace dependencies
         timeout-minutes: 5
@@ -300,14 +304,17 @@ jobs:
           --branch "${GITHUB_REF_NAME}"
           --cli-only
 
-      - name: Upload signed CLI executables
+      # The notices ship with the executables: the publish job checks out the source again, which has none.
+      - name: Upload signed CLI executables and their notices
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           overwrite: true
           name: native-cli-darwin
           path: |
             packages/cli-darwin-arm64/bin/vertesia
+            packages/cli-darwin-arm64/THIRD-PARTY-NOTICES.txt
             packages/cli-darwin-x64/bin/vertesia
+            packages/cli-darwin-x64/THIRD-PARTY-NOTICES.txt
           if-no-files-found: error
 
       - name: Remove signing material from runner
@@ -393,7 +400,7 @@ jobs:
           path: ${{ steps.pnpm-store.outputs.path }}
           key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
 
-      - name: Download signed macOS CLI executables
+      - name: Download signed macOS CLI executables and their notices
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: native-cli-darwin
@@ -403,6 +410,15 @@ jobs:
           chmod 755
           packages/cli-darwin-arm64/bin/vertesia
           packages/cli-darwin-x64/bin/vertesia
+      # `vertesia licenses` reads this file next to the executable, so a package without it must not publish.
+      - name: Check the macOS CLI notices
+        run: |
+          for notices in packages/cli-darwin-arm64/THIRD-PARTY-NOTICES.txt packages/cli-darwin-x64/THIRD-PARTY-NOTICES.txt; do
+              if [ ! -s "${notices}" ]; then
+                  echo "::error::${notices} is missing or empty"
+                  exit 1
+              fi
+          done
 
       - name: Publish all packages
         id: publish
