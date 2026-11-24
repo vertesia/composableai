@@ -723,6 +723,7 @@
     "login.inviteRole": "Role: {{role}}",
     "login.invitedBy": "Invited by {{name}}",
     "login.invitesIntro": "You have been invited to join the following accounts. Accept or reject each invite.",
+    "login.openSourceNotices": "Open-source notices",
     "login.reject": "Reject",
     "login.reviewInvites": "Review Invites",
     "login.terminal.account": "Account",
