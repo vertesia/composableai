@@ -30,6 +30,10 @@
         "./vite": {
             "types": "./lib/vite/index.d.ts",
             "default": "./lib/vite/index.js"
+        },
+        "./licenses": {
+            "types": "./lib/licenses/index.d.ts",
+            "default": "./lib/licenses/index.js"
         }
     },
     "devDependencies": {
