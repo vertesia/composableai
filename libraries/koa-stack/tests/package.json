@@ -12,7 +12,7 @@
     },
     "keywords": [],
     "author": "stefanescu.bogdan@gmail.com",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "dependencies": {
         "@koa-stack/body": "workspace:*",
         "@koa-stack/router": "workspace:*",
