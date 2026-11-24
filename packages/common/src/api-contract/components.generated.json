@@ -722,7 +722,11 @@
       "billing",
       "member",
       "app_member",
-      "content_superadmin"
+      "content_superadmin",
+      "project_admin",
+      "project_app_admin",
+      "project_auditor",
+      "project_support"
     ]
   },
   "Permission": {

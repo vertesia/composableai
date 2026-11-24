@@ -1,4 +1,4 @@
-import { type CustomRoleDefinition, Permission } from '@vertesia/common';
+import { type CustomRoleDefinition, Permission, SystemRoles } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
 import { createAccountRoleResolver, getRoleByName, InvalidCustomRoleError } from './index.js';
 
@@ -7,6 +7,16 @@ function definition(name: string, base_roles: string[] = [], permissions: Permis
 }
 
 describe('custom role inheritance', () => {
+    it.each([
+        SystemRoles.project_admin,
+        SystemRoles.project_app_admin,
+        SystemRoles.project_auditor,
+        SystemRoles.project_support,
+    ])('accepts %s as an inherited built-in role', (baseRole) => {
+        const resolve = createAccountRoleResolver([definition('project_operator', [baseRole])], { strict: true });
+        expect(resolve('c:project_operator').permissions).toEqual(getRoleByName(baseRole).permissions);
+    });
+
     it('unions system bases, custom bases and explicit additions without changing the role name', () => {
         const resolve = createAccountRoleResolver([
             definition('reviewer', ['auditor'], [Permission.content_write]),
