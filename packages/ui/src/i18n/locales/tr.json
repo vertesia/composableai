@@ -428,6 +428,7 @@
     "login.inviteRole": "Rol: {{role}}",
     "login.invitedBy": "Davet eden: {{name}}",
     "login.invitesIntro": "Aşağıdaki hesaplara katılmaya davet edildiniz. Her daveti kabul edin veya reddedin.",
+    "login.openSourceNotices": "Açık kaynak bildirimleri",
     "login.reject": "Reddet",
     "login.reviewInvites": "Davetleri İncele",
     "login.terminal.account": "Hesap",

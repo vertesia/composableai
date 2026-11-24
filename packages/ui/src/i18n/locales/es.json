@@ -430,6 +430,7 @@
     "login.inviteRole": "Rol: {{role}}",
     "login.invitedBy": "Invitado por {{name}}",
     "login.invitesIntro": "Ha sido invitado a unirse a las siguientes cuentas. Acepte o rechace cada invitación.",
+    "login.openSourceNotices": "Avisos de código abierto",
     "login.reject": "Rechazar",
     "login.reviewInvites": "Revisar invitaciones",
     "login.terminal.account": "Cuenta",

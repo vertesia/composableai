@@ -1,0 +1,12 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    // rolldown.config.js imports the third-party notices helper from source, outside this package, so
+    // a change to it must invalidate the cached bundles and the notices written beside them. The path is
+    // relative to this package: $TURBO_ROOT$ is the parent repository when it builds this one as a submodule.
+    "build": {
+      "inputs": ["$TURBO_DEFAULT$", "../build-tools/src/licenses/index.ts"]
+    }
+  }
+}

@@ -428,6 +428,7 @@
     "login.inviteRole": "ロール: {{role}}",
     "login.invitedBy": "招待者: {{name}}",
     "login.invitesIntro": "次のアカウントへの参加に招待されています。各招待を承認または拒否してください。",
+    "login.openSourceNotices": "オープンソースライセンス",
     "login.reject": "拒否",
     "login.reviewInvites": "招待を確認",
     "login.terminal.account": "アカウント",

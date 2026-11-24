@@ -456,6 +456,7 @@
     "login.inviteRole": "الدور: {{role}}",
     "login.invitedBy": "دعاك {{name}}",
     "login.invitesIntro": "تمت دعوتك للانضمام إلى الحسابات التالية. اقبل كل دعوة أو ارفضها.",
+    "login.openSourceNotices": "إشعارات المصادر المفتوحة",
     "login.reject": "رفض",
     "login.reviewInvites": "مراجعة الدعوات",
     "login.terminal.account": "الحساب",

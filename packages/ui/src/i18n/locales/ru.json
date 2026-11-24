@@ -442,6 +442,7 @@
     "login.inviteRole": "Роль: {{role}}",
     "login.invitedBy": "Пригласил(а): {{name}}",
     "login.invitesIntro": "Вас пригласили присоединиться к следующим аккаунтам. Примите или отклоните каждое приглашение.",
+    "login.openSourceNotices": "Сведения об открытом ПО",
     "login.reject": "Отклонить",
     "login.reviewInvites": "Просмотреть приглашения",
     "login.terminal.account": "Аккаунт",
