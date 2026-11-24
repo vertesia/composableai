@@ -29,8 +29,12 @@ const approvalFields = {
     audience,
 };
 
+// The strict branches preserve the original dedicated-project payload without requiring a new field.
 export const ApproveSharePointLibraryPayloadSchema = z
-    .strictObject({ ...approvalFields, project_name: projectName.optional() })
+    .union([
+        z.strictObject({ ...approvalFields, project_name: projectName.optional() }),
+        z.strictObject({ project_id: objectId, audience }),
+    ])
     .meta({ id: 'ApproveSharePointLibraryPayload' });
 
 export const ConfigureSharePointLibraryReaderPayloadSchema = z
@@ -71,6 +75,7 @@ export const SharePointLibraryConnectionSchema = z
             'disconnected',
         ]),
         project_id: objectId.optional(),
+        project_mode: z.enum(['dedicated', 'existing']).optional(),
         oauth_provider_id: objectId.optional(),
         source_id: objectId.optional(),
         approval: SharePointLibraryApprovalSchema.optional(),
@@ -83,5 +88,8 @@ export const SharePointLibraryConnectionArraySchema = z
     .meta({ id: 'SharePointLibraryConnectionArray' });
 
 export const ProjectSharePointLibraryResponseSchema = z
-    .strictObject({ library: SharePointLibraryConnectionSchema.nullable() })
+    .strictObject({
+        library: SharePointLibraryConnectionSchema.nullable(),
+        libraries: z.array(SharePointLibraryConnectionSchema).optional(),
+    })
     .meta({ id: 'ProjectSharePointLibraryResponse' });

@@ -204,6 +204,7 @@ export const ProjectSchema = z
         description: z.string().optional(),
         account: z.string(),
         sharepoint_library_binding: ManagedSharePointLibrarySchema.optional(),
+        sharepoint_library_attachments: z.array(ManagedSharePointLibrarySchema).meta({ readOnly: true }).optional(),
         configuration: ProjectConfigurationSchema,
         integrations: z.record(z.string(), z.unknown()).optional(),
         plugins: z.array(z.string()),
@@ -230,6 +231,7 @@ export const UpdateProjectPayloadSchema = ProjectSchema.omit({
     annotations: true,
     last_activity_at: true,
     sharepoint_library_binding: true,
+    sharepoint_library_attachments: true,
 })
     .partial()
     .meta({ id: 'UpdateProjectPayload' });

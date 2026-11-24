@@ -14,7 +14,7 @@ async function readConfiguration(path: string): Promise<unknown> {
 export function registerSharePointLibrariesCommand(program: Command): void {
     const command = program
         .command('sharepoint-libraries')
-        .description('Manage dedicated projects for verified SharePoint libraries');
+        .description('Manage verified SharePoint libraries in dedicated or existing projects');
     command
         .command('list')
         .action(async () => print(await (await getClient(program)).sharepointLibraries.listLibraries()));
@@ -23,10 +23,17 @@ export function registerSharePointLibrariesCommand(program: Command): void {
         .action(async (id: string) => print(await (await getClient(program)).sharepointLibraries.getLibrary(id)));
     command
         .command('current-project')
-        .action(async () => print(await (await getClient(program)).sharepointLibraries.getProjectLibrary()));
+        .option('--all', 'List every SharePoint library attached to the current project')
+        .action(async ({ all }: { all?: boolean }) => {
+            const { sharepointLibraries } = await getClient(program);
+            print(await (all ? sharepointLibraries.getProjectLibraries() : sharepointLibraries.getProjectLibrary()));
+        });
     command
         .command('approve <id>')
-        .requiredOption('--file <path>', 'Approval JSON with manager, group and audience; - reads stdin')
+        .requiredOption(
+            '--file <path>',
+            'Approval JSON with project_id and audience, or manager_id, reader_group_id and audience; - reads stdin',
+        )
         .action(async (id: string, options: { file: string }) => {
             const approval = validateApiRequest(
                 'ApproveSharePointLibraryPayload',

@@ -165,6 +165,9 @@ export const CreateSharePointContentSourcePayloadSchema = z
     .strictObject({
         ...commonCreateFields,
         type: z.literal('sharepoint'),
+        sharepoint_library_binding_id: z.string().regex(OBJECT_ID_PATTERN).optional().meta({
+            description: 'The approved SharePoint library binding this source is registered for.',
+        }),
         permissions: ContentSourcePermissionSettingsSchema.optional(),
         site_url: z.string().min(1).meta({
             description: 'The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`.',

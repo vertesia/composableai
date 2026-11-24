@@ -6777,6 +6777,10 @@
         "type": "string",
         "pattern": "^[0-9a-f]{24}$"
       },
+      "binding_id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      },
       "source_id": {
         "type": "string",
         "minLength": 1
@@ -6807,6 +6811,13 @@
       },
       "sharepoint_library_binding": {
         "$ref": "#/components/schemas/ManagedSharePointLibrary"
+      },
+      "sharepoint_library_attachments": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ManagedSharePointLibrary"
+        },
+        "readOnly": true
       },
       "configuration": {
         "$ref": "#/components/schemas/ProjectConfiguration"
@@ -6863,33 +6874,59 @@
     "additionalProperties": false
   },
   "ApproveSharePointLibraryPayload": {
-    "type": "object",
-    "properties": {
-      "manager_id": {
-        "type": "string",
-        "pattern": "^[0-9a-fA-F]{24}$"
+    "anyOf": [
+      {
+        "type": "object",
+        "properties": {
+          "manager_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$"
+          },
+          "reader_group_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "uniform",
+              "mirrored"
+            ]
+          },
+          "project_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "manager_id",
+          "reader_group_id",
+          "audience"
+        ],
+        "additionalProperties": false
       },
-      "reader_group_id": {
-        "type": "string",
-        "pattern": "^[0-9a-fA-F]{24}$"
-      },
-      "audience": {
-        "type": "string",
-        "enum": [
-          "uniform",
-          "mirrored"
-        ]
-      },
-      "project_name": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 128
+      {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "uniform",
+              "mirrored"
+            ]
+          }
+        },
+        "required": [
+          "project_id",
+          "audience"
+        ],
+        "additionalProperties": false
       }
-    },
-    "required": [
-      "manager_id",
-      "reader_group_id",
-      "audience"
     ]
   },
   "SharePointContentSourcePermissions": {
@@ -7180,6 +7217,13 @@
         "type": "string",
         "pattern": "^[0-9a-fA-F]{24}$"
       },
+      "project_mode": {
+        "type": "string",
+        "enum": [
+          "dedicated",
+          "existing"
+        ]
+      },
       "oauth_provider_id": {
         "type": "string",
         "pattern": "^[0-9a-fA-F]{24}$"
@@ -7226,6 +7270,12 @@
             "type": "null"
           }
         ]
+      },
+      "libraries": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SharePointLibraryConnection"
+        }
       }
     },
     "required": [
@@ -39717,6 +39767,11 @@
       "type": {
         "type": "string",
         "const": "sharepoint"
+      },
+      "sharepoint_library_binding_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The approved SharePoint library binding this source is registered for."
       },
       "permissions": {
         "$ref": "#/components/schemas/ContentSourcePermissionSettings"

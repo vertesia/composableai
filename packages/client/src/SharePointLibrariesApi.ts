@@ -24,6 +24,11 @@ export class SharePointLibrariesApi extends ApiTopic {
         return library;
     }
 
+    async getProjectLibraries(): Promise<SharePointLibraryConnection[]> {
+        const { library, libraries = [] } = await this.get<ProjectSharePointLibraryResponse>('/current-project');
+        return library ? [library, ...libraries.filter(({ id }) => id !== library.id)] : libraries;
+    }
+
     approveLibrary(bindingId: string, payload: ApproveSharePointLibraryPayload): Promise<SharePointLibraryConnection> {
         return this.post(`/${encodeURIComponent(bindingId)}/approve`, { payload });
     }

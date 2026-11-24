@@ -71,5 +71,5 @@ export const SharePointLibraryRequestsQuerySchema = z
     .meta({ id: 'SharePointLibraryRequestsQuery' });
 
 export const SharePointRequestProjectSchema = z
-    .strictObject({ project_id: id, source_id: z.string().min(1).optional() })
+    .strictObject({ project_id: id, binding_id: id.optional(), source_id: z.string().min(1).optional() })
     .meta({ id: 'SharePointRequestProject' });

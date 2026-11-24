@@ -153,7 +153,12 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         }
         // `.partial()` of the root, not a restatement: same properties minus the server-managed
         // read-only ones, none required.
-        const readOnly = ['annotations', 'last_activity_at', 'sharepoint_library_binding'];
+        const readOnly = [
+            'annotations',
+            'last_activity_at',
+            'sharepoint_library_binding',
+            'sharepoint_library_attachments',
+        ];
         const project = ApiSchemaComponents.Project as JsonObject;
         const partial = ApiSchemaComponents.UpdateProjectPayload as JsonObject;
         expect(Object.keys(project.properties as JsonObject)).toEqual(expect.arrayContaining(readOnly));

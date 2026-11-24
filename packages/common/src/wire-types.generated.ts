@@ -2386,6 +2386,7 @@ export type CreateSharePointContentSourcePayload = {
     sync?: ContentSourceSyncSettings | undefined;
     sample_percent?: number | undefined;
     type: 'sharepoint';
+    sharepoint_library_binding_id?: string | undefined;
     permissions?: ContentSourcePermissionSettings | undefined;
     site_url: string;
     library_name?: string | undefined;
@@ -6729,6 +6730,7 @@ export type Project = {
     description?: string | undefined;
     account: string;
     sharepoint_library_binding?: ManagedSharePointLibrary | undefined;
+    sharepoint_library_attachments?: ManagedSharePointLibrary[] | undefined;
     configuration: ProjectConfiguration;
     integrations?: Record<string, unknown> | undefined;
     plugins: string[];
@@ -7486,12 +7488,17 @@ export type ManagedSharePointLibrary = {
 export type SharePointLibraryPathParams = {
     bindingId: string;
 };
-export type ApproveSharePointLibraryPayload = {
-    manager_id: string;
-    reader_group_id: string;
-    audience: 'uniform' | 'mirrored';
-    project_name?: string | undefined;
-};
+export type ApproveSharePointLibraryPayload =
+    | {
+          manager_id: string;
+          reader_group_id: string;
+          audience: 'uniform' | 'mirrored';
+          project_name?: string | undefined;
+      }
+    | {
+          project_id: string;
+          audience: 'uniform' | 'mirrored';
+      };
 export type ConfigureSharePointLibraryReaderPayload = {
     oauth_provider_id: string;
     permissions?: SharePointContentSourcePermissions | undefined;
@@ -7524,6 +7531,7 @@ export type SharePointLibraryConnection = {
         | 'disconnecting'
         | 'disconnected';
     project_id?: string | undefined;
+    project_mode?: 'dedicated' | 'existing' | undefined;
     oauth_provider_id?: string | undefined;
     source_id?: string | undefined;
     approval?: SharePointLibraryApproval | undefined;
@@ -7532,6 +7540,7 @@ export type SharePointLibraryConnection = {
 export type SharePointLibraryConnectionArray = SharePointLibraryConnection[];
 export type ProjectSharePointLibraryResponse = {
     library: SharePointLibraryConnection | null;
+    libraries?: SharePointLibraryConnection[] | undefined;
 };
 export type BeginSharePointOrganizationLinkPayload = {
     tenant_id: string;
@@ -7597,6 +7606,7 @@ export type SharePointLibraryRequestsQuery = {
 };
 export type SharePointRequestProject = {
     project_id: string;
+    binding_id?: string | undefined;
     source_id?: string | undefined;
 };
 /** Packaged workflows supported by event subscriptions. */
