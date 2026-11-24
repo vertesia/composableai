@@ -40,6 +40,10 @@ export const ApproveSharePointLibraryPayloadSchema = z
 export const ConfigureSharePointLibraryReaderPayloadSchema = z
     .strictObject({
         permissions: SharePointContentSourcePermissionsSchema.optional(),
+        site_policy_confirmed: z.boolean().optional().meta({
+            description:
+                'Required for mirrored permissions. The account administrator confirms that RestrictedAccessControl and BlockDownloadPolicy are both off on the exact bound site.',
+        }),
     })
     .meta({ id: 'ConfigureSharePointLibraryReaderPayload' });
 

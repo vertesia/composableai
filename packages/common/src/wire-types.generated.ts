@@ -7498,6 +7498,7 @@ export type ApproveSharePointLibraryPayload =
       };
 export type ConfigureSharePointLibraryReaderPayload = {
     permissions?: SharePointContentSourcePermissions | undefined;
+    site_policy_confirmed?: boolean | undefined;
 };
 export type SharePointLibraryApproval = {
     manager_id: string;

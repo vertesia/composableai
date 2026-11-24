@@ -7017,6 +7017,10 @@
     "properties": {
       "permissions": {
         "$ref": "#/components/schemas/SharePointContentSourcePermissions"
+      },
+      "site_policy_confirmed": {
+        "type": "boolean",
+        "description": "Required for mirrored permissions. The account administrator confirms that RestrictedAccessControl and BlockDownloadPolicy are both off on the exact bound site."
       }
     },
     "additionalProperties": false

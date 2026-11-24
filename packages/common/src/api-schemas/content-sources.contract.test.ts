@@ -33,3 +33,21 @@ describe('content source permission settings', () => {
         ).toBe(true);
     });
 });
+
+describe('managed SharePoint reader setup', () => {
+    it('accepts explicit site policy confirmation and leaves uniform registration unchanged', () => {
+        expect(validateApiRequest('ConfigureSharePointLibraryReaderPayload', {}).valid).toBe(true);
+        expect(
+            validateApiRequest('ConfigureSharePointLibraryReaderPayload', {
+                permissions: source,
+                site_policy_confirmed: true,
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiRequest('ConfigureSharePointLibraryReaderPayload', {
+                permissions: source,
+                site_policy_confirmed: 'true',
+            }).valid,
+        ).toBe(false);
+    });
+});

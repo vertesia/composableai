@@ -46,7 +46,7 @@ export function registerSharePointLibrariesCommand(program: Command): void {
         .command('configure-reader <id>')
         .requiredOption(
             '--file <path>',
-            'Reader configuration JSON. Use {} for the organization reader with uniform permissions; - reads stdin',
+            'Reader configuration JSON. Use {} for uniform permissions. For mirrored permissions, include permissions and site_policy_confirmed: true after the SharePoint administrator verifies both site policies are off. Use - to read stdin.',
         )
         .action(async (id: string, options: { file: string }) => {
             const reader = validateApiRequest(
