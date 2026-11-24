@@ -1,4 +1,7 @@
 import { defineConfig } from 'rolldown';
+// Imported from source: @vertesia/build-tools depends on this workspace's packages, so a package
+// dependency on it would be a build cycle.
+import { thirdPartyLicenses } from '../build-tools/src/licenses/index.ts';
 
 // Bundles the already-built ES output (`lib/index.js`, produced by `tsc`) into a single
 // browser-friendly file. Build script: `tsc && rolldown -c rolldown.config.js`.
@@ -14,6 +17,14 @@ export default defineConfig({
         sourcemap: true,
         minify: true,
     },
+    // Writes the notices of the packages this bundle inlines beside it.
+    plugins: [
+        thirdPartyLicenses({
+            title: 'vertesia-studio-utils.js',
+            noticesFileName: 'vertesia-studio-utils.THIRD-PARTY-NOTICES.txt',
+            jsonFileName: 'vertesia-studio-utils.third-party-licenses.json',
+        }),
+    ],
     external: ['@llumiverse/common', '@vertesia/common', '@vertesia/jst', 'handlebars'],
     resolve: {
         mainFields: ['browser', 'module', 'main'],
