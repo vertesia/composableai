@@ -18,7 +18,7 @@ import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from 'lucide-react';
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTypeRegistry } from '../../types/TypeRegistryProvider.js';
-import { uploadWithContentMd5, writeWithContentMd5 } from './contentMd5';
+import { uploadWithContentSha256, writeWithContentSha256 } from './contentChecksum';
 import { FileUploadAction, type FileWithMetadata, useSmartFileUploadProcessing } from './useSmartFileUploadProcessing';
 import type { DocumentUploadResult } from './useUploadHandler';
 
@@ -387,12 +387,12 @@ export function DocumentUploadModal({
                             if (action === 'update' && fileInfo.existingId) {
                                 // Update existing file
                                 const existingId = fileInfo.existingId;
-                                const content = await uploadWithContentMd5(
+                                const content = await uploadWithContentSha256(
                                     client.store.objects,
                                     fileInfo.file,
-                                    fileInfo.hash,
+                                    fileInfo.sha256,
                                 );
-                                await writeWithContentMd5(content, (content) =>
+                                await writeWithContentSha256(content, (content) =>
                                     client.store.objects.update(
                                         existingId,
                                         {
@@ -428,12 +428,12 @@ export function DocumentUploadModal({
                                 });
                             } else {
                                 // Create new file
-                                const content = await uploadWithContentMd5(
+                                const content = await uploadWithContentSha256(
                                     client.store.objects,
                                     fileInfo.file,
-                                    fileInfo.hash,
+                                    fileInfo.sha256,
                                 );
-                                const createResult = await writeWithContentMd5(content, (content) =>
+                                const createResult = await writeWithContentSha256(content, (content) =>
                                     client.store.objects.create(
                                         {
                                             type: typeId || undefined,
