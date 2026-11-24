@@ -4,12 +4,13 @@ import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { useCallback } from 'react';
 import { Md5 } from 'ts-md5';
+import { matchesStoredContent, sha256Hex } from './contentChecksum';
 
 const t = i18nInstance.getFixedT(null, NAMESPACE);
 
-interface ExistingHashMatch {
+export interface ExistingHashMatch {
     id: string;
-    content?: { etag?: string };
+    content?: { etag?: string; sha256?: string };
 }
 
 /**
@@ -26,7 +27,10 @@ export enum FileUploadAction {
  */
 export interface FileWithMetadata {
     file: File;
+    /** MD5 of the bytes, compared with the etag of objects stored before `content.sha256`. */
     hash?: string;
+    /** SHA-256 of the bytes, stored as `content.sha256` and compared with it. */
+    sha256?: string;
     name: string;
     size: number;
     location?: string;
@@ -39,21 +43,46 @@ export interface FileWithMetadata {
 }
 
 /**
- * Calculates the MD5 hash of a file
- * @param file The file to hash
- * @returns Promise with the MD5 hash of the file
+ * Marks every file whose bytes an existing object already holds as skipped, with that object's id: several files of a
+ * batch can hold the same bytes as one object. A file whose hash could not be computed is never marked.
  */
-async function calculateFileHash(file: File): Promise<string | undefined> {
+export function markExistingByHash(files: FileWithMetadata[], existing: ExistingHashMatch[]): void {
+    for (const file of files) {
+        if (file.action === FileUploadAction.SKIP) continue;
+        const doc = existing.find((d) => matchesStoredContent(file, d.content));
+        if (doc) {
+            file.existingId = doc.id;
+            file.action = FileUploadAction.SKIP;
+        }
+    }
+}
+
+/**
+ * Calculates the hashes of a file: its SHA-256, stored with the object, and its MD5, only to recognise objects stored
+ * before `content.sha256` by their etag. A hash that cannot be computed is left out.
+ */
+async function calculateFileHashes(file: File): Promise<{ hash?: string; sha256?: string }> {
+    let arrayBuffer: ArrayBuffer;
     try {
-        const arrayBuffer = await file.arrayBuffer();
+        arrayBuffer = await file.arrayBuffer();
+    } catch (error) {
+        console.error('Error reading file for hashing:', error);
+        return {};
+    }
+    const hashes: { hash?: string; sha256?: string } = {};
+    try {
+        hashes.sha256 = await sha256Hex(arrayBuffer);
+    } catch (error) {
+        console.error('Error calculating file SHA-256:', error);
+    }
+    try {
         const md5 = new Md5();
         md5.appendByteArray(new Uint8Array(arrayBuffer));
-        const hash = md5.end();
-        return hash?.toString();
+        hashes.hash = md5.end()?.toString();
     } catch (error) {
-        console.error('Error calculating file hash:', error);
-        return undefined;
+        console.error('Error calculating file MD5:', error);
     }
+    return hashes;
 }
 
 /**
@@ -91,12 +120,13 @@ async function prepareFilesWithMetadata(files: File[], selectedFolder?: string |
                     }
                 }
 
-                // Calculate hash for content comparison
-                const hash = await calculateFileHash(file);
+                // Calculate hashes for content comparison
+                const { hash, sha256 } = await calculateFileHashes(file);
 
                 return {
                     file,
                     hash,
+                    sha256,
                     name: file.name,
                     size: file.size,
                     location,
@@ -138,19 +168,22 @@ export function useSmartFileUploadProcessing() {
                 const filesWithMetadata = await prepareFilesWithMetadata(files, selectedFolder);
 
                 const identifyExistingHash = async () => {
-                    const hashes = filesWithMetadata.map((file) => file.hash).filter(Boolean);
-                    if (hashes.length === 0) return;
-
-                    const query = {
-                        'content.etag': { $in: hashes },
-                    };
+                    const sha256s = filesWithMetadata.flatMap((file) => (file.sha256 ? [file.sha256] : []));
+                    const md5s = filesWithMetadata.flatMap((file) => (file.hash ? [file.hash] : []));
+                    // Objects store the SHA-256 of their bytes as `content.sha256`. Older ones have only their etag,
+                    // the MD5 of their bytes on most storage.
+                    const clauses: Record<string, unknown>[] = [];
+                    if (sha256s.length > 0) clauses.push({ 'content.sha256': { $in: sha256s } });
+                    if (md5s.length > 0) clauses.push({ 'content.etag': { $in: md5s } });
+                    if (clauses.length === 0) return;
+                    const query = { $or: clauses };
 
                     let res: ExistingHashMatch[];
 
                     if (limitToCollectionId) {
                         const payload: ComplexSearchPayload = {
                             query: { match: query },
-                            select: 'id content.etag',
+                            select: 'id content.etag content.sha256',
                         };
                         res = (
                             await client.store.collections.searchMembers(limitToCollectionId, payload)
@@ -158,20 +191,14 @@ export function useSmartFileUploadProcessing() {
                     } else {
                         const payload = {
                             query,
-                            select: 'id content.etag',
+                            select: 'id content.etag content.sha256',
                         } satisfies FindPayload & { select: string };
                         res = (await client.store.objects.find(payload)).flatMap((doc) =>
                             typeof doc.id === 'string' ? [{ id: doc.id, content: doc.content }] : [],
                         );
                     }
 
-                    for (const doc of res) {
-                        const file = filesWithMetadata.find((f) => f.hash === doc.content?.etag);
-                        if (file) {
-                            file.existingId = doc.id;
-                            file.action = FileUploadAction.SKIP;
-                        }
-                    }
+                    markExistingByHash(filesWithMetadata, res);
                 };
 
                 /**
