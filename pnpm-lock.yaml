@@ -7,162 +7,162 @@ importers:
     configDependencies: {}
     packageManagerDependencies:
       pnpm:
-        specifier: 12.19.0
-        version: 12.19.0
+        specifier: 12.21.0
+        version: 12.21.0
 
 packages:
 
-  '@pnpm/exe.android-arm64@12.19.0':
-    resolution: {integrity: sha512-NpPhCmjTAQUmG6PK5CYQBWrPE8D/IQCOcmVQQ1MMfVjcBIWh8KAxk1jBsKjy9Dpz7JH9k3QAQdwCekpi/9Q3LQ==}
+  '@pnpm/exe.android-arm64@12.21.0':
+    resolution: {integrity: sha512-iaWidxR5B9NUBpwMznCQu1yUpKB6BjTY5BYX2lORj76VsfINdj8Z8XWSzSNrGI8qlxa28Jzdp5fiaspzOaJZlA==}
     cpu: [arm64]
     os: [android]
 
-  '@pnpm/exe.android-x64@12.19.0':
-    resolution: {integrity: sha512-Ko6d6NHauv1fV9WjuEoFTM/V4Q6wVuv+A59atp37YB4UMYs9h6OHcpN7W4Q6l//do8LJhN2fjt4F7K4+/SRWSw==}
+  '@pnpm/exe.android-x64@12.21.0':
+    resolution: {integrity: sha512-35e5v3wlwjIYxDywq+R6/z8CE4gLOEgRxt18yqz1tMRLmx2mnW+CFJI2Q8+srTNjn7gykXUC0x1k195JNikC5A==}
     cpu: [x64]
     os: [android]
 
-  '@pnpm/exe.darwin-arm64@12.19.0':
-    resolution: {integrity: sha512-2u5ifdaBi/3pA0MMmEZ9ZvXBY2DJvk0NrvxgZ3L87B3MlbZdTb9oq6tTYMJAsMLhEg0NiGovtq1cTHVc75OnKw==}
+  '@pnpm/exe.darwin-arm64@12.21.0':
+    resolution: {integrity: sha512-F5OyMX/6zLSowpTZEQRojbCmPS1Pq+fyRaIinslsIe6Glh3qbyQ52u+Fe0eEzSaRuIbWZkXmAAXSWh6Q5Wrlgg==}
     cpu: [arm64]
     os: [darwin]
 
-  '@pnpm/exe.darwin-x64@12.19.0':
-    resolution: {integrity: sha512-VZOyG983At+Y9iqOtxSfRSMDci4dLqmfYL7xFDKeLvsw8u101T1vellHFYdWnxM59gNi4jufuhBcyx5WwjeF+A==}
+  '@pnpm/exe.darwin-x64@12.21.0':
+    resolution: {integrity: sha512-EzpvcsaE6hrrgYeEiAFYd2rSgFybYyxXhkAY7K3y6Hg3loVfcyJ81hHczpFzi8lW5RXtUlFECRPZ8ZAMRFQYYg==}
     cpu: [x64]
     os: [darwin]
 
-  '@pnpm/exe.freebsd-x64@12.19.0':
-    resolution: {integrity: sha512-VctpMq4CSn8fh20XX0dsQz1cmakaRxSMq5AT7u66dQxkpMhf/ugm6bbwyj0rJpb04SYHtUBJKb7BB433KWHy8A==}
+  '@pnpm/exe.freebsd-x64@12.21.0':
+    resolution: {integrity: sha512-wNjuEnmdLks4aayPu/QZWQ5tQM9Jn+odUp/vwQM8BXRYoulkTZhtZTHoD60N6mUdLWef1hgUeUh8llNGEUsimw==}
     cpu: [x64]
     os: [freebsd]
 
-  '@pnpm/exe.linux-arm64-musl@12.19.0':
-    resolution: {integrity: sha512-qWBJJrY084dmXordzdjL8C4drTHEU6dhbJ4ZupTChg9DKbWSKhVxJwTZXzUwFNmbo/TTAIQ8pFic8YCr0fIczg==}
+  '@pnpm/exe.linux-arm64-musl@12.21.0':
+    resolution: {integrity: sha512-Ceit9zn4g5ZqCJtx1fV8eJE7p8aeXMrGZ+Dc01vRqZLIUNgNeI+Ur0ruyqxtsnJx6rGADyXzohumxPLHjaJ5AQ==}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  '@pnpm/exe.linux-arm64@12.19.0':
-    resolution: {integrity: sha512-Rcivut7V1fcWSz4c11GYcZwRrUO1+wXWLUUBV13uRGuQ0QcixOoVn9+2ypfSmp6arDXl2Y+vKhs9522V8kCZHw==}
+  '@pnpm/exe.linux-arm64@12.21.0':
+    resolution: {integrity: sha512-4Oj/iF2TDCe2lcH0n4TupPR5sSdrNLclJB6xBElLMPCUOAvBhdf2rRlSaO5M4erJ6g4Fyy7YTXTpcmfFsKyxEA==}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.linux-ppc64@12.19.0':
-    resolution: {integrity: sha512-KhBS0NJK+wY0PbwdjFQ7gR00Pv+1be83nXqPrRcK+h0xmUmRSAEiLGyPajSNa7xUFoCXVVwJGeoCYMepz2VNmg==}
+  '@pnpm/exe.linux-ppc64@12.21.0':
+    resolution: {integrity: sha512-s2o7rdSDeUTBFsNqxptpZXlTgT6cojmMVUOvTQvFNSv6Easian02ha4tR32fwwD97Au4YzIIjMCwywCF4D82Sw==}
     cpu: [ppc64]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.linux-riscv64@12.19.0':
-    resolution: {integrity: sha512-fbwKjV+2AsrFTToCseD9IccE+VQXbzeKMiho6U1he4N904gQ9p06/MwtxqKBGSD+PaEVAn8IolzSQRpBq84XZg==}
+  '@pnpm/exe.linux-riscv64@12.21.0':
+    resolution: {integrity: sha512-EYv3GzxeBTITCuM3yGHHbpRFpUvyulkXpQ6LsjKAQNL3iaba1E6h9iDmlouLb3Io4AMMsfdk0/uG6poQ41uewA==}
     cpu: [riscv64]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.linux-s390x@12.19.0':
-    resolution: {integrity: sha512-Bntrz3smF+pHpH3z82JFY3ldFthmrpGXB6xT32qhDB0qwo096OUSQvzO3xZ6+Mt1bnStM72q7w0Ht1jyEMdS3A==}
+  '@pnpm/exe.linux-s390x@12.21.0':
+    resolution: {integrity: sha512-8VXGNGVNEfs7pL9GTZOzFxjFEnMt4WL3rLOADR5/kPQ7ROTV9GfpVI2DPO/zArXFSkvfc9Zad/WypHLbvzoaTQ==}
     cpu: [s390x]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.linux-x64-musl@12.19.0':
-    resolution: {integrity: sha512-2IJD+LBqnrwAInPSlhm5Z4l8qXUEG3L/zPmAy1amx8Mw/d+SYOoeI4X61eML1m4UD9mjrePF76M6Z+DEbLv/mg==}
+  '@pnpm/exe.linux-x64-musl@12.21.0':
+    resolution: {integrity: sha512-MnC5vpIXYubhDZCgCwlfJMg7Cg6HupN2IuouT9gD/tUmOfVdQYqeyYccWbthyo/Jeto8de1oQlxeRN1+1Hl2DQ==}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@pnpm/exe.linux-x64@12.19.0':
-    resolution: {integrity: sha512-oTji4PzIwSG+AbcHnouo/hW1Oz+1yDP30KJqBmmQnxiOSqTAi8HylytTrONUT08DIjuZ9t8gGZWjv/tqnQdb2w==}
+  '@pnpm/exe.linux-x64@12.21.0':
+    resolution: {integrity: sha512-8eufCjHXspKbNS/kh8q4Q0gqJoOuvC4Q5pgos6XS8By/nAMtP+jf8F1Cw9er840kfAX+PJ/ts+A9qnLE91rvXQ==}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.netbsd-x64@12.19.0':
-    resolution: {integrity: sha512-0Sh1mIsOEvuQQsI6wAK3iRYBTqIaa3uAP81Gd+P27/yIpwfLnrHRdtWw+ojfhz0KeQmOH3SJYIY6504wYYuDNA==}
+  '@pnpm/exe.netbsd-x64@12.21.0':
+    resolution: {integrity: sha512-eyh1M8hQZCkLWxuva7S/fc1SbFbgqg0/5di0dgWmyiuc2Io3dbWVihDun8X+XM8zsR5uhIDvvZpbS9aZQbCovg==}
     cpu: [x64]
     os: [netbsd]
 
-  '@pnpm/exe.win32-arm64@12.19.0':
-    resolution: {integrity: sha512-vHJKl9Z4KDm48dAMlf2RXJroQiFTrxcN0DWc7m6fi+czyTHwtR8kVn2W0CQA0wbWAsdFg2kZ1A8KCuzbAo5Vsg==}
+  '@pnpm/exe.win32-arm64@12.21.0':
+    resolution: {integrity: sha512-7xTxxUXo/grRLivSeIl6B21gnsz7ooe5EMPcJmQqwxc8WLJVReN8MzrlHru8bqXfVr4X3+6ZGZscntKenlCBqQ==}
     cpu: [arm64]
     os: [win32]
 
-  '@pnpm/exe.win32-x64@12.19.0':
-    resolution: {integrity: sha512-Jr3tdhL7PG20T2mz3XWVa/CIod5dIC3vv+IUWNictKTky8vNwQQ00OCK8fd9rNihVhCC61oMjBROm8ABZEDLWQ==}
+  '@pnpm/exe.win32-x64@12.21.0':
+    resolution: {integrity: sha512-9TpkJemVApxJ1Z1w0ZFGN+AuSx4nJOqXSJUqMqDvaXTYwGOzvBiiWdFP9GN0ketiWCQS1Q0/pza2E7I3pP0OBQ==}
     cpu: [x64]
     os: [win32]
 
-  pnpm@12.19.0:
-    resolution: {integrity: sha512-hzJ7ZhmFMgWDTkvlm6OiMeMD2fXkNZEu3jMSt1Obea+JCUL2UTsFpGkHRWZoiARcCbM/xCDCzS072VwBuiHb6w==}
+  pnpm@12.21.0:
+    resolution: {integrity: sha512-Zv2CeO4ok1zpUXktNDZ/869cQyonVkRYIwKVM4NbjaUpu+C+UTCv1W7QcT+4eJ5Hutgtk71a4v5UsVVi1idu8A==}
     engines: {node: '>=18'}
     hasBin: true
 
 snapshots:
 
-  '@pnpm/exe.android-arm64@12.19.0':
+  '@pnpm/exe.android-arm64@12.21.0':
     optional: true
 
-  '@pnpm/exe.android-x64@12.19.0':
+  '@pnpm/exe.android-x64@12.21.0':
     optional: true
 
-  '@pnpm/exe.darwin-arm64@12.19.0':
+  '@pnpm/exe.darwin-arm64@12.21.0':
     optional: true
 
-  '@pnpm/exe.darwin-x64@12.19.0':
+  '@pnpm/exe.darwin-x64@12.21.0':
     optional: true
 
-  '@pnpm/exe.freebsd-x64@12.19.0':
+  '@pnpm/exe.freebsd-x64@12.21.0':
     optional: true
 
-  '@pnpm/exe.linux-arm64-musl@12.19.0':
+  '@pnpm/exe.linux-arm64-musl@12.21.0':
     optional: true
 
-  '@pnpm/exe.linux-arm64@12.19.0':
+  '@pnpm/exe.linux-arm64@12.21.0':
     optional: true
 
-  '@pnpm/exe.linux-ppc64@12.19.0':
+  '@pnpm/exe.linux-ppc64@12.21.0':
     optional: true
 
-  '@pnpm/exe.linux-riscv64@12.19.0':
+  '@pnpm/exe.linux-riscv64@12.21.0':
     optional: true
 
-  '@pnpm/exe.linux-s390x@12.19.0':
+  '@pnpm/exe.linux-s390x@12.21.0':
     optional: true
 
-  '@pnpm/exe.linux-x64-musl@12.19.0':
+  '@pnpm/exe.linux-x64-musl@12.21.0':
     optional: true
 
-  '@pnpm/exe.linux-x64@12.19.0':
+  '@pnpm/exe.linux-x64@12.21.0':
     optional: true
 
-  '@pnpm/exe.netbsd-x64@12.19.0':
+  '@pnpm/exe.netbsd-x64@12.21.0':
     optional: true
 
-  '@pnpm/exe.win32-arm64@12.19.0':
+  '@pnpm/exe.win32-arm64@12.21.0':
     optional: true
 
-  '@pnpm/exe.win32-x64@12.19.0':
+  '@pnpm/exe.win32-x64@12.21.0':
     optional: true
 
-  pnpm@12.19.0:
+  pnpm@12.21.0:
     optionalDependencies:
-      '@pnpm/exe.android-arm64': 12.19.0
-      '@pnpm/exe.android-x64': 12.19.0
-      '@pnpm/exe.darwin-arm64': 12.19.0
-      '@pnpm/exe.darwin-x64': 12.19.0
-      '@pnpm/exe.freebsd-x64': 12.19.0
-      '@pnpm/exe.linux-arm64': 12.19.0
-      '@pnpm/exe.linux-arm64-musl': 12.19.0
-      '@pnpm/exe.linux-ppc64': 12.19.0
-      '@pnpm/exe.linux-riscv64': 12.19.0
-      '@pnpm/exe.linux-s390x': 12.19.0
-      '@pnpm/exe.linux-x64': 12.19.0
-      '@pnpm/exe.linux-x64-musl': 12.19.0
-      '@pnpm/exe.netbsd-x64': 12.19.0
-      '@pnpm/exe.win32-arm64': 12.19.0
-      '@pnpm/exe.win32-x64': 12.19.0
+      '@pnpm/exe.android-arm64': 12.21.0
+      '@pnpm/exe.android-x64': 12.21.0
+      '@pnpm/exe.darwin-arm64': 12.21.0
+      '@pnpm/exe.darwin-x64': 12.21.0
+      '@pnpm/exe.freebsd-x64': 12.21.0
+      '@pnpm/exe.linux-arm64': 12.21.0
+      '@pnpm/exe.linux-arm64-musl': 12.21.0
+      '@pnpm/exe.linux-ppc64': 12.21.0
+      '@pnpm/exe.linux-riscv64': 12.21.0
+      '@pnpm/exe.linux-s390x': 12.21.0
+      '@pnpm/exe.linux-x64': 12.21.0
+      '@pnpm/exe.linux-x64-musl': 12.21.0
+      '@pnpm/exe.netbsd-x64': 12.21.0
+      '@pnpm/exe.win32-arm64': 12.21.0
+      '@pnpm/exe.win32-x64': 12.21.0
 
 ---
 lockfileVersion: '9.0'
@@ -200,7 +200,7 @@ overrides:
   '@types/react-dom': 19.3.0
   koa@<3.2.1: ^3.2.1
   '@types/koa@<3.0.3': ^3.0.3
-  vite: 8.3.7
+  vite: 8.3.8
   '@ungap/structured-clone@<=1.3.0': ^1.3.1
   '@hono/node-server@<2.1.6': 2.1.6
   re2js@>=2.2.0 <2.8.7: 2.9.0
@@ -250,8 +250,8 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2
       vite:
-        specifier: 8.3.7
-        version: 8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+        specifier: 8.3.8
+        version: 8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
 
   libraries/jst:
     dependencies:
@@ -294,7 +294,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   libraries/koa-stack/body:
     dependencies:
@@ -374,7 +374,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   libraries/koa-stack/server:
     dependencies:
@@ -430,7 +430,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   libraries/tsconfig: {}
 
@@ -451,7 +451,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   packages/api-fetch-client:
     dependencies:
@@ -554,11 +554,11 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2
       vite:
-        specifier: 8.3.7
-        version: 8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+        specifier: 8.3.8
+        version: 8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   packages/cli:
     dependencies:
@@ -649,7 +649,7 @@ importers:
         version: link:../../libraries/tsconfig
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
     optionalDependencies:
       '@napi-rs/keyring':
         specifier: ^2.1.2
@@ -706,7 +706,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   packages/common:
     dependencies:
@@ -740,7 +740,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   packages/converters:
     dependencies:
@@ -762,7 +762,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   packages/create-plugin:
     dependencies:
@@ -789,8 +789,8 @@ importers:
         specifier: ^2.4.9
         version: 2.4.9
       '@vercel/node':
-        specifier: 30.0.0
-        version: 30.0.0(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@vercel/build-utils@15.3.0)(supports-color@10.2.2)
+        specifier: 31.0.0
+        version: 31.0.0(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@vercel/build-utils@15.4.0)(supports-color@10.2.2)
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -824,7 +824,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   packages/json:
     devDependencies:
@@ -839,7 +839,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   packages/plugin-builder:
     dependencies:
@@ -850,8 +850,8 @@ importers:
         specifier: ^24.19.2
         version: 24.19.2
       vite:
-        specifier: 8.3.7
-        version: 8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+        specifier: 8.3.8
+        version: 8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
     devDependencies:
       '@vertesia/tsconfig':
         specifier: workspace:*
@@ -919,7 +919,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   packages/studio-utils:
     dependencies:
@@ -950,7 +950,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   packages/tools-admin-ui:
     dependencies:
@@ -966,7 +966,7 @@ importers:
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.3.5
-        version: 4.3.5(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 4.3.5(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
       '@types/react':
         specifier: 19.3.0
         version: 19.3.0
@@ -978,7 +978,7 @@ importers:
         version: link:../../libraries/tsconfig
       '@vitejs/plugin-react':
         specifier: ^6.3.0
-        version: 6.3.0(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 6.3.0(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
       react:
         specifier: 19.3.1
         version: 19.3.1
@@ -992,8 +992,8 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2
       vite:
-        specifier: 8.3.7
-        version: 8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+        specifier: 8.3.8
+        version: 8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
 
   packages/tools-sdk:
     dependencies:
@@ -1030,7 +1030,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   packages/ui:
     dependencies:
@@ -1310,10 +1310,10 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
       vitest-axe:
         specifier: ^0.1.0
-        version: 0.1.0(vitest@5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)))
+        version: 0.1.0(vitest@5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)))
       wcag-contrast:
         specifier: ^3.0.0
         version: 3.0.0
@@ -1428,7 +1428,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   templates/plugin-template:
     dependencies:
@@ -1495,7 +1495,7 @@ importers:
         version: 0.5.11(tailwindcss@4.3.5)
       '@tailwindcss/vite':
         specifier: ^4.3.5
-        version: 4.3.5(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 4.3.5(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
       '@types/node':
         specifier: ^24.19.2
         version: 24.19.2
@@ -1513,10 +1513,10 @@ importers:
         version: link:../../packages/plugin-builder
       '@vitejs/plugin-basic-ssl':
         specifier: ^2.3.0
-        version: 2.3.0(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 2.3.0(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
       '@vitejs/plugin-react':
         specifier: ^6.3.0
-        version: 6.3.0(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 6.3.0(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
       concurrently:
         specifier: ^10.0.7
         version: 10.0.7
@@ -1545,14 +1545,14 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2
       vite:
-        specifier: 8.3.7
-        version: 8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+        specifier: 8.3.8
+        version: 8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
       vite-plugin-serve-static:
         specifier: ^2.2.1
-        version: 2.2.1(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 2.2.1(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
       vitest:
         specifier: 'catalog:'
-        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
       workerd:
         specifier: 1.20261110.1
         version: 1.20261110.1
@@ -4271,7 +4271,7 @@ packages:
   '@tailwindcss/vite@4.3.5':
     resolution: {integrity: sha512-BCNiY0a1ZjdOHVqw7kyb7U72BwfMF3dfUuN+tQsLWky/J5JOI/r7abibglXfygrZhVO/3u3V+E25kkKTeMkXaQ==}
     peerDependencies:
-      vite: 8.3.7
+      vite: 8.3.8
 
   '@temporalio/activity@1.26.0':
     resolution: {integrity: sha512-j0/yL0PDasvbOuIH571c1rr1n+xsm0BnGX0dl/G+lpWRurxyojCCJmZG9FF472x8xUON6WWequ2qOGquw0gb8A==}
@@ -4946,8 +4946,8 @@ packages:
   '@upsetjs/venn.js@2.0.0':
     resolution: {integrity: sha512-WbBhLrooyePuQ1VZxrJjtLvTc4NVfpOyKx0sKqioq9bX1C1m7Jgykkn8gLrtwumBioXIqam8DLxp88Adbue6Hw==}
 
-  '@vercel/build-utils@15.3.0':
-    resolution: {integrity: sha512-gXR/D6yFovhZd/e3t+EsVKgOdQSNS7R7s+fuvcvEqTvd8mxcw2//UTG7vPM65zfHl1vNDCafNlPQ4vGDa/QoLA==}
+  '@vercel/build-utils@15.4.0':
+    resolution: {integrity: sha512-eWgVvEjAC8ksF0TcctpT8UeSQ0Jj838yVosppDFmEZQSkB9tcYJPn3JwUTexB62o9YVIVpMkU5V5YbPfnKE+zg==}
 
   '@vercel/error-utils@2.2.1':
     resolution: {integrity: sha512-9DhP8jP7raLML4hGsBemxX5fXuQnu5xxMV+HjGygGbzEmVK/+KyJ3QP2Cw7PdF0uXdb9N0Qa4c3tRGH34ZX6vw==}
@@ -4957,10 +4957,10 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
-  '@vercel/node@30.0.0':
-    resolution: {integrity: sha512-zaQQa4h34HgtV1gBSTs49C9s3J4ZhjhhSESlMcnQf6JlOIC2+qHVgHB1vgqgaBCkpyxI64PObTlSPByxTK+wlA==}
+  '@vercel/node@31.0.0':
+    resolution: {integrity: sha512-3vNvZnopE7mS+WjrrPYZUqZqz1Yt3bKQHPl+nNfsVjBdzYB/tNaabQLn/vS0bzomZ+mFtNKSMw7U6b9FhbLn4Q==}
     peerDependencies:
-      '@vercel/build-utils': 15.3.0
+      '@vercel/build-utils': 15.4.0
 
   '@vercel/static-config@3.4.4':
     resolution: {integrity: sha512-WppaPyEKQhO8qo5gVee3mSo1QSCgDZaUcUDHrqICSlt90oYeC/SHTmKCPWY1x1NB9hU+kR2oDzJwAeRKKv5NIw==}
@@ -4969,7 +4969,7 @@ packages:
     resolution: {integrity: sha512-bdyo8rB3NnQbikdMpHaML9Z1OZPBu6fFOBo+OtxsBlvMJtysWskmBcnbIDhUqgC8tcxNv/a+BcV5U+2nQMm1OQ==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     peerDependencies:
-      vite: 8.3.7
+      vite: 8.3.8
 
   '@vitejs/plugin-react@6.3.0':
     resolution: {integrity: sha512-H9E955aVvD2F4zNHCw4eIZbIfF6xKldlh7MNu+hSU7xwQzh65lI/N+CJWqmfhi0PEjDXIt/H7T7J/4wU63KJiw==}
@@ -4978,7 +4978,7 @@ packages:
       '@rolldown/plugin-babel': ^0.1.7 || ^0.2.0 || ^0.3.0
       babel-plugin-react-compiler: ^1.0.0
       oxc-transform-react: '>=0.152.0 <0.157.0'
-      vite: 8.3.7
+      vite: 8.3.8
     peerDependenciesMeta:
       '@rolldown/plugin-babel':
         optional: true
@@ -4991,7 +4991,7 @@ packages:
     resolution: {integrity: sha512-5umB9/jlWcqVS6fsrFmv5Gdnpu6wAUio/lEOwAmvB7v+lFo/IW2B9FhAD0p19GCULTgMzLCdUmuCDCnAzWgppQ==}
     peerDependencies:
       msw: ^2.4.9 || ^3.0.0
-      vite: 8.3.7
+      vite: 8.3.8
     peerDependenciesMeta:
       msw:
         optional: true
@@ -8058,10 +8058,10 @@ packages:
     resolution: {integrity: sha512-7oCFrBG/cPVFsS+FWtptN9NILHIaMpYhfLHUOhzgHl2Sopba5vSyymJg5Jpe65ABOmtn1VPVGZnETyWDRP5KAA==}
     engines: {node: '>=20'}
     peerDependencies:
-      vite: 8.3.7
+      vite: 8.3.8
 
-  vite@8.3.7:
-    resolution: {integrity: sha512-oxh0dMxrayBr33ScJvvBJ2HBQ2jc1TBrXKR2NyL/MJ9WPuX19mN2DXWUmywKdyw5RFVQBo8hmtb2FMC0LHrnng==}
+  vite@8.3.8:
+    resolution: {integrity: sha512-LzOn3h9rG/0vhLdXrV4yJ4QFA9eEoqCl+Yx+kGJd7aB9w6nfNgVHKSYwLPZUHrz4ZGa+t+kXjV9itvcHDLQouA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -8124,7 +8124,7 @@ packages:
       '@vitest/ui': 5.1.0
       happy-dom: '*'
       jsdom: '*'
-      vite: 8.3.7
+      vite: 8.3.8
     peerDependenciesMeta:
       '@edge-runtime/vm':
         optional: true
@@ -10832,12 +10832,12 @@ snapshots:
       '@tailwindcss/oxide-win32-arm64-msvc': 4.3.5
       '@tailwindcss/oxide-win32-x64-msvc': 4.3.5
 
-  '@tailwindcss/vite@4.3.5(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))':
+  '@tailwindcss/vite@4.3.5(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))':
     dependencies:
       '@tailwindcss/node': 4.3.5
       '@tailwindcss/oxide': 4.3.5
       tailwindcss: 4.3.5
-      vite: 8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+      vite: 8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
 
   '@temporalio/activity@1.26.0(long@5.3.2)(protobufjs@8.8.0)':
     dependencies:
@@ -11587,7 +11587,7 @@ snapshots:
       d3-selection: 3.0.0
       d3-transition: 3.0.1(d3-selection@3.0.0)
 
-  '@vercel/build-utils@15.3.0':
+  '@vercel/build-utils@15.4.0':
     dependencies:
       cjs-module-lexer: 1.2.3
       es-module-lexer: 1.5.0
@@ -11613,13 +11613,13 @@ snapshots:
       - rollup
       - supports-color
 
-  '@vercel/node@30.0.0(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@vercel/build-utils@15.3.0)(supports-color@10.2.2)':
+  '@vercel/node@31.0.0(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@vercel/build-utils@15.4.0)(supports-color@10.2.2)':
     dependencies:
       '@edge-runtime/node-utils': 2.3.0
       '@edge-runtime/primitives': 4.1.0
       '@edge-runtime/vm': 3.2.0
       '@types/node': 24.19.2
-      '@vercel/build-utils': 15.3.0
+      '@vercel/build-utils': 15.4.0
       '@vercel/error-utils': 2.2.1
       '@vercel/nft': 1.10.0(supports-color@10.2.2)
       '@vercel/static-config': 3.4.4(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)
@@ -11654,23 +11654,23 @@ snapshots:
       - '@emnapi/core'
       - '@emnapi/runtime'
 
-  '@vitejs/plugin-basic-ssl@2.3.0(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))':
+  '@vitejs/plugin-basic-ssl@2.3.0(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))':
     dependencies:
-      vite: 8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+      vite: 8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
 
-  '@vitejs/plugin-react@6.3.0(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))':
+  '@vitejs/plugin-react@6.3.0(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: 8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+      vite: 8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
 
-  '@vitest/mocker@5.1.0(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))':
+  '@vitest/mocker@5.1.0(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@vitest/spy': 5.1.0
       estree-walker: 3.0.3
       magic-string: 1.4.5
     optionalDependencies:
-      vite: 8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+      vite: 8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
 
   '@vitest/spy@5.1.0': {}
 
@@ -15400,13 +15400,13 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vite-plugin-serve-static@2.2.1(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)):
+  vite-plugin-serve-static@2.2.1(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)):
     dependencies:
       cors: 2.8.6
       mime-types: 2.1.35
-      vite: 8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+      vite: 8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
 
-  vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1):
+  vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1):
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7
@@ -15422,7 +15422,7 @@ snapshots:
       tsx: 4.23.15
       yaml: 2.9.1
 
-  vitest-axe@0.1.0(vitest@5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))):
+  vitest-axe@0.1.0(vitest@5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))):
     dependencies:
       aria-query: 5.3.2
       axe-core: 4.14.0
@@ -15430,12 +15430,12 @@ snapshots:
       dom-accessibility-api: 0.5.16
       lodash-es: 4.18.1
       redent: 3.0.0
-      vitest: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+      vitest: 5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
-  vitest@5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)):
+  vitest@5.1.0(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@31.0.1(@napi-rs/canvas@1.1.1)(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)):
     dependencies:
       '@types/chai': 5.2.3
-      '@vitest/mocker': 5.1.0(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+      '@vitest/mocker': 5.1.0(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
       chai: 6.3.0
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
@@ -15446,7 +15446,7 @@ snapshots:
       tinybench: 6.2.2
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
-      vite: 8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+      vite: 8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
       why-is-node-running: 3.2.1
     optionalDependencies:
       '@edge-runtime/vm': 3.2.0
