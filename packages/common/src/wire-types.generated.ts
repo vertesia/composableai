@@ -4164,8 +4164,10 @@ export type MediatorEnvConfig = {
 };
 export type ExecutionEnvironmentSettings = {
     default_headers?: StringValueMap | undefined;
+    openai_api?: OpenAICompatibleApi | undefined;
     [k: string]: unknown;
 };
+export type OpenAICompatibleApi = 'responses' | 'chat_completions';
 export type ExecutionEnvironment = {
     id: string;
     name: string;
@@ -12130,6 +12132,7 @@ export interface ApiComponentTypes {
     ExecutionEnvironment: ExecutionEnvironment;
     ExecutionEnvironmentArray: ExecutionEnvironmentArray;
     ExecutionEnvironmentSettings: ExecutionEnvironmentSettings;
+    OpenAICompatibleApi: OpenAICompatibleApi;
     ExecutionEnvironmentCreatePayload: ExecutionEnvironmentCreatePayload;
     ExecutionEnvironmentUpdatePayload: ExecutionEnvironmentUpdatePayload;
     ExecutionEnvironmentConfigUpdatePayload: ExecutionEnvironmentConfigUpdatePayload;
