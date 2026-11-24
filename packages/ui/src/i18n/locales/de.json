@@ -413,6 +413,7 @@
     "login.inviteRole": "Rolle: {{role}}",
     "login.invitedBy": "Eingeladen von {{name}}",
     "login.invitesIntro": "Sie wurden eingeladen, den folgenden Konten beizutreten. Nehmen Sie jede Einladung an oder lehnen Sie sie ab.",
+    "login.openSourceNotices": "Open-Source-Hinweise",
     "login.reject": "Ablehnen",
     "login.reviewInvites": "Einladungen überprüfen",
     "login.terminal.account": "Konto",

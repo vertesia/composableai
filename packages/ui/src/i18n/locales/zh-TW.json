@@ -413,6 +413,7 @@
     "login.inviteRole": "角色：{{role}}",
     "login.invitedBy": "邀請人：{{name}}",
     "login.invitesIntro": "您已受邀加入以下帳戶。請接受或拒絕每個邀請。",
+    "login.openSourceNotices": "開源聲明",
     "login.reject": "拒絕",
     "login.reviewInvites": "查看邀請",
     "login.terminal.account": "帳戶",
