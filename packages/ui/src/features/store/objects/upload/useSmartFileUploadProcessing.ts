@@ -9,7 +9,7 @@ const t = i18nInstance.getFixedT(null, NAMESPACE);
 
 interface ExistingHashMatch {
     id: string;
-    content?: { etag?: string };
+    content?: { etag?: string; md5?: string };
 }
 
 /**
@@ -141,8 +141,10 @@ export function useSmartFileUploadProcessing() {
                     const hashes = filesWithMetadata.map((file) => file.hash).filter(Boolean);
                     if (hashes.length === 0) return;
 
+                    // A file's MD5 is its etag on most storage; where it is not (an S3 object encrypted with a KMS key or
+                    // uploaded in parts), the upload stored it as `content.md5`.
                     const query = {
-                        'content.etag': { $in: hashes },
+                        $or: [{ 'content.etag': { $in: hashes } }, { 'content.md5': { $in: hashes } }],
                     };
 
                     let res: ExistingHashMatch[];
@@ -150,7 +152,7 @@ export function useSmartFileUploadProcessing() {
                     if (limitToCollectionId) {
                         const payload: ComplexSearchPayload = {
                             query: { match: query },
-                            select: 'id content.etag',
+                            select: 'id content.etag content.md5',
                         };
                         res = (
                             await client.store.collections.searchMembers(limitToCollectionId, payload)
@@ -158,7 +160,7 @@ export function useSmartFileUploadProcessing() {
                     } else {
                         const payload = {
                             query,
-                            select: 'id content.etag',
+                            select: 'id content.etag content.md5',
                         } satisfies FindPayload & { select: string };
                         res = (await client.store.objects.find(payload)).flatMap((doc) =>
                             typeof doc.id === 'string' ? [{ id: doc.id, content: doc.content }] : [],
@@ -166,7 +168,9 @@ export function useSmartFileUploadProcessing() {
                     }
 
                     for (const doc of res) {
-                        const file = filesWithMetadata.find((f) => f.hash === doc.content?.etag);
+                        const file = filesWithMetadata.find(
+                            (f) => f.hash === doc.content?.md5 || f.hash === doc.content?.etag,
+                        );
                         if (file) {
                             file.existingId = doc.id;
                             file.action = FileUploadAction.SKIP;

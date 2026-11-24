@@ -2,6 +2,7 @@ import { errorMessage, useToast } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { useDocumentSearch } from '../search/DocumentSearchContext';
+import { withContentMd5, writeWithContentMd5 } from './contentMd5';
 import { FileUploadAction, useSmartFileUploadProcessing } from './useSmartFileUploadProcessing';
 
 /**
@@ -179,18 +180,25 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                         try {
                             if (fileInfo.action === FileUploadAction.UPDATE && fileInfo.existingId) {
                                 // UPDATE - Update the existing object
-                                const updateResult = await client.store.objects.update(
-                                    fileInfo.existingId,
-                                    {
-                                        type: type || undefined,
-                                        content: fileInfo.file,
-                                        location: fileInfo.location,
-                                        name: fileInfo.name,
-                                    },
-                                    {
-                                        createRevision: true,
-                                        revisionLabel: `upload on ${new Date().toISOString()}`,
-                                    },
+                                const existingId = fileInfo.existingId;
+                                const content = withContentMd5(
+                                    await client.store.objects.upload(fileInfo.file),
+                                    fileInfo.hash,
+                                );
+                                const updateResult = await writeWithContentMd5(content, (content) =>
+                                    client.store.objects.update(
+                                        existingId,
+                                        {
+                                            type: type || undefined,
+                                            content,
+                                            location: fileInfo.location,
+                                            name: fileInfo.name,
+                                        },
+                                        {
+                                            createRevision: true,
+                                            revisionLabel: `upload on ${new Date().toISOString()}`,
+                                        },
+                                    ),
                                 );
 
                                 // Use a separate data structure for updated files
@@ -215,14 +223,20 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                                 // CREATE - Create a new object
                                 // If collectionId is provided, pass it as an option
                                 const options = collectionId ? { collection_id: collectionId } : undefined;
-                                const createResult = await store.objects.create(
-                                    {
-                                        type: type || undefined,
-                                        content: fileInfo.file,
-                                        location:
-                                            fileInfo.location || fileInfo.file.webkitRelativePath || fileInfo.name,
-                                    },
-                                    options,
+                                const content = withContentMd5(
+                                    await store.objects.upload(fileInfo.file),
+                                    fileInfo.hash,
+                                );
+                                const createResult = await writeWithContentMd5(content, (content) =>
+                                    store.objects.create(
+                                        {
+                                            type: type || undefined,
+                                            content,
+                                            location:
+                                                fileInfo.location || fileInfo.file.webkitRelativePath || fileInfo.name,
+                                        },
+                                        options,
+                                    ),
                                 );
 
                                 // Track successful upload
