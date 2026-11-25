@@ -8,6 +8,17 @@ export interface OAuthPopupResult {
     error_code?: string;
     /** After a step-up: the part of the challenged scope the authorization server did not grant. */
     missing_scope?: string;
+    /** The OAuth `state` of the authorization the callback page completed. Absent from older callback pages. */
+    state?: string;
+}
+
+export interface OpenOAuthPopupOptions {
+    /**
+     * The OAuth `state` of this authorization. When set, only a callback message for this `state` completes it: a
+     * message from another tab's authorization, or one without a `state`, is ignored, and the caller learns the
+     * outcome when the popup closes.
+     */
+    state?: string;
 }
 
 export interface UseOAuthPopupOptions {
@@ -61,7 +72,7 @@ export function useOAuthPopup({ onComplete, onError }: UseOAuthPopupOptions) {
         };
     }, []);
 
-    const openOAuthPopup = (authorizationUrl: string) => {
+    const openOAuthPopup = (authorizationUrl: string, { state }: OpenOAuthPopupOptions = {}) => {
         // Clean up any previous OAuth flow
         if (cleanupRef.current) {
             cleanupRef.current();
@@ -88,6 +99,9 @@ export function useOAuthPopup({ onComplete, onError }: UseOAuthPopupOptions) {
 
         const handleMessage = (event: MessageEvent) => {
             if (!isOAuthMessage(event.data)) {
+                return;
+            }
+            if (state !== undefined && event.data.state !== state) {
                 return;
             }
 

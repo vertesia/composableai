@@ -18250,6 +18250,10 @@
       },
       "scope": {
         "type": "string"
+      },
+      "step_up_attempt": {
+        "type": "string",
+        "description": "The `step_up_attempt` of the reconnect that stored the user's grant, when that reconnect asked for a scope the MCP server had refused a call for."
       }
     },
     "required": [
@@ -18350,6 +18354,10 @@
       },
       "connected": {
         "type": "boolean"
+      },
+      "step_up_attempt": {
+        "type": "string",
+        "description": "Set when the request asked for `required_scope`: an id for this reconnect. Once the user completes it, the collection status reports it as `step_up_attempt`, so the caller can confirm that the grant is the one it started, even without a message from the callback page."
       }
     },
     "additionalProperties": false,

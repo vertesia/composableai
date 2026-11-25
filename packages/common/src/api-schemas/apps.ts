@@ -580,6 +580,14 @@ export const OAuthAuthStatusSchema = z
         mcp_server_url: z.string(),
         expires_at: z.string().optional(),
         scope: z.string().optional(),
+        step_up_attempt: z
+            .string()
+            .meta({
+                description:
+                    "The `step_up_attempt` of the reconnect that stored the user's grant, when that reconnect asked " +
+                    'for a scope the MCP server had refused a call for.',
+            })
+            .optional(),
     })
     .meta({ id: 'OAuthAuthStatus', description: 'OAuth authentication status for an MCP tool collection' });
 
@@ -637,6 +645,15 @@ export const OAuthAuthorizeResponseSchema = z
         authorization_url: z.string().optional(),
         state: z.string().optional(),
         connected: z.boolean().optional(),
+        step_up_attempt: z
+            .string()
+            .meta({
+                description:
+                    'Set when the request asked for `required_scope`: an id for this reconnect. Once the user ' +
+                    'completes it, the collection status reports it as `step_up_attempt`, so the caller can confirm ' +
+                    'that the grant is the one it started, even without a message from the callback page.',
+            })
+            .optional(),
     })
     .meta({ id: 'OAuthAuthorizeResponse', description: 'Response from OAuth authorization endpoint' });
 

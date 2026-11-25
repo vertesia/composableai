@@ -1559,6 +1559,7 @@ export type OAuthAuthStatus = {
     mcp_server_url: string;
     expires_at?: string | undefined;
     scope?: string | undefined;
+    step_up_attempt?: string | undefined;
 };
 /**
  * Response from OAuth authorization endpoint
@@ -1567,6 +1568,7 @@ export type OAuthAuthorizeResponse = {
     authorization_url?: string | undefined;
     state?: string | undefined;
     connected?: boolean | undefined;
+    step_up_attempt?: string | undefined;
 };
 /**
  * Payload for storing the static bearer token of an `auth: 'api_key'` MCP collection.

@@ -6,12 +6,17 @@ import type { UseOAuthPopupOptions } from './useOAuthPopup.js';
 
 const mocks = vi.hoisted(() => ({
     authorize: vi.fn(),
+    getCollectionStatus: vi.fn(),
     openOAuthPopup: vi.fn(),
     popupOptions: undefined as UseOAuthPopupOptions | undefined,
 }));
 
 vi.mock('@vertesia/ui/session', () => ({
-    useUserSession: () => ({ client: { remoteMcpConnections: { authorize: mocks.authorize } } }),
+    useUserSession: () => ({
+        client: {
+            remoteMcpConnections: { authorize: mocks.authorize, getCollectionStatus: mocks.getCollectionStatus },
+        },
+    }),
 }));
 
 vi.mock('./useOAuthPopup.js', () => ({
@@ -36,32 +41,96 @@ function renderButton(onGranted = vi.fn()) {
 }
 
 describe('McpStepUpButton', () => {
+    const AUTH_URL = 'https://auth.example.com/authorize';
+
     beforeEach(() => {
         vi.clearAllMocks();
-        mocks.authorize.mockResolvedValue({ authorization_url: 'https://auth.example.com/authorize' });
+        mocks.authorize.mockResolvedValue({
+            authorization_url: AUTH_URL,
+            state: 'state-1',
+            step_up_attempt: 'attempt-1',
+        });
     });
 
-    it('authorizes again with the refused scope and reports success with what was not granted', async () => {
-        const onGranted = renderButton();
-
+    async function grant() {
         fireEvent.click(screen.getByRole('button', { name: 'Grant permission' }));
+        await waitFor(() => expect(mocks.openOAuthPopup).toHaveBeenCalled());
+    }
 
-        await waitFor(() => expect(mocks.openOAuthPopup).toHaveBeenCalledWith('https://auth.example.com/authorize'));
+    it('authorizes again with the refused scope, for this attempt only', async () => {
+        renderButton();
+        await grant();
+
         expect(mocks.authorize).toHaveBeenCalledWith('app1', 'jira', {
             required_scope: 'write:jira-work',
             refused_tool: 'jira__create_issue',
             scope_mode: 'union',
         });
+        expect(mocks.openOAuthPopup).toHaveBeenCalledWith(AUTH_URL, { state: 'state-1' });
+    });
 
-        mocks.popupOptions?.onComplete({ success: true, missing_scope: 'write:jira-work' });
-        expect(onGranted).toHaveBeenCalledWith('write:jira-work');
+    it('resumes once the status confirms the grant of this attempt, even without a callback message', async () => {
+        mocks.getCollectionStatus.mockResolvedValue({
+            authenticated: true,
+            step_up_attempt: 'attempt-1',
+            scope: 'read:jira-work',
+        });
+        const onGranted = renderButton();
+        await grant();
+
+        // An app on another origin never gets the callback page's message: the popup just closes.
+        mocks.popupOptions?.onComplete(undefined);
+
+        await waitFor(() => expect(onGranted).toHaveBeenCalledWith('write:jira-work'));
+        expect(mocks.getCollectionStatus).toHaveBeenCalledWith('app1', 'jira');
+    });
+
+    it('does not resume on a grant from another attempt', async () => {
+        mocks.getCollectionStatus.mockResolvedValue({ authenticated: true, step_up_attempt: 'attempt-other' });
+        const onGranted = renderButton();
+        await grant();
+
+        mocks.popupOptions?.onComplete({ success: true });
+
+        await waitFor(() => expect(mocks.getCollectionStatus).toHaveBeenCalled());
+        await waitFor(() =>
+            expect((screen.getByRole('button', { name: 'Grant permission' }) as HTMLButtonElement).disabled).toBe(
+                false,
+            ),
+        );
+        expect(onGranted).not.toHaveBeenCalled();
+    });
+
+    it("trusts this attempt's own callback message on a server without attempt ids", async () => {
+        mocks.authorize.mockResolvedValue({ authorization_url: AUTH_URL, state: 'state-1' });
+        const onGranted = renderButton();
+        await grant();
+
+        mocks.popupOptions?.onComplete({ success: true, missing_scope: 'write:jira-work', state: 'state-1' });
+
+        await waitFor(() => expect(onGranted).toHaveBeenCalledWith('write:jira-work'));
+        expect(mocks.getCollectionStatus).not.toHaveBeenCalled();
+    });
+
+    it('does not resume when the popup closes without completing on a server without attempt ids', async () => {
+        mocks.authorize.mockResolvedValue({ authorization_url: AUTH_URL, state: 'state-1' });
+        const onGranted = renderButton();
+        await grant();
+
+        mocks.popupOptions?.onComplete(undefined);
+
+        await waitFor(() =>
+            expect((screen.getByRole('button', { name: 'Grant permission' }) as HTMLButtonElement).disabled).toBe(
+                false,
+            ),
+        );
+        expect(onGranted).not.toHaveBeenCalled();
     });
 
     it('offers to ask for the refused scope alone when the authorization server answers invalid_scope', async () => {
         const onGranted = renderButton();
+        await grant();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Grant permission' }));
-        await waitFor(() => expect(mocks.openOAuthPopup).toHaveBeenCalled());
         mocks.popupOptions?.onComplete({ success: false, error: 'invalid_scope', error_code: 'invalid_scope' });
 
         fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
@@ -72,16 +141,6 @@ describe('McpStepUpButton', () => {
                 expect.objectContaining({ scope_mode: 'challenged' }),
             ),
         );
-        expect(onGranted).not.toHaveBeenCalled();
-    });
-
-    it('does not resume the agent when the popup closes without completing', async () => {
-        const onGranted = renderButton();
-
-        fireEvent.click(screen.getByRole('button', { name: 'Grant permission' }));
-        await waitFor(() => expect(mocks.openOAuthPopup).toHaveBeenCalled());
-        mocks.popupOptions?.onComplete(undefined);
-
         expect(onGranted).not.toHaveBeenCalled();
     });
 });
