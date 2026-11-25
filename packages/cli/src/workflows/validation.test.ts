@@ -309,6 +309,51 @@ describe('workflow validation', () => {
     });
 });
 
+describe('runtime expression rules', () => {
+    function errorsFor(activity: Record<string, unknown>, vars: Record<string, unknown> = { field: 1 }) {
+        return getWorkflowErrors({ name: 'test', vars, activities: [{ name: 'a', ...activity }] } as DSLWorkflowSpec);
+    }
+
+    test('should accept required imports', () => {
+        expect(
+            errorsFor({ import: ['objectId!', { f: 'field!' }], params: { id: '${objectId}', value: '${f}' } }),
+        ).toEqual([]);
+    });
+
+    test('should reject an unknown required import', () => {
+        expect(errorsFor({ import: ['missing!'] })).toEqual([
+            'Activity "a": Unknown workflow variable "missing!" in import declaration',
+        ]);
+    });
+
+    test('should accept JSON and single-quoted fallbacks', () => {
+        expect(
+            errorsFor({
+                import: ['field'],
+                params: { a: '${field ?? 1}', b: "${field ?? 'x'}", c: '${ field ?? "y" }', d: '${field??null}' },
+            }),
+        ).toEqual([]);
+    });
+
+    test('should reject a fallback the runtime cannot parse', () => {
+        expect(errorsFor({ import: ['field'], params: { a: '${field ?? nope}' } })).toEqual([
+            'Activity "a": Invalid fallback value "nope" in reference "${field ?? nope}" in expression "${field ?? nope}"',
+        ]);
+    });
+
+    test('should not trim a reference without a fallback', () => {
+        expect(errorsFor({ import: ['field'], params: { a: '${ field }' } })).toEqual([
+            'Activity "a": Unknown variable " field " in expression "${ field }"',
+        ]);
+    });
+
+    test('should reject an invalid variable path', () => {
+        expect(errorsFor({ import: ['field'], params: { a: '${field..x}' } })).toEqual([
+            'Activity "a": Invalid variable reference "field..x" in expression "${field..x}"',
+        ]);
+    });
+});
+
 describe('validateWorkflow', () => {
     test('should throw a ValidationError for an invalid workflow', () => {
         const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);

@@ -82,15 +82,17 @@ function getActivityErrors(activity: DSLActivitySpec, workflowVars: Set<string>)
     const localVars = new Set<string>();
     for (const entry of activity.import ?? []) {
         if (typeof entry === 'string') {
-            addLocalVar(entry, localVars, errors);
-            if (!workflowVars.has(entry)) {
+            // the runtime imports `name!` (a required import) as `name`
+            const path = stripRequiredMarker(entry);
+            addLocalVar(path, localVars, errors);
+            if (!workflowVars.has(path)) {
                 errors.push(`Unknown workflow variable "${entry}" in import declaration`);
             }
         } else {
             for (const key of Object.keys(entry)) {
                 addLocalVar(key, localVars, errors);
                 const wfExpr = entry[key];
-                if (!workflowVars.has(splitPath(wfExpr)[0])) {
+                if (!workflowVars.has(splitPath(stripRequiredMarker(wfExpr))[0])) {
                     errors.push(`Unknown workflow variable "${wfExpr}" in import declaration`);
                 }
             }
@@ -126,30 +128,70 @@ function addLocalVar(name: string, localVars: Set<string>, errors: string[]) {
     localVars.add(name);
 }
 
+function stripRequiredMarker(path: string): string {
+    return path.endsWith('!') ? path.slice(0, -1) : path;
+}
+
 function splitPath(path: string): string[] {
     return path.replace(/\[(\d+)\]/g, '.$1').split('.');
 }
 
-const REFERENCE = /\$\{([^}]+)\}/g;
 const FALLBACK_SEPARATOR = '??';
 
-/** Reports every `${name}` reference, in any string nested in `target`, whose head is not a known variable. */
+/**
+ * Extracts the references of an expression string the way the workflow runtime does:
+ * `${a} and ${b}` is split on each `${…}`, and a string holding `${` without a closing `}`
+ * is read as a single reference.
+ */
+function getReferences(value: string): string[] {
+    if (!value.includes('${')) {
+        return [];
+    }
+    const segments = value.split(/(\${[^}]+})/);
+    if (segments.length === 1) {
+        return [value.substring(2, value.length - 1)];
+    }
+    return segments.filter((seg) => seg.startsWith('${') && seg.endsWith('}')).map((seg) => seg.slice(2, -1));
+}
+
+/** The fallback literal after `??`: JSON, or a single-quoted string. */
+function decodeFallbackLiteral(value: string): void {
+    if (value.startsWith("'") && value.endsWith("'")) {
+        value = `"${value.slice(1, -1).replace(/(?<!\\)"/g, '\\"')}"`;
+    }
+    JSON.parse(value);
+}
+
+/**
+ * Parses one reference as the runtime does, returning its path or an error message.
+ * Only a reference with a fallback is trimmed: `${ name }` names the variable ` name `.
+ */
+function parseReference(ref: string): { path: string[] } | { error: string } {
+    const index = ref.indexOf(FALLBACK_SEPARATOR);
+    if (index > -1) {
+        const fallback = ref.substring(index + FALLBACK_SEPARATOR.length).trim();
+        try {
+            decodeFallbackLiteral(fallback);
+        } catch {
+            return { error: `Invalid fallback value "${fallback}" in reference "\${${ref}}"` };
+        }
+        ref = ref.substring(0, index).trim();
+    }
+    if (ref === '.' || ref.includes('..')) {
+        return { error: `Invalid variable reference "${ref}"` };
+    }
+    return { path: splitPath(ref) };
+}
+
+/** Reports every reference, in any string nested in `target`, that is invalid or whose head is not a known variable. */
 function checkReferences(target: unknown, known: Set<string>, errors: string[]) {
     if (typeof target === 'string') {
-        for (const match of target.matchAll(REFERENCE)) {
-            let ref = match[1];
-            const fallback = ref.indexOf(FALLBACK_SEPARATOR);
-            if (fallback > -1) {
-                ref = ref.substring(0, fallback);
-            }
-            ref = ref.trim();
-            if (ref === '.' || ref.includes('..')) {
-                errors.push(`Invalid variable reference "${ref}" in expression "${target}"`);
-                continue;
-            }
-            const path = splitPath(ref);
-            if (!known.has(path[0])) {
-                const name = path.join('.');
+        for (const ref of getReferences(target)) {
+            const parsed = parseReference(ref);
+            if ('error' in parsed) {
+                errors.push(`${parsed.error} in expression "${target}"`);
+            } else if (!known.has(parsed.path[0])) {
+                const name = parsed.path.join('.');
                 errors.push(`Unknown variable "${name}" in expression "\${${name}}"`);
             }
         }
