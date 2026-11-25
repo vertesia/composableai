@@ -22,7 +22,7 @@ import {
 } from './notifyWebhook.js';
 
 const mockValidateUrl = vi.hoisted(() => vi.fn());
-const mockIssueToken = vi.hoisted(() => vi.fn());
+const mockPost = vi.hoisted(() => vi.fn());
 const mockWithApiKey = vi.hoisted(() => vi.fn());
 
 vi.mock('../utils/client.js', async (importOriginal) => {
@@ -33,7 +33,7 @@ vi.mock('../utils/client.js', async (importOriginal) => {
             () =>
                 ({
                     tokenServerUrl: 'http://mock-token-server',
-                    post: mockIssueToken,
+                    post: mockPost,
                     withApiKey: mockWithApiKey,
                     apps: {
                         validateUrl: mockValidateUrl,
@@ -496,7 +496,7 @@ describe('Webhook should be notified', () => {
 
         await expect(testEnv.run(notifyWebhook, payload)).resolves.toMatchObject({ status: 202 });
 
-        expect(mockIssueToken).not.toHaveBeenCalled();
+        expect(mockPost).not.toHaveBeenCalled();
         expect(mockFetch).toHaveBeenCalledWith(
             defaultParams.webhook,
             expect.objectContaining({
@@ -505,11 +505,10 @@ describe('Webhook should be notified', () => {
         );
     });
 
-    it('refreshes a near-expiry app-hook token without reconstructing its identity', async () => {
+    it('sends a near-expiry app-hook token as is, without asking the STS to renew it', async () => {
         const token = createToken({
             exp: Math.floor(Date.now() / 1000) + 60,
         });
-        mockIssueToken.mockResolvedValueOnce({ token: 'fresh-token' });
         mockFetch.mockResolvedValueOnce(
             new Response(null, {
                 status: 202,
@@ -526,23 +525,34 @@ describe('Webhook should be notified', () => {
 
         await expect(testEnv.run(notifyWebhook, payload)).resolves.toMatchObject({ status: 202 });
 
-        expect(mockIssueToken).toHaveBeenCalledWith('http://mock-token-server/token/refresh', {
-            headers: {
-                authorization: `Bearer ${token}`,
-                'content-type': 'application/json',
-            },
-            payload: { token },
-        });
-        expect(mockWithApiKey).toHaveBeenCalledWith('fresh-token');
-        expect(mockWithApiKey.mock.invocationCallOrder[0]).toBeLessThan(
-            mockValidateUrl.mock.invocationCallOrder[0] ?? 0,
-        );
+        expect(mockPost).not.toHaveBeenCalled();
+        expect(mockWithApiKey).not.toHaveBeenCalled();
         expect(mockFetch).toHaveBeenCalledWith(
             defaultParams.webhook,
             expect.objectContaining({
-                headers: expect.objectContaining({ Authorization: 'Bearer fresh-token' }),
+                headers: expect.objectContaining({ Authorization: `Bearer ${token}` }),
             }),
         );
+    });
+
+    it('fails an app hook whose token has expired without calling the app', async () => {
+        const token = createToken({
+            exp: Math.floor(Date.now() / 1000) - 1,
+        });
+
+        const payload = createTestPayload({
+            body: JSON.stringify({ event: { event_id: 'evt-1' } }),
+            auth_mode: 'vertesia',
+        });
+        payload.auth_token = token;
+
+        await expect(testEnv.run(notifyWebhook, payload)).rejects.toMatchObject({
+            type: 'AppHookAuthTokenExpired',
+            nonRetryable: true,
+        });
+
+        expect(mockPost).not.toHaveBeenCalled();
+        expect(mockFetch).not.toHaveBeenCalled();
     });
 
     it('should send workflow info in new POST format when detail is undefined', async () => {
