@@ -450,8 +450,86 @@ export const MCPToolAnnotationsSchema = z
 export const McpOAuthTokenResponseSchema = z
     .strictObject({
         access_token: z.string(),
+        user_grant: z
+            .boolean()
+            .meta({
+                description:
+                    "True when the token is the user's own OAuth grant for this server, which the user can renew with " +
+                    'more scope by reconnecting. Absent for project credentials (client credentials, API keys) and ' +
+                    'from servers older than this field.',
+            })
+            .optional(),
+        step_up_scope: z
+            .string()
+            .meta({
+                description:
+                    'The scope the stored grant was last requested for after the server refused a call with ' +
+                    '`insufficient_scope`. A second refusal for this scope means the grant did not include it, so ' +
+                    'the user should not be asked to reconnect again.',
+            })
+            .optional(),
+        step_up_tool: z.string().meta({ description: 'The tool whose refusal led to `step_up_scope`.' }).optional(),
     })
     .meta({ id: 'McpOAuthTokenResponse' });
+
+export const McpStepUpScopeModeSchema = z.enum(['union', 'challenged']).meta({
+    id: 'McpStepUpScopeMode',
+    description:
+        '`union` asks for the scope already granted, the scopes the server advertises and the challenged scope. ' +
+        '`challenged` asks for the challenged scope alone, for an authorization server that refused the union ' +
+        'with `invalid_scope`.',
+});
+
+export const AuthorizeRemoteMcpConnectionQuerySchema = z
+    .strictObject({
+        required_scope: z
+            .string()
+            .max(512)
+            .meta({
+                description:
+                    'A scope the MCP server refused a tool call for (`insufficient_scope`). The authorization request ' +
+                    'asks for it too, unless the collection uses a shared OAuth provider, whose scope is configured ' +
+                    'by an administrator. A malformed scope is refused with 400.',
+            })
+            .optional(),
+        refused_tool: z
+            .string()
+            .max(256)
+            .meta({ description: 'The tool the server refused, recorded with the step-up.' })
+            .optional(),
+        scope_mode: McpStepUpScopeModeSchema.optional(),
+    })
+    .meta({
+        id: 'AuthorizeRemoteMcpConnectionQuery',
+        description: 'Optional step-up parameters for authorizing a remote MCP connection again.',
+    });
+
+export const McpStepUpOutcomeSchema = z.enum(['used', 'refused_again']).meta({
+    id: 'McpStepUpOutcome',
+    description:
+        '`used`: the refused tool has now run, so the step-up is forgotten and a later refusal can ask the user to ' +
+        'reconnect again. `refused_again`: the server refused the same scope after the step-up, so the agent stops ' +
+        'asking; the step-up is kept.',
+});
+
+export const ReportMcpStepUpOutcomeRequestSchema = z
+    .strictObject({
+        app_install_id: z.string(),
+        collection_id: z.string(),
+        scope: z.string().max(512).meta({ description: 'The step-up scope, as the token response gave it.' }),
+        outcome: McpStepUpOutcomeSchema,
+        tool_name: z.string().max(256).meta({ description: 'The tool that was called.' }).optional(),
+    })
+    .meta({
+        id: 'ReportMcpStepUpOutcomeRequest',
+        description: "What became of the step-up recorded on the user's grant for a remote MCP collection.",
+    });
+
+export const ReportMcpStepUpOutcomeResponseSchema = z
+    .strictObject({
+        cleared: z.boolean().meta({ description: 'Whether the recorded step-up for this scope is now gone.' }),
+    })
+    .meta({ id: 'ReportMcpStepUpOutcomeResponse' });
 
 export const McpOAuthTokenRequestSchema = z
     .strictObject({
@@ -542,6 +620,15 @@ export const McpOAuthExchangePayloadSchema = z
 export const McpOAuthConnectResponseSchema = z
     .strictObject({
         success: z.boolean(),
+        missing_scope: z
+            .string()
+            .meta({
+                description:
+                    'After a reconnect that asked for a scope the server had refused a call for: the part of that ' +
+                    'scope the authorization server did not grant. The account may lack the permission, or an ' +
+                    'administrator may need to consent to it.',
+            })
+            .optional(),
     })
     .meta({ id: 'McpOAuthConnectResponse' });
 

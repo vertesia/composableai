@@ -1,17 +1,25 @@
 import { useEffect, useRef } from 'react';
 
+/** What the callback page reported. Undefined when the popup closed without reporting. */
+export interface OAuthPopupResult {
+    success: boolean;
+    error?: string;
+    /** The authorization response's `error` code (RFC 6749 §4.1.2.1), such as `invalid_scope`. */
+    error_code?: string;
+    /** After a step-up: the part of the challenged scope the authorization server did not grant. */
+    missing_scope?: string;
+}
+
 export interface UseOAuthPopupOptions {
-    onComplete: () => void;
+    onComplete: (result?: OAuthPopupResult) => void;
     onError?: (error: string) => void;
 }
 
 /**
  * OAuth message structure from callback page
  */
-interface OAuthMessage {
+interface OAuthMessage extends OAuthPopupResult {
     type: 'oauth-complete';
-    success: boolean;
-    error?: string;
 }
 
 /**
@@ -87,7 +95,8 @@ export function useOAuthPopup({ onComplete, onError }: UseOAuthPopupOptions) {
             channel.close();
             if (intervalId) clearInterval(intervalId);
 
-            onCompleteRef.current();
+            const { type: _type, ...result } = event.data;
+            onCompleteRef.current(result);
 
             if (!event.data.success && event.data.error) {
                 onErrorRef.current?.(event.data.error);

@@ -1587,9 +1587,13 @@ export type McpOAuthTokenRequest = {
 };
 export type McpOAuthTokenResponse = {
     access_token: string;
+    user_grant?: boolean | undefined;
+    step_up_scope?: string | undefined;
+    step_up_tool?: string | undefined;
 };
 export type McpOAuthConnectResponse = {
     success: boolean;
+    missing_scope?: string | undefined;
 };
 export type McpOAuthExchangePayload = {
     code: string;
@@ -1599,6 +1603,26 @@ export type McpOAuthExchangePayload = {
 export type McpOAuthDisconnectResponse = {
     success: boolean;
     message: string;
+};
+/** Which scope a step-up authorization asks for. */
+export type McpStepUpScopeMode = 'union' | 'challenged';
+/** Optional step-up parameters for authorizing a remote MCP connection again. */
+export type AuthorizeRemoteMcpConnectionQuery = {
+    required_scope?: string | undefined;
+    refused_tool?: string | undefined;
+    scope_mode?: McpStepUpScopeMode | undefined;
+};
+/** What became of a step-up recorded on a user's remote MCP grant. */
+export type McpStepUpOutcome = 'used' | 'refused_again';
+export type ReportMcpStepUpOutcomeRequest = {
+    app_install_id: string;
+    collection_id: string;
+    scope: string;
+    outcome: McpStepUpOutcome;
+    tool_name?: string | undefined;
+};
+export type ReportMcpStepUpOutcomeResponse = {
+    cleared: boolean;
 };
 /**
  * Response from OAuth metadata endpoint
@@ -8011,6 +8035,8 @@ export type PendingMcpConnection = {
     name: string;
     description?: string | undefined;
     namespace?: string | undefined;
+    required_scope?: string | undefined;
+    refused_tool?: string | undefined;
 };
 /** Skill metadata tracked when a skill is used */
 export type UsedSkill = {
@@ -13082,6 +13108,11 @@ export interface ApiComponentTypes {
     McpOAuthExchangePayload: McpOAuthExchangePayload;
     OAuthAuthorizeResponse: OAuthAuthorizeResponse;
     OAuthAuthStatusArray: OAuthAuthStatusArray;
+    McpStepUpScopeMode: McpStepUpScopeMode;
+    AuthorizeRemoteMcpConnectionQuery: AuthorizeRemoteMcpConnectionQuery;
+    McpStepUpOutcome: McpStepUpOutcome;
+    ReportMcpStepUpOutcomeRequest: ReportMcpStepUpOutcomeRequest;
+    ReportMcpStepUpOutcomeResponse: ReportMcpStepUpOutcomeResponse;
     SetMcpApiKeyRequest: SetMcpApiKeyRequest;
     McpApiKeyStatus: McpApiKeyStatus;
     AuditAdoptionActiveDays: AuditAdoptionActiveDays;

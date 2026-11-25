@@ -86,6 +86,14 @@ export const PendingMcpConnectionSchema = z
             .meta({ description: 'Manifest description of what the server provides (used for discovery).' })
             .optional(),
         namespace: z.string().meta({ description: 'Tool-name prefix for this collection.' }).optional(),
+        required_scope: z
+            .string()
+            .meta({
+                description:
+                    'The scope the server refused a tool call for (`insufficient_scope`): reconnecting asks for it too.',
+            })
+            .optional(),
+        refused_tool: z.string().meta({ description: 'The tool the server refused for `required_scope`.' }).optional(),
     })
     .meta({
         id: 'PendingMcpConnection',
