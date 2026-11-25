@@ -22,6 +22,13 @@ export interface McpConnectUxConfig {
     collection_id: string;
     /** Human-readable server name shown in the prompt. */
     name: string;
+    /**
+     * The scope the server refused a tool call for (`insufficient_scope`). The user is already connected, so the
+     * prompt asks them to reconnect and grant it.
+     */
+    required_scope?: string;
+    /** The tool the server refused for `required_scope`. */
+    refused_tool?: string;
 }
 
 /** Optional free-form response rendered alongside predefined options. */

@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import { AgentMessageType } from '@vertesia/common';
+import { AgentMessageType, type McpConnectUxConfig } from '@vertesia/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from '../../../__tests__/axe-helper.js';
 import { renderWithProviders } from '../../../__tests__/test-utils.js';
@@ -24,6 +24,14 @@ vi.mock('../../oauth/RemoteMcpConnectionButton.js', () => ({
     RemoteMcpConnectionButton: ({ onAuthChange }: { onAuthChange: () => void }) => (
         <button type="button" onClick={onAuthChange}>
             Connect
+        </button>
+    ),
+}));
+
+vi.mock('../../oauth/McpStepUpButton.js', () => ({
+    McpStepUpButton: ({ onGranted, requiredScope }: { onGranted: () => void; requiredScope: string }) => (
+        <button type="button" onClick={onGranted}>
+            Grant {requiredScope}
         </button>
     ),
 }));
@@ -193,6 +201,25 @@ describe('AgentRequestInputOverlay', () => {
             expect(onMcpConnected).toHaveBeenCalledWith(expect.objectContaining({ collection_id: 'jira' }), {
                 request_input_response: { request_id: 'request-mcp-1' },
             });
+        });
+    });
+
+    it('asks a connected user to grant the refused scope, and resumes once they reconnect', () => {
+        const onMcpConnected = vi.fn();
+        const message = createMcpRequestMessage();
+        const ux = (message.details as { ux: { mcp_connect: McpConnectUxConfig } }).ux;
+        ux.mcp_connect = { ...ux.mcp_connect, required_scope: 'write:jira-work', refused_tool: 'jira__create_issue' };
+
+        renderWithProviders(
+            <AgentRequestInputOverlay message={message} onSendMessage={vi.fn()} onMcpConnected={onMcpConnected} />,
+        );
+
+        expect(screen.queryByRole('button', { name: 'Connect' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Grant write:jira-work' }));
+
+        expect(mocks.getCollectionStatus).not.toHaveBeenCalled();
+        expect(onMcpConnected).toHaveBeenCalledWith(expect.objectContaining({ required_scope: 'write:jira-work' }), {
+            request_input_response: { request_id: 'request-mcp-1' },
         });
     });
 
