@@ -2,7 +2,7 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import type { DSLWorkflowSpec } from '@vertesia/common';
 import * as ts from 'typescript-legacy';
-import { ValidationError, validateWorkflow } from './validation.js';
+import { ValidationError } from './validation.js';
 
 function compile(
     fileNames: string[],
@@ -69,7 +69,7 @@ function tryDeleteFile(file: string) {
     }
 }
 
-export function loadTsWorkflowDefinition(file: string, skipValidation: boolean = false): Promise<DSLWorkflowSpec> {
+export function loadTsWorkflowDefinition(file: string): Promise<DSLWorkflowSpec> {
     if (!file.endsWith('.ts')) {
         throw new Error(`Not a type script file: ${file}`);
     }
@@ -99,7 +99,7 @@ export function loadTsWorkflowDefinition(file: string, skipValidation: boolean =
             if (!module.default || typeof module.default !== 'object') {
                 throw new ValidationError('Workflow module does not export a default object');
             }
-            return skipValidation ? module.default : validateWorkflow(module.default);
+            return module.default as DSLWorkflowSpec;
         })
         .finally(() => tryDeleteFile(emittedFile));
 }

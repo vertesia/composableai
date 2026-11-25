@@ -12,7 +12,6 @@ import { ValidationError } from './validation.js';
 type WorkflowFileOptions = CliOptions<{
     file?: string;
     tags?: string[];
-    skipValidation?: boolean;
 }>;
 
 type WorkflowExecuteOptions = CliOptions<{
@@ -182,7 +181,7 @@ export async function createOrUpdateWorkflowDefinition(
     workflowId: string | undefined,
     options: WorkflowFileOptions,
 ) {
-    const { file, tags, skipValidation } = options;
+    const { file, tags } = options;
 
     if (!file) {
         console.log('A file with the workflow definition is required. Use --file argument');
@@ -196,7 +195,7 @@ export async function createOrUpdateWorkflowDefinition(
         if (isTs) {
             console.log(`Transpiling file ${file} ...`);
         }
-        json = await loadWorkflow(file, skipValidation);
+        json = await loadWorkflow(file);
     } catch (err: unknown) {
         if (err instanceof ValidationError) {
             console.log(err.message);

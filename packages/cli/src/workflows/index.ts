@@ -101,7 +101,7 @@ export function registerWorkflowsCommand(program: Command) {
         .command('apply [workflowId]')
         .description('Create or update a workflow definition using a file.')
         .option('-f, --file <file>', 'The file containing the workflow definition.')
-        .option('--skip-validation', 'Skip the validation of the workflow definition.')
+        .option('--skip-validation', 'Deprecated: has no effect. The CLI no longer validates workflow definitions.')
         .action(async (workflowId, options: Record<string, unknown>) => {
             await createOrUpdateWorkflowDefinition(program, workflowId, options);
         });
