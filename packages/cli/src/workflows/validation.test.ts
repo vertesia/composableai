@@ -354,6 +354,53 @@ describe('runtime expression rules', () => {
     });
 });
 
+describe('runtime variables', () => {
+    test('should accept the variables the runtime defines from the execution input', () => {
+        const workflow = {
+            name: 'test',
+            activities: [
+                {
+                    name: 'a',
+                    import: ['inputType', 'objectIds', 'objectId', 'files', 'file'],
+                    params: { kind: '${inputType}', first: '${file}' },
+                },
+            ],
+        };
+        expect(getWorkflowErrors(workflow as unknown as DSLWorkflowSpec)).toEqual([]);
+    });
+
+    test('should accept the output of a preceding child workflow', () => {
+        const workflow = {
+            name: 'test',
+            steps: [
+                { type: 'workflow', name: 'child', workflow: 'Child', output: 'childResult' },
+                { type: 'activity', name: 'a', import: ['childResult'], params: { r: '${childResult}' } },
+            ],
+        };
+        expect(getWorkflowErrors(workflow as unknown as DSLWorkflowSpec)).toEqual([]);
+    });
+
+    test('should reject the output of a later step', () => {
+        const workflow = {
+            name: 'test',
+            steps: [
+                { type: 'activity', name: 'a', import: ['later'] },
+                { type: 'workflow', name: 'child', workflow: 'Child', output: 'later' },
+            ],
+        };
+        expect(getWorkflowErrors(workflow as unknown as DSLWorkflowSpec)).toEqual([
+            'Activity "a": Unknown workflow variable "later" in import declaration',
+        ]);
+    });
+
+    test('should validate a step without a type as an activity', () => {
+        const workflow = { name: 'test', steps: [{ name: 'a', import: ['missing'] }] };
+        expect(getWorkflowErrors(workflow as unknown as DSLWorkflowSpec)).toEqual([
+            'Activity "a": Unknown workflow variable "missing" in import declaration',
+        ]);
+    });
+});
+
 describe('validateWorkflow', () => {
     test('should throw a ValidationError for an invalid workflow', () => {
         const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);

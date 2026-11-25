@@ -26,15 +26,16 @@ export function validateWorkflow(spec: DSLWorkflowSpec): DSLWorkflowSpec {
     return spec;
 }
 
+/** The variables the workflow runtime defines from the execution input, next to the definition's own vars. */
+const RUNTIME_INPUT_VARS = ['inputType', 'objectIds', 'objectId', 'files', 'file'];
+
 /**
  * Checks the structure of a DSL workflow definition and the variables its activities reference.
  * Mirrors the checks of the workflow runtime's DSL validator without depending on the runtime.
  */
 export function getWorkflowErrors(workflow: DSLWorkflowSpec, vars: string[] = []): string[] {
     const errors: string[] = [];
-    const workflowVars = new Set(vars);
-    workflowVars.add('objectId');
-    workflowVars.add('objectIds');
+    const workflowVars = new Set([...vars, ...RUNTIME_INPUT_VARS]);
     if (workflow.vars) {
         for (const v of Object.keys(workflow.vars)) {
             workflowVars.add(v);
@@ -61,14 +62,18 @@ export function getWorkflowErrors(workflow: DSLWorkflowSpec, vars: string[] = []
         errors.push('Workflow should have at least one step or activity');
     }
 
-    const activities: DSLActivitySpec[] =
-        stepsPropName === 'steps' ? (steps as DSLWorkflowStep[]).filter((s) => s.type === 'activity') : steps;
-    for (const activity of activities) {
-        for (const err of getActivityErrors(activity, workflowVars)) {
-            errors.push(`Activity "${activity.name}": ${err}`);
+    // Steps run in order, and each step's output is visible to the steps after it. As in the runtime,
+    // a step whose type is not 'workflow' is an activity.
+    for (const step of steps as (DSLWorkflowStep | DSLActivitySpec)[]) {
+        const isChildWorkflow = stepsPropName === 'steps' && 'type' in step && step.type === 'workflow';
+        if (!isChildWorkflow) {
+            const activity = step as DSLActivitySpec;
+            for (const err of getActivityErrors(activity, workflowVars)) {
+                errors.push(`Activity "${activity.name}": ${err}`);
+            }
         }
-        if (activity.output) {
-            workflowVars.add(activity.output);
+        if (step.output) {
+            workflowVars.add(step.output);
         }
     }
     return errors;
