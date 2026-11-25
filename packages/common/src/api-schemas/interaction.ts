@@ -94,6 +94,14 @@ export const PendingMcpConnectionSchema = z
             })
             .optional(),
         refused_tool: z.string().meta({ description: 'The tool the server refused for `required_scope`.' }).optional(),
+        awaiting_user_answer: z
+            .boolean()
+            .meta({
+                description:
+                    'Set when the server refused `required_scope` again after the user reconnected to grant it: the ' +
+                    'agent asked the user what to do, and the reconnect is not offered until the user answers.',
+            })
+            .optional(),
     })
     .meta({
         id: 'PendingMcpConnection',

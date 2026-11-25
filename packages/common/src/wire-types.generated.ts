@@ -8041,6 +8041,7 @@ export type PendingMcpConnection = {
     namespace?: string | undefined;
     required_scope?: string | undefined;
     refused_tool?: string | undefined;
+    awaiting_user_answer?: boolean | undefined;
 };
 /** Skill metadata tracked when a skill is used */
 export type UsedSkill = {

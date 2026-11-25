@@ -14058,6 +14058,10 @@
       "refused_tool": {
         "type": "string",
         "description": "The tool the server refused for `required_scope`."
+      },
+      "awaiting_user_answer": {
+        "type": "boolean",
+        "description": "Set when the server refused `required_scope` again after the user reconnected to grant it: the agent asked the user what to do, and the reconnect is not offered until the user answers."
       }
     },
     "required": [
