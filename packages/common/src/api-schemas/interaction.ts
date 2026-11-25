@@ -86,12 +86,39 @@ export const PendingMcpConnectionSchema = z
             .meta({ description: 'Manifest description of what the server provides (used for discovery).' })
             .optional(),
         namespace: z.string().meta({ description: 'Tool-name prefix for this collection.' }).optional(),
+        required_scope: z
+            .string()
+            .meta({
+                description:
+                    'The scope the server refused a tool call for (`insufficient_scope`): reconnecting asks for it too.',
+            })
+            .optional(),
+        refused_tool: z.string().meta({ description: 'The tool the server refused for `required_scope`.' }).optional(),
     })
     .meta({
         id: 'PendingMcpConnection',
         description:
             "An MCP server the user can connect to but hasn't yet (active + accessible, no OAuth token). Built at tool-discovery time and stored on the conversation state so the agent can discover it (by description) and ask the user to connect.",
     });
+
+export const HeldMcpReconnectSchema = PendingMcpConnectionSchema.extend({
+    held_at: z
+        .string()
+        .meta({
+            format: 'date-time',
+            description: 'When the hold was made: only an answer from the user after this time releases it.',
+        })
+        .optional(),
+    answered: z
+        .boolean()
+        .meta({ description: 'Whether the user has answered since the hold was made, so it can be offered again.' })
+        .optional(),
+}).meta({
+    id: 'HeldMcpReconnect',
+    description:
+        "A reconnect held for the user's answer after an MCP server refused a tool's scope again following a " +
+        'reconnect.',
+});
 
 export const ModelSourceSchema = z
     .enum(ModelSource)
@@ -1985,6 +2012,16 @@ export const ConversationStateSchema = z
             .meta({
                 description:
                     'MCP servers that are active (not disabled) and accessible to the user but not yet OAuth-connected. Surfaced to the agent (via discover_tools) so it can offer to connect.',
+            })
+            .optional(),
+        held_mcp_reconnects: z
+            .array(HeldMcpReconnectSchema)
+            .meta({
+                description:
+                    'MCP reconnects held after a server refused a tool (`refused_tool`) again although the user ' +
+                    'reconnected to grant `required_scope`; the agent asked the user whether to reconnect, continue ' +
+                    'without it, or stop. Until the user answers, that tool does not run again and its server is not ' +
+                    'offered for reconnection; once they answer, the hold is offered as a reconnect.',
             })
             .optional(),
         active_activity_group_id: z
