@@ -4965,6 +4965,15 @@ export type InteractionExecutionPayload = {
               };
           }[]
         | undefined;
+    standby_tool_definitions?:
+        | {
+              name: string;
+              description?: string | undefined;
+              input_schema: {
+                  [k: string]: unknown;
+              };
+          }[]
+        | undefined;
     workflow?: ExecutionRunWorkflow | undefined;
     prompts?: InCodePrompt[] | undefined;
     asyncCompletion?: AsyncCompletionOptions | undefined;
@@ -4978,6 +4987,15 @@ export type NamedInteractionExecutionPayload = {
     tags?: string[] | undefined;
     conversation?: unknown | undefined;
     tool_definitions?:
+        | {
+              name: string;
+              description?: string | undefined;
+              input_schema: {
+                  [k: string]: unknown;
+              };
+          }[]
+        | undefined;
+    standby_tool_definitions?:
         | {
               name: string;
               description?: string | undefined;
@@ -5215,6 +5233,15 @@ export type ToolResultsPayload = {
             [k: string]: unknown;
         };
     }[];
+    standby_tools?:
+        | {
+              name: string;
+              description?: string | undefined;
+              input_schema: {
+                  [k: string]: unknown;
+              };
+          }[]
+        | undefined;
     strip_options?: ConversationStripOptions | undefined;
     asyncCompletion?: AsyncCompletionOptions | undefined;
     results: ToolResult[];
@@ -5231,6 +5258,15 @@ export type UserMessagePayload = {
             [k: string]: unknown;
         };
     }[];
+    standby_tools?:
+        | {
+              name: string;
+              description?: string | undefined;
+              input_schema: {
+                  [k: string]: unknown;
+              };
+          }[]
+        | undefined;
     strip_options?: ConversationStripOptions | undefined;
     asyncCompletion?: AsyncCompletionOptions | undefined;
     message: string;

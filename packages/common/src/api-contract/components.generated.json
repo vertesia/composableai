@@ -15589,6 +15589,13 @@
         },
         "description": "The tools to be used in the execution"
       },
+      "standby_tool_definitions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ToolDefinition"
+        },
+        "description": "Tools that may be offered in a later turn of the conversation, for example the tools a skill unlocks. They cannot be called until a later request lists them in the tools. Declaring them in advance keeps the prompt cache of Claude on Amazon Bedrock, Vertex AI and Microsoft Foundry when one is offered; other models ignore them, and so does every request of a conversation after the one that first declares its tools."
+      },
       "workflow": {
         "$ref": "#/components/schemas/ExecutionRunWorkflow",
         "description": "The workflow related to this Interaction Run."
@@ -15687,6 +15694,13 @@
           "$ref": "#/components/schemas/ToolDefinition"
         },
         "description": "The tools to be used in the execution"
+      },
+      "standby_tool_definitions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ToolDefinition"
+        },
+        "description": "Tools that may be offered in a later turn of the conversation, for example the tools a skill unlocks. They cannot be called until a later request lists them in the tools. Declaring them in advance keeps the prompt cache of Claude on Amazon Bedrock, Vertex AI and Microsoft Foundry when one is offered; other models ignore them, and so does every request of a conversation after the one that first declares its tools."
       },
       "workflow": {
         "$ref": "#/components/schemas/ExecutionRunWorkflow",
@@ -17544,6 +17558,13 @@
           "$ref": "#/components/schemas/ToolDefinition"
         }
       },
+      "standby_tools": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ToolDefinition"
+        },
+        "description": "Tools that may be offered in a later turn of the conversation, for example the tools a skill unlocks. They cannot be called until a later request lists them in the tools. Declaring them in advance keeps the prompt cache of Claude on Amazon Bedrock, Vertex AI and Microsoft Foundry when one is offered; other models ignore them, and so does every request of a conversation after the one that first declares its tools."
+      },
       "strip_options": {
         "$ref": "#/components/schemas/ConversationStripOptions"
       },
@@ -17584,6 +17605,13 @@
         "items": {
           "$ref": "#/components/schemas/ToolDefinition"
         }
+      },
+      "standby_tools": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ToolDefinition"
+        },
+        "description": "Tools that may be offered in a later turn of the conversation, for example the tools a skill unlocks. They cannot be called until a later request lists them in the tools. Declaring them in advance keeps the prompt cache of Claude on Amazon Bedrock, Vertex AI and Microsoft Foundry when one is offered; other models ignore them, and so does every request of a conversation after the one that first declares its tools."
       },
       "strip_options": {
         "$ref": "#/components/schemas/ConversationStripOptions"
