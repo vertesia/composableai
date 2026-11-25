@@ -1,4 +1,4 @@
-import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type { ClientBase } from '@vertesia/api-fetch-client';
 import {
     type CreateDashboardPayload,
     type CreateDashboardSnapshotPayload,
@@ -19,6 +19,7 @@ import {
     type PromoteDashboardVersionPayload,
     type UpdateDashboardPayload,
 } from '@vertesia/common';
+import { DataServerTopic } from './DataServerTopic.js';
 
 /**
  * Client API for managing Vega-based dashboards linked to data stores.
@@ -31,11 +32,11 @@ import {
  *   ({@link DashboardApi.exportPreview}). Exports run in the background: poll them with
  *   {@link DashboardApi.getExport}, or wait for them with {@link DashboardApi.waitForExport}.
  */
-export class DashboardApi extends ApiTopic {
+export class DashboardApi extends DataServerTopic {
     private readonly storeId: string;
 
     constructor(parent: ClientBase, storeId: string) {
-        super(parent, `/api/v1/data/${storeId}/dashboards`);
+        super(parent, `/${storeId}/dashboards`);
         this.storeId = storeId;
     }
 

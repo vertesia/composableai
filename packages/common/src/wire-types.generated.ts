@@ -41,7 +41,9 @@ import type {
     DashboardExportStatus as DashboardExportStatusValues,
     DashboardStatus as DashboardStatusValues,
     DataColumnType as DataColumnTypeValues,
+    DataStoreDataWriteVersioning as DataStoreDataWriteVersioningValues,
     DataStoreStatus as DataStoreStatusValues,
+    DataStoreStorageFormat as DataStoreStorageFormatValues,
     ImportStatus as ImportStatusValues,
     SemanticColumnType as SemanticColumnTypeValues,
 } from './data-platform.js';
@@ -3090,6 +3092,22 @@ export type DataStoreFullSchemaResponse = {
     schema_format: 'full';
 };
 export type DataStoreStatus = (typeof DataStoreStatusValues)[keyof typeof DataStoreStatusValues];
+export type DataStoreStorageFormat = (typeof DataStoreStorageFormatValues)[keyof typeof DataStoreStorageFormatValues];
+export type DataStoreStorageFormatArray = DataStoreStorageFormat[];
+export type DataStoreDataWriteVersioning =
+    (typeof DataStoreDataWriteVersioningValues)[keyof typeof DataStoreDataWriteVersioningValues];
+/**
+ * The versioning settings of a data store.
+ */
+export type DataStoreVersioning = {
+    data_writes?: DataStoreDataWriteVersioning | undefined;
+};
+/**
+ * Payload for changing the settings of a data store.
+ */
+export type UpdateDataStorePayload = {
+    versioning?: DataStoreVersioning | undefined;
+};
 /**
  * Summary view of a data store (for listings).
  */
@@ -3107,8 +3125,10 @@ export type DataStoreItem = {
     table_count: number;
     total_rows: number;
     storage_bytes: number;
+    storage_format?: DataStoreStorageFormat | undefined;
     last_import_at?: string | undefined;
     version_count: number;
+    versioning?: DataStoreVersioning | undefined;
 };
 /**
  * Full data store with schema details.
@@ -3127,9 +3147,11 @@ export type DataStore = {
     table_count: number;
     total_rows: number;
     storage_bytes: number;
+    storage_format?: DataStoreStorageFormat | undefined;
     last_import_at?: string | undefined;
     version_count: number;
     current_version?: string | undefined;
+    versioning?: DataStoreVersioning | undefined;
     schema: DataSchema;
     gcs_bucket: string;
     gcs_path: string;
@@ -3156,6 +3178,7 @@ export type DataStoreVersion = {
     gcs_path_id?: string | undefined;
     is_snapshot?: boolean | undefined;
     snapshot_name?: string | undefined;
+    retained?: boolean | undefined;
 };
 export type ListDataStoreVersionsQuery = {
     limit?: number | undefined;
@@ -3205,6 +3228,8 @@ export type CreateDataStorePayload = {
     name: string;
     description?: string | undefined;
     tags?: string[] | undefined;
+    storage_format?: DataStoreStorageFormat | undefined;
+    versioning?: DataStoreVersioning | undefined;
 };
 /**
  * Payload for creating a new table.
@@ -3323,6 +3348,7 @@ export type ImportDataPayload = {
     tables: ImportTableDataMap;
     mode: 'append' | 'replace';
     message: string;
+    version?: boolean | undefined;
 };
 /**
  * Payload for creating a named snapshot.
@@ -3351,6 +3377,7 @@ export type DataStoreMutateRowsPayload = {
     sql: string;
     message: string;
     allow_full_table?: boolean | undefined;
+    version?: boolean | undefined;
 };
 /**
  * Result from mutating rows in a data store.
@@ -12546,6 +12573,10 @@ export interface ApiComponentTypes {
     DataTableSummary: DataTableSummary;
     DataStoreVersionTableState: DataStoreVersionTableState;
     DataStoreStatus: DataStoreStatus;
+    DataStoreStorageFormat: DataStoreStorageFormat;
+    DataStoreStorageFormatArray: DataStoreStorageFormatArray;
+    DataStoreDataWriteVersioning: DataStoreDataWriteVersioning;
+    DataStoreVersioning: DataStoreVersioning;
     ImportDataFormat: ImportDataFormat;
     ImportDataSource: ImportDataSource;
     DataRelationshipForAI: DataRelationshipForAI;
@@ -12557,6 +12588,7 @@ export interface ApiComponentTypes {
     CreateSnapshotPayload: CreateSnapshotPayload;
     DataStoreDownloadInfo: DataStoreDownloadInfo;
     CreateDataStorePayload: CreateDataStorePayload;
+    UpdateDataStorePayload: UpdateDataStorePayload;
     QueryValidationResult: QueryValidationResult;
     DataColumn: DataColumn;
     AlterTableAddColumnOperation: AlterTableAddColumnOperation;

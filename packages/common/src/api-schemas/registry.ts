@@ -365,6 +365,7 @@ import {
     DataSchemaForAISchema,
     DataSchemaSchema,
     DataStoreArchiveResultSchema,
+    DataStoreDataWriteVersioningSchema,
     DataStoreDownloadInfoSchema,
     DataStoreFullSchemaResponseSchema,
     DataStoreItemArraySchema,
@@ -374,9 +375,12 @@ import {
     DataStoreSchema,
     DataStoreSchemaResponseSchema,
     DataStoreStatusSchema,
+    DataStoreStorageFormatArraySchema,
+    DataStoreStorageFormatSchema,
     DataStoreTableDetailSchema,
     DataStoreTableDropResultSchema,
     DataStoreVersionArraySchema,
+    DataStoreVersioningSchema,
     DataStoreVersionSchema,
     DataStoreVersionTableStateMapSchema,
     DataStoreVersionTableStateSchema,
@@ -405,6 +409,7 @@ import {
     QueryValidationPayloadSchema,
     QueryValidationResultSchema,
     SemanticColumnTypeSchema,
+    UpdateDataStorePayloadSchema,
     UpdateSchemaPayloadSchema,
 } from './data-store.js';
 import { CreateDelegationGrantPayloadSchema, DelegationGrantArraySchema, DelegationGrantSchema } from './delegation.js';
@@ -1606,6 +1611,10 @@ const DATA_STORE_CORE_SCHEMAS = {
     DataTableSummary: DataTableSummarySchema,
     DataStoreVersionTableState: DataStoreVersionTableStateSchema,
     DataStoreStatus: DataStoreStatusSchema,
+    DataStoreStorageFormat: DataStoreStorageFormatSchema,
+    DataStoreStorageFormatArray: DataStoreStorageFormatArraySchema,
+    DataStoreDataWriteVersioning: DataStoreDataWriteVersioningSchema,
+    DataStoreVersioning: DataStoreVersioningSchema,
     ImportDataFormat: ImportDataFormatSchema,
     ImportDataSource: ImportDataSourceSchema,
     DataRelationshipForAI: DataRelationshipForAISchema,
@@ -1617,6 +1626,7 @@ const DATA_STORE_CORE_SCHEMAS = {
     CreateSnapshotPayload: CreateSnapshotPayloadSchema,
     DataStoreDownloadInfo: DataStoreDownloadInfoSchema,
     CreateDataStorePayload: CreateDataStorePayloadSchema,
+    UpdateDataStorePayload: UpdateDataStorePayloadSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const DATA_STORE_SCHEMA_SCHEMAS = {
@@ -3174,6 +3184,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'CreateSnapshotPayload',
     'DataStoreDownloadInfo',
     'CreateDataStorePayload',
+    'UpdateDataStorePayload',
+    'DataStoreVersioning',
     'QueryValidationResult',
     'DataColumn',
     'DataRelationship',
