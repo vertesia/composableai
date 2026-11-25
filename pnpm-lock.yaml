@@ -1140,8 +1140,8 @@ importers:
         specifier: ^1.11.23
         version: 1.11.23
       debounce:
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^4.0.0
+        version: 4.0.0
       dompurify:
         specifier: ^3.4.18
         version: 3.4.18
@@ -5579,9 +5579,9 @@ packages:
   dayjs@1.11.23:
     resolution: {integrity: sha512-QDTCU0M0MxR3hQfnlDJfwekQiaanm1ubOD231u73WBckQ/fsamwRLiE2GBz6D3a/xF1NgfiDLJjXBa1hYOYTtQ==}
 
-  debounce@3.0.0:
-    resolution: {integrity: sha512-64byRbF0/AirwbuHqB3/ZpMG9/nckDa6ZA0yd6UnaQNwbbemCOwvz2sL5sjXLHhZHADyiwLm0M5qMhltUUx+TA==}
-    engines: {node: '>=20'}
+  debounce@4.0.0:
+    resolution: {integrity: sha512-o6nMNFRtqLR6mRlyt0b21cgYPSKAEMZFpROIRS9ZRH6hhSJWvGErqeSCJnWyiwVQYMSw7f/DZLilF5YRDwFz7w==}
+    engines: {node: '>=22.2'}
 
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
@@ -12230,7 +12230,7 @@ snapshots:
 
   dayjs@1.11.23: {}
 
-  debounce@3.0.0: {}
+  debounce@4.0.0: {}
 
   debug@4.4.3(supports-color@10.2.2):
     dependencies:
