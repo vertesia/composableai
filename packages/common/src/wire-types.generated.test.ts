@@ -14373,6 +14373,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2959);
+        expect(Object.keys(checks)).toHaveLength(2979);
     });
 });
