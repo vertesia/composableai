@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { defineConfig } from 'rolldown';
+// Imported from source: @vertesia/build-tools depends on this workspace's packages, so a package
+// dependency on it would be a build cycle.
+import { thirdPartyLicenses } from '../build-tools/src/licenses/index.ts';
 import { EXTERNALS } from './externals.js';
 
 const outputDir = path.resolve('lib');
@@ -46,6 +49,14 @@ const jsEntries = entries.map((name) => ({
                   codeSplitting: false,
               }),
     },
+    // Writes the notices of the packages each sub-path bundle inlines beside it.
+    plugins: [
+        thirdPartyLicenses({
+            title: `vertesia-ui-${name}.js`,
+            noticesFileName: `vertesia-ui-${name}.THIRD-PARTY-NOTICES.txt`,
+            jsonFileName: `vertesia-ui-${name}.third-party-licenses.json`,
+        }),
+    ],
     external: EXTERNALS,
     // Substitute `process.env.NODE_ENV` at build time so the published bundle never
     // references the Node-only `process` global (browser consumers would otherwise

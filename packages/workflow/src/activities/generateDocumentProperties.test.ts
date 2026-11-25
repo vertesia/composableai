@@ -83,11 +83,15 @@ async function mockSetup(options: {
     renditions?: Rendition[];
     properties?: Record<string, unknown>;
     generationRuns?: GenerationRunMetadata[];
+    name?: string;
+    location?: string;
 }) {
     const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
     const update = vi.fn(async () => ({}));
     const retrieveObject = vi.fn(async () => ({
         id: 'object-1',
+        name: options.name,
+        location: options.location,
         text: options.text,
         text_etag: 'source-etag',
         properties: options.properties,
@@ -204,6 +208,29 @@ describe('generateDocumentProperties', () => {
 
         expect(result).toEqual({ status: 'failed', error: 'no-source' });
         expect(executeInteractionFromActivity).not.toHaveBeenCalled();
+    });
+
+    it('passes the file name and location to extraction as context', async () => {
+        await mockSetup({
+            text: 'Schedule 16 (Security)',
+            contentType: 'text/plain',
+            name: 'Mid-Tier_Schedule_16__Security.docx',
+            location: '/sharepoint/library/Legal/Templates',
+        });
+        mockExtractionResult({ title: 'Schedule 16' });
+
+        await testEnv.run(generateDocumentProperties, payload({ source: 'text' }));
+
+        expect(executeInteractionFromActivity).toHaveBeenCalledWith(
+            expect.anything(),
+            'sys:ExtractInformation',
+            expect.anything(),
+            expect.objectContaining({
+                file_name: 'Mid-Tier_Schedule_16__Security.docx',
+                location: '/sharepoint/library/Legal/Templates',
+            }),
+            false,
+        );
     });
 
     it('uses a PDF rendition as vision evidence for non-visual source documents', async () => {
@@ -434,6 +461,31 @@ describe('generateDocumentProperties', () => {
                     images: undefined,
                 }),
                 false,
+            );
+        });
+
+        it('invalidates extraction when the file name or folder changes', () => {
+            const base = { source: 'text' as const, interactionName: 'sys:ExtractInformation', text_etag: 't1' };
+            const named = computeExtractionFingerprint({
+                ...base,
+                file_context: { file_name: 'Mid-Tier_Schedule_16.docx', location: '/sp/Legal/Templates' },
+            });
+            expect(named).not.toBe(computeExtractionFingerprint(base));
+            expect(
+                computeExtractionFingerprint({
+                    ...base,
+                    file_context: { file_name: 'MSC_Schedule_16.docx', location: '/sp/Legal/Templates' },
+                }),
+            ).not.toBe(named);
+            expect(
+                computeExtractionFingerprint({
+                    ...base,
+                    file_context: { file_name: 'Mid-Tier_Schedule_16.docx', location: '/sp/Legal/Archive' },
+                }),
+            ).not.toBe(named);
+            // Callers that pass no file context keep the hashes they stored before.
+            expect(computeExtractionFingerprint({ ...base, file_context: undefined })).toBe(
+                computeExtractionFingerprint(base),
             );
         });
 
@@ -778,6 +830,173 @@ describe('generateDocumentProperties', () => {
                 }),
                 { suppressWorkflows: true },
             );
+        });
+    });
+    describe('schema validation of the extracted properties', () => {
+        const AGREEMENT_SCHEMA = {
+            type: 'object',
+            properties: {
+                agreement_type: { type: 'string', enum: ['reimbursable', 'non_reimbursable'] },
+                signature_date: { type: 'string', format: 'date' },
+                effective_date: {
+                    type: 'string',
+                    format: 'date',
+                    description: 'Effective date. If not stated, the signature date.',
+                },
+            },
+        };
+
+        function mockRuns(...outputs: Record<string, unknown>[]) {
+            outputs.forEach((output, index) => {
+                vi.mocked(executeInteractionFromActivity).mockResolvedValueOnce({
+                    id: `run-${index + 1}`,
+                    modelId: 'model-1',
+                    result: { object: vi.fn(() => output) },
+                } as unknown as Awaited<ReturnType<typeof executeInteractionFromActivity>>);
+            });
+        }
+
+        it('stores an enum near-miss as the allowed value and empty values as absent, with no extra call', async () => {
+            const { update } = await mockSetup({ text: 'agreement', objectSchema: AGREEMENT_SCHEMA });
+            mockRuns({ agreement_type: 'nonreimbursable', signature_date: null, effective_date: '' });
+
+            const result = await testEnv.run(generateDocumentProperties, payload({}));
+
+            expect(executeInteractionFromActivity).toHaveBeenCalledTimes(1);
+            const report = { normalized: [{ path: 'agreement_type', rule: 'enum' }] };
+            expect(result).toEqual({ status: 'completed', report });
+            expect(update).toHaveBeenCalledWith(
+                'object-1',
+                {
+                    properties: { agreement_type: 'non_reimbursable' },
+                    generation_run_info: expect.objectContaining({ id: 'run-1', extraction_report: report }),
+                },
+                { suppressWorkflows: true },
+            );
+        });
+
+        it('re-asks once, for the derivable field only, and records the repair', async () => {
+            const { update } = await mockSetup({ text: 'agreement', objectSchema: AGREEMENT_SCHEMA });
+            mockRuns(
+                { agreement_type: 'reimbursable', signature_date: '2025-09-10' },
+                { effective_date: '2025-09-10' },
+            );
+
+            const result = await testEnv.run(generateDocumentProperties, payload({ instructions: 'Type rules.' }));
+
+            expect(executeInteractionFromActivity).toHaveBeenCalledTimes(2);
+            const repairCall = vi.mocked(executeInteractionFromActivity).mock.calls[1];
+            expect(repairCall[1]).toBe('sys:ExtractInformation');
+            expect(repairCall[2]).toMatchObject({
+                include_previous_error: false,
+                result_schema: { type: 'object', properties: { effective_date: expect.any(Object) } },
+            });
+            expect(Object.keys((repairCall[2].result_schema as { properties: object }).properties)).toEqual([
+                'effective_date',
+            ]);
+            expect(repairCall[3]).toMatchObject({
+                content: 'agreement',
+                extraction_instructions: expect.stringContaining('`effective_date`: left empty'),
+            });
+            expect(result).toMatchObject({
+                status: 'completed',
+                report: { repair: { fields: ['effective_date'], filled: ['effective_date'] } },
+            });
+            expect(update).toHaveBeenCalledWith(
+                'object-1',
+                expect.objectContaining({
+                    properties: {
+                        agreement_type: 'reimbursable',
+                        signature_date: '2025-09-10',
+                        effective_date: '2025-09-10',
+                    },
+                    // The first run stays the generation run of record.
+                    generation_run_info: expect.objectContaining({ id: 'run-1' }),
+                }),
+                { suppressWorkflows: true },
+            );
+        });
+
+        it('never stores an off-schema value: cleared and recorded when the repair does not fix it', async () => {
+            const { update } = await mockSetup({ text: 'agreement', objectSchema: AGREEMENT_SCHEMA });
+            mockRuns({ agreement_type: 'grant' }, { agreement_type: 'grant' });
+
+            const result = await testEnv.run(generateDocumentProperties, payload({}));
+
+            expect(result).toMatchObject({
+                status: 'completed',
+                report: {
+                    cleared: [{ path: 'agreement_type', error: expect.stringContaining('"grant"') }],
+                    repair: { fields: ['agreement_type'], filled: [] },
+                },
+            });
+            expect(update).toHaveBeenCalledWith('object-1', expect.objectContaining({ properties: {} }), {
+                suppressWorkflows: true,
+            });
+        });
+
+        it('keeps the first extraction when the repair call fails', async () => {
+            const { update } = await mockSetup({ text: 'agreement', objectSchema: AGREEMENT_SCHEMA });
+            mockRuns({ agreement_type: 'grant', signature_date: '2025-09-10', effective_date: '2025-09-10' });
+            vi.mocked(executeInteractionFromActivity).mockRejectedValueOnce(new Error('model down'));
+
+            const result = await testEnv.run(generateDocumentProperties, payload({}));
+
+            expect(result).toMatchObject({ report: { repair: { failed: true, filled: [] } } });
+            expect(update).toHaveBeenCalledWith(
+                'object-1',
+                expect.objectContaining({
+                    properties: { signature_date: '2025-09-10', effective_date: '2025-09-10' },
+                }),
+                { suppressWorkflows: true },
+            );
+        });
+
+        it('sends no extraction report when the output conforms as returned', async () => {
+            const { update } = await mockSetup({ text: 'agreement', objectSchema: AGREEMENT_SCHEMA });
+            mockRuns({ agreement_type: 'reimbursable' });
+
+            const result = await testEnv.run(generateDocumentProperties, payload({}));
+
+            expect(result).toEqual({ status: 'completed' });
+            expect(update).toHaveBeenCalledWith(
+                'object-1',
+                expect.objectContaining({
+                    generation_run_info: expect.not.objectContaining({ extraction_report: expect.anything() }),
+                }),
+                { suppressWorkflows: true },
+            );
+        });
+
+        it('stores the properties without the report when an older server rejects the field', async () => {
+            const { update } = await mockSetup({ text: 'agreement', objectSchema: AGREEMENT_SCHEMA });
+            mockRuns({ agreement_type: 'Reimbursable' });
+            update.mockRejectedValueOnce(
+                new ServerError('unknown field extraction_report', new Request('https://zeno.test/api'), 400, {}),
+            );
+
+            const result = await testEnv.run(generateDocumentProperties, payload({}));
+
+            expect(result).toMatchObject({ status: 'completed' });
+            expect(update).toHaveBeenCalledTimes(2);
+            expect(update).toHaveBeenLastCalledWith(
+                'object-1',
+                {
+                    properties: { agreement_type: 'reimbursable' },
+                    generation_run_info: expect.not.objectContaining({ extraction_report: expect.anything() }),
+                },
+                { suppressWorkflows: true },
+            );
+        });
+
+        it('does not retry the update on other errors', async () => {
+            const { update } = await mockSetup({ text: 'agreement', objectSchema: AGREEMENT_SCHEMA });
+            mockRuns({ agreement_type: 'Reimbursable' });
+            const error = new ServerError('boom', new Request('https://zeno.test/api'), 500, {});
+            update.mockRejectedValueOnce(error);
+
+            await expect(testEnv.run(generateDocumentProperties, payload({}))).rejects.toBe(error);
+            expect(update).toHaveBeenCalledTimes(1);
         });
     });
 });

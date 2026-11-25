@@ -1,4 +1,4 @@
-import { activityInfo, type Info } from '@temporalio/activity';
+import { activityInfo, Context, type Info } from '@temporalio/activity';
 
 /**
  * Temporal SDK 1.17 changed {@link Info.workflowExecution} to be optional.
@@ -24,4 +24,13 @@ export function activityWillRetry(error: unknown, info: Info = activityInfo()): 
     if (failure?.nonRetryable === true || failure?.retryable === false) return false;
     const maximumAttempts = info.retryPolicy?.maximumAttempts;
     return typeof maximumAttempts === 'number' && maximumAttempts > 0 && info.attempt < maximumAttempts;
+}
+
+/** The cancellation signal of the current activity, or undefined outside an activity (e.g. tests or utility code). */
+export function currentActivitySignal(): AbortSignal | undefined {
+    try {
+        return Context.current().cancellationSignal;
+    } catch {
+        return undefined;
+    }
 }

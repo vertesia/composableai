@@ -556,6 +556,26 @@
       }
     }
   },
+  "NotificationPathParams": {
+    "type": "object",
+    "properties": {
+      "notificationId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The notification ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "ContentSourceRoundPathParams": {
+    "type": "object",
+    "properties": {
+      "roundId": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$",
+        "description": "The sync round ID: 1 to 64 letters, digits, `_` or `-`."
+      }
+    }
+  },
   "CreateDelegationGrantPayload": {
     "type": "object",
     "properties": {
@@ -7425,7 +7445,31 @@
       "client_id"
     ],
     "additionalProperties": false,
-    "description": "Payload for creating an OAuth Provider. The client_secret is accepted as plaintext on create and stored encrypted."
+    "if": {
+      "not": {
+        "required": [
+          "grant_type"
+        ],
+        "properties": {
+          "grant_type": {
+            "const": "client_credentials"
+          }
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "token_endpoint_auth_method": {
+          "not": {
+            "const": "private_key_jwt"
+          }
+        },
+        "allowed_scopes": {
+          "maxItems": 0
+        }
+      }
+    },
+    "description": "Payload for creating an OAuth Provider. The client_secret is accepted as plaintext on create and stored encrypted. `private_key_jwt` and a non-empty `allowed_scopes` require the `client_credentials` grant; the grant defaults to `authorization_code`."
   },
   "UpdateOAuthProviderPayload": {
     "type": "object",
@@ -9397,12 +9441,23 @@
       "type": "string"
     }
   },
+  "OpenAICompatibleApi": {
+    "type": "string",
+    "enum": [
+      "responses",
+      "chat_completions"
+    ],
+    "description": "The OpenAI API an OpenAI-compatible environment calls: `responses` (the default when omitted) or `chat_completions`, for services that implement only Chat Completions."
+  },
   "ExecutionEnvironmentSettings": {
     "type": "object",
     "properties": {
       "default_headers": {
         "$ref": "#/components/schemas/StringValueMap",
         "description": "Custom HTTP headers sent by OpenAI-compatible environments."
+      },
+      "openai_api": {
+        "$ref": "#/components/schemas/OpenAICompatibleApi"
       }
     },
     "additionalProperties": true
@@ -12712,7 +12767,9 @@
         "type": "string"
       },
       "environment": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:[0-9a-fA-F]{24})?$",
+        "description": "Environment ID, as 24 hexadecimal characters. An empty string applies no filter."
       },
       "is_agent": {
         "type": "boolean"
@@ -13449,7 +13506,44 @@
     "required": [
       "config"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "config"
+      ]
+    },
+    "then": {
+      "properties": {
+        "config": {
+          "properties": {
+            "http_timeout": {
+              "properties": {
+                "headersTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "bodyTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "connectTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "keepAliveTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   },
   "GeneratedTestDataRecord": {
     "type": "object"
@@ -13956,6 +14050,14 @@
       "namespace": {
         "type": "string",
         "description": "Tool-name prefix for this collection."
+      },
+      "required_scope": {
+        "type": "string",
+        "description": "The scope the server refused a tool call for (`insufficient_scope`): reconnecting asks for it too."
+      },
+      "refused_tool": {
+        "type": "string",
+        "description": "The tool the server refused for `required_scope`."
       }
     },
     "required": [
@@ -13965,6 +14067,55 @@
     ],
     "additionalProperties": false,
     "description": "An MCP server the user can connect to but hasn't yet (active + accessible, no OAuth token). Built at tool-discovery time and stored on the conversation state so the agent can discover it (by description) and ask the user to connect."
+  },
+  "HeldMcpReconnect": {
+    "type": "object",
+    "properties": {
+      "app_install_id": {
+        "type": "string",
+        "description": "The app installation id owning the collection (used for OAuth operations)."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "The MCP tool-collection id."
+      },
+      "name": {
+        "type": "string",
+        "description": "Human-readable label for the server/collection."
+      },
+      "description": {
+        "type": "string",
+        "description": "Manifest description of what the server provides (used for discovery)."
+      },
+      "namespace": {
+        "type": "string",
+        "description": "Tool-name prefix for this collection."
+      },
+      "required_scope": {
+        "type": "string",
+        "description": "The scope the server refused a tool call for (`insufficient_scope`): reconnecting asks for it too."
+      },
+      "refused_tool": {
+        "type": "string",
+        "description": "The tool the server refused for `required_scope`."
+      },
+      "held_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the hold was made: only an answer from the user after this time releases it."
+      },
+      "answered": {
+        "type": "boolean",
+        "description": "Whether the user has answered since the hold was made, so it can be offered again."
+      }
+    },
+    "required": [
+      "app_install_id",
+      "collection_id",
+      "name"
+    ],
+    "additionalProperties": false,
+    "description": "A reconnect held for the user's answer after an MCP server refused a tool's scope again following a reconnect."
   },
   "UsedSkill": {
     "type": "object",
@@ -14303,6 +14454,13 @@
           "$ref": "#/components/schemas/PendingMcpConnection"
         },
         "description": "MCP servers that are active (not disabled) and accessible to the user but not yet OAuth-connected. Surfaced to the agent (via discover_tools) so it can offer to connect."
+      },
+      "held_mcp_reconnects": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/HeldMcpReconnect"
+        },
+        "description": "MCP reconnects held after a server refused a tool (`refused_tool`) again although the user reconnected to grant `required_scope`; the agent asked the user whether to reconnect, continue without it, or stop. Until the user answers, that tool does not run again and its server is not offered for reconnection; once they answer, the hold is offered as a reconnect."
       },
       "active_activity_group_id": {
         "type": "string",
@@ -15085,6 +15243,43 @@
       "interaction"
     ],
     "additionalProperties": false,
+    "if": {
+      "required": [
+        "config"
+      ]
+    },
+    "then": {
+      "properties": {
+        "config": {
+          "properties": {
+            "http_timeout": {
+              "properties": {
+                "headersTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "bodyTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "connectTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "keepAliveTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "description": "Interaction execution payload for creating a new run It uses interaction field (from NamedInteractionExecutionPayload) to pass the interaction ID to run"
   },
   "GetRunQuery": {
@@ -15410,7 +15605,44 @@
         "description": "Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming."
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "config"
+      ]
+    },
+    "then": {
+      "properties": {
+        "config": {
+          "properties": {
+            "http_timeout": {
+              "properties": {
+                "headersTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "bodyTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "connectTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "keepAliveTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   },
   "NamedInteractionExecutionPayload": {
     "type": "object",
@@ -15480,7 +15712,44 @@
     "required": [
       "interaction"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "config"
+      ]
+    },
+    "then": {
+      "properties": {
+        "config": {
+          "properties": {
+            "http_timeout": {
+              "properties": {
+                "headersTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "bodyTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "connectTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "keepAliveTimeout": {
+                  "multipleOf": 1,
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   },
   "InteractionExecutionResult": {
     "type": "object",
@@ -17983,6 +18252,22 @@
     "properties": {
       "access_token": {
         "type": "string"
+      },
+      "user_grant": {
+        "type": "boolean",
+        "description": "True when the token is the user's own OAuth grant for this server, which the user can renew with more scope by reconnecting. Absent for project credentials (client credentials, API keys) and from servers older than this field."
+      },
+      "step_up_scope": {
+        "type": "string",
+        "description": "The scope the stored grant was last requested for after the server refused a call with `insufficient_scope`. A second refusal for this scope means the grant did not include it, so the user should not be asked to reconnect again."
+      },
+      "step_up_tool": {
+        "type": "string",
+        "description": "The tool whose refusal led to `step_up_scope`."
+      },
+      "step_up_attempt": {
+        "type": "string",
+        "description": "The id of the reconnect that recorded `step_up_scope`, to send back when reporting its outcome."
       }
     },
     "required": [
@@ -18025,6 +18310,10 @@
       },
       "scope": {
         "type": "string"
+      },
+      "step_up_attempt": {
+        "type": "string",
+        "description": "The `step_up_attempt` of the reconnect that stored the user's grant, when that reconnect asked for a scope the MCP server had refused a call for."
       }
     },
     "required": [
@@ -18082,12 +18371,37 @@
     "properties": {
       "success": {
         "type": "boolean"
+      },
+      "missing_scope": {
+        "type": "string",
+        "description": "After a reconnect that asked for a scope the server had refused a call for: the part of that scope the authorization server did not grant. The account may lack the permission, or an administrator may need to consent to it."
       }
     },
     "required": [
       "success"
     ],
     "additionalProperties": false
+  },
+  "McpOAuthExchangePayload": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string"
+      },
+      "iss": {
+        "type": "string",
+        "description": "The `iss` parameter of the authorization response (RFC 9207), when the authorization server sent one. It is checked against the issuer the server discovered, to detect an authorization server mix-up."
+      }
+    },
+    "required": [
+      "code",
+      "state"
+    ],
+    "additionalProperties": false,
+    "description": "The authorization response parameters of a remote MCP OAuth callback."
   },
   "OAuthAuthorizeResponse": {
     "type": "object",
@@ -18100,6 +18414,10 @@
       },
       "connected": {
         "type": "boolean"
+      },
+      "step_up_attempt": {
+        "type": "string",
+        "description": "Set when the request asked for `required_scope`: an id for this reconnect. Once the user completes it, the collection status reports it as `step_up_attempt`, so the caller can confirm that the grant is the one it started, even without a message from the callback page."
       }
     },
     "additionalProperties": false,
@@ -18110,6 +18428,92 @@
     "items": {
       "$ref": "#/components/schemas/OAuthAuthStatus"
     }
+  },
+  "McpStepUpScopeMode": {
+    "type": "string",
+    "enum": [
+      "union",
+      "challenged"
+    ],
+    "description": "`union` asks for the scope already granted, the scopes the server advertises and the challenged scope. `challenged` asks for the challenged scope alone, for an authorization server that refused the union with `invalid_scope`."
+  },
+  "AuthorizeRemoteMcpConnectionQuery": {
+    "type": "object",
+    "properties": {
+      "required_scope": {
+        "type": "string",
+        "maxLength": 512,
+        "description": "A scope the MCP server refused a tool call for (`insufficient_scope`). The authorization request asks for it too, unless the collection uses a shared OAuth provider, whose scope is configured by an administrator. A malformed scope is refused with 400."
+      },
+      "refused_tool": {
+        "type": "string",
+        "maxLength": 256,
+        "description": "The tool the server refused, recorded with the step-up."
+      },
+      "scope_mode": {
+        "$ref": "#/components/schemas/McpStepUpScopeMode"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Optional step-up parameters for authorizing a remote MCP connection again."
+  },
+  "McpStepUpOutcome": {
+    "type": "string",
+    "enum": [
+      "used",
+      "refused_again"
+    ],
+    "description": "`used`: the refused tool has now run, so the step-up is forgotten and a later refusal can ask the user to reconnect again. `refused_again`: the server refused the same scope after the step-up, so the agent stops asking; the step-up is kept."
+  },
+  "ReportMcpStepUpOutcomeRequest": {
+    "type": "object",
+    "properties": {
+      "app_install_id": {
+        "type": "string"
+      },
+      "collection_id": {
+        "type": "string"
+      },
+      "scope": {
+        "type": "string",
+        "maxLength": 512,
+        "description": "The step-up scope, as the token response gave it."
+      },
+      "outcome": {
+        "$ref": "#/components/schemas/McpStepUpOutcome"
+      },
+      "tool_name": {
+        "type": "string",
+        "maxLength": 256,
+        "description": "The tool that was called."
+      },
+      "step_up_attempt": {
+        "type": "string",
+        "maxLength": 64,
+        "description": "The `step_up_attempt` the token response gave with `step_up_scope`. With it, `used` clears only that step-up: one a later reconnect recorded for the same scope stays."
+      }
+    },
+    "required": [
+      "app_install_id",
+      "collection_id",
+      "scope",
+      "outcome"
+    ],
+    "additionalProperties": false,
+    "description": "What became of the step-up recorded on the user's grant for a remote MCP collection."
+  },
+  "ReportMcpStepUpOutcomeResponse": {
+    "type": "object",
+    "properties": {
+      "cleared": {
+        "type": "boolean",
+        "description": "Whether the recorded step-up for this scope is now gone."
+      }
+    },
+    "required": [
+      "cleared"
+    ],
+    "additionalProperties": false
   },
   "SetMcpApiKeyRequest": {
     "type": "object",
@@ -18968,7 +19372,53 @@
       "id",
       "operation"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "operation"
+      ],
+      "properties": {
+        "operation": {
+          "enum": [
+            "sum_meter",
+            "average_meter"
+          ]
+        }
+      }
+    },
+    "then": {
+      "required": [
+        "meterCategory",
+        "meterType"
+      ],
+      "properties": {
+        "meterCategory": {
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "meterType": {
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "else": {
+      "if": {
+        "required": [
+          "operation"
+        ],
+        "properties": {
+          "operation": {
+            "const": "count_distinct"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "field"
+        ]
+      }
+    }
   },
   "AuditAggregationGroup": {
     "type": "object",
@@ -30689,7 +31139,8 @@
     "properties": {
       "type": {
         "type": "string",
-        "minLength": 1
+        "pattern": "^(?:agent_request|task|agent_run_end|agent_turn|object|inference_budget)$",
+        "description": "The occurrence type: agent_request, task, agent_run_end, agent_turn, object, inference_budget."
       },
       "id": {
         "type": "string",
@@ -30886,8 +31337,10 @@
         "maxItems": 200,
         "type": "array",
         "items": {
-          "type": "string"
-        }
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
+        },
+        "description": "Notification IDs, as 24 hexadecimal characters."
       },
       "occurrences": {
         "maxItems": 200,
@@ -30922,8 +31375,10 @@
         "maxItems": 200,
         "type": "array",
         "items": {
-          "type": "string"
-        }
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
+        },
+        "description": "Notification IDs, as 24 hexadecimal characters."
       }
     },
     "required": [
@@ -33065,6 +33520,96 @@
       }
     }
   },
+  "ExtractionReport": {
+    "type": "object",
+    "properties": {
+      "normalized": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ExtractionNormalization"
+        }
+      },
+      "cleared": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ExtractionValidationError"
+        },
+        "description": "Values that still did not conform after the repair call, and were not stored."
+      },
+      "repair": {
+        "$ref": "#/components/schemas/ExtractionRepair"
+      }
+    },
+    "additionalProperties": false,
+    "description": "How property extraction checked the model output against the content type schema. Present only when something was rewritten, repaired or dropped."
+  },
+  "ExtractionNormalization": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "description": "Property path of the value, such as `parties[0].name`."
+      },
+      "rule": {
+        "type": "string",
+        "description": "What was rewritten: `enum` (case, separators or accents matched an allowed value), `type` (a number, boolean or string given in another JSON type), `format` (a date or date-time rewritten to its ISO form), `pattern` (the one substring matching the pattern was kept), `wrap` (a single value wrapped in an array) or `unknown_property` (a property the schema does not allow was dropped). New rules may be added."
+      }
+    },
+    "required": [
+      "path",
+      "rule"
+    ],
+    "additionalProperties": false,
+    "description": "A deterministic rewrite applied to an extracted value so that it conforms to the schema."
+  },
+  "ExtractionValidationError": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "description": "Property path of the value, such as `parties[0].name`."
+      },
+      "error": {
+        "type": "string",
+        "description": "Why the value did not conform to the schema."
+      }
+    },
+    "required": [
+      "path",
+      "error"
+    ],
+    "additionalProperties": false,
+    "description": "An extracted value that did not conform to the schema and was not stored."
+  },
+  "ExtractionRepair": {
+    "type": "object",
+    "properties": {
+      "fields": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Top-level properties the repair call was asked for."
+      },
+      "filled": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Properties the repair call filled with a valid value."
+      },
+      "failed": {
+        "type": "boolean",
+        "description": "True when the repair call itself failed; the first extraction was kept."
+      }
+    },
+    "required": [
+      "fields",
+      "filled"
+    ],
+    "additionalProperties": false,
+    "description": "The one extra extraction call made when the first result had invalid values, or left empty a property whose description says how to derive it from properties that were filled."
+  },
   "GenerationRunMetadata": {
     "type": "object",
     "properties": {
@@ -33083,6 +33628,9 @@
       "extraction_fingerprint": {
         "type": "string",
         "description": "Fingerprint of the inputs used by property extraction (content etag, type + its object schema, source, instructions, interaction). Lets a later run skip re-extraction when nothing changed."
+      },
+      "extraction_report": {
+        "$ref": "#/components/schemas/ExtractionReport"
       }
     },
     "required": [
@@ -33123,6 +33671,11 @@
       },
       "etag": {
         "type": "string"
+      },
+      "sha256": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$",
+        "description": "Lowercase hex SHA-256 of the content bytes, as computed by the uploader. Unlike `etag`, it does not depend on how the storage provider stores the file: an S3 object encrypted with a KMS key, or uploaded in parts, has an etag that is not a hash of its bytes. Omitted when the uploader did not compute it."
       }
     },
     "additionalProperties": false
@@ -35003,8 +35556,10 @@
       "objectIds": {
         "type": "array",
         "items": {
-          "type": "string"
-        }
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
+        },
+        "description": "Content object IDs, as 24 hexadecimal characters. Empty exports all objects."
       },
       "type": {
         "type": "string",
@@ -38767,6 +39322,12 @@
       "sync": {
         "$ref": "#/components/schemas/ContentSourceSyncSettings"
       },
+      "sample_percent": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 99,
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Absent when the source syncs every file."
+      },
       "created_by": {
         "type": "string"
       },
@@ -38857,6 +39418,12 @@
       "sync": {
         "$ref": "#/components/schemas/ContentSourceSyncSettings"
       },
+      "sample_percent": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 99,
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Absent when the source syncs every file."
+      },
       "created_by": {
         "type": "string"
       },
@@ -38944,8 +39511,8 @@
       },
       "oauth_provider_id": {
         "type": "string",
-        "minLength": 1,
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system, as 24 hexadecimal characters."
       },
       "location_root": {
         "type": "string",
@@ -38958,6 +39525,12 @@
       "sync": {
         "$ref": "#/components/schemas/ContentSourceSyncSettings",
         "description": "Defaults to scheduled sync disabled, every 60 minutes once enabled."
+      },
+      "sample_percent": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 99,
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Leave out to sync every file."
       },
       "type": {
         "type": "string",
@@ -39004,8 +39577,8 @@
       },
       "oauth_provider_id": {
         "type": "string",
-        "minLength": 1,
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system, as 24 hexadecimal characters."
       },
       "location_root": {
         "type": "string",
@@ -39018,6 +39591,12 @@
       "sync": {
         "$ref": "#/components/schemas/ContentSourceSyncSettings",
         "description": "Defaults to scheduled sync disabled, every 60 minutes once enabled."
+      },
+      "sample_percent": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 99,
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Leave out to sync every file."
       },
       "type": {
         "type": "string",
@@ -39073,6 +39652,19 @@
       "sync": {
         "$ref": "#/components/schemas/ContentSourceSyncSettings"
       },
+      "sample_percent": {
+        "anyOf": [
+          {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. `null` removes the sample, so that every file is synced. A change, before or after the first sync, makes the next sync an import that lists the whole folder: it imports the files that entered the sample and deletes the documents of those that left it."
+      },
       "permissions": {
         "$ref": "#/components/schemas/ContentSourcePermissionSettings"
       },
@@ -39092,7 +39684,7 @@
       }
     },
     "additionalProperties": false,
-    "description": "Changes the name, description or sync settings, and, before the first sync, the root and folder to sync. Saving sync settings also hands the sync your credentials, which restarts a sync stopped because its previous credentials were refused."
+    "description": "Changes the name, description, sync settings or sample, and, before the first sync, the root and folder to sync. Saving sync settings also hands the sync your credentials, which restarts a sync stopped because its previous credentials were refused."
   },
   "SyncContentSourcePayload": {
     "type": "object",
@@ -39137,7 +39729,7 @@
         "type": "integer",
         "minimum": -9007199254740991,
         "maximum": 9007199254740991,
-        "description": "Files that are not synced (unsupported types, packages)."
+        "description": "Files that are not synced (unsupported types, packages, files outside the sample)."
       },
       "failed": {
         "type": "integer",
@@ -39189,7 +39781,7 @@
           "minimum": -9007199254740991,
           "maximum": 9007199254740991
         },
-        "description": "The skipped files by reason: `package`, `not_a_file`, `too_large`, `unsupported_type`, or another reason a system reports."
+        "description": "The skipped files by reason: `package`, `not_a_file`, `too_large`, `unsupported_type`, `not_sampled` (outside the source's `sample_percent`; counted only, not listed in the report), or another reason a system reports."
       },
       "swept": {
         "type": "boolean",
@@ -39255,6 +39847,121 @@
     "additionalProperties": false,
     "description": "A content source's sync state."
   },
+  "ContentSourceRoundSummary": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "import",
+          "update"
+        ],
+        "description": "`import` lists the whole folder; `update` reads the changes since the previous sync."
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "finished_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "outcome": {
+        "type": "string",
+        "enum": [
+          "succeeded",
+          "failed"
+        ],
+        "description": "Whether the round finished without an error."
+      }
+    },
+    "required": [
+      "kind",
+      "started_at",
+      "outcome"
+    ],
+    "additionalProperties": false,
+    "description": "When a finished sync round ran, and how it ended."
+  },
+  "ContentSourceSummary": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "type": {
+        "type": "string",
+        "enum": [
+          "sharepoint",
+          "box"
+        ]
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` under which the source folder's tree is reproduced, e.g. `/sharepoint/legal`."
+      },
+      "site_url": {
+        "type": "string",
+        "description": "SharePoint only: the site URL."
+      },
+      "library_name": {
+        "type": "string",
+        "description": "SharePoint only: the document library name."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The folder synced: relative to the library root for SharePoint (empty for the whole library), the folder path below All Files for Box."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "not_started",
+          "running",
+          "waiting",
+          "stopped"
+        ],
+        "description": "`waiting` between syncs, `running` during one, `stopped` when its credentials were refused or the source is being deleted."
+      },
+      "next_sync_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "last_success_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the last round that finished without an error ended. Absent when none has."
+      },
+      "last_round": {
+        "$ref": "#/components/schemas/ContentSourceRoundSummary"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "type",
+      "location_root",
+      "folder_path",
+      "sync",
+      "state"
+    ],
+    "additionalProperties": false,
+    "description": "What a content source syncs into the project and how its sync stands, readable by every member who can read content. Holds no connection, credential or permission settings."
+  },
+  "ContentSourceSummaryArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/ContentSourceSummary"
+    }
+  },
   "ContentSourceReportAction": {
     "type": "string",
     "enum": [
@@ -39309,7 +40016,7 @@
       },
       "reason": {
         "type": "string",
-        "description": "`skipped`: why the file is not synced (`package`, `not_a_file`, `too_large`, `unsupported_type`). `deleted`: `file_deleted` (deleted, moved out or no longer synced) or `duplicate`."
+        "description": "`skipped`: why the file is not synced (`package`, `not_a_file`, `too_large`, `unsupported_type`). `deleted`: `file_deleted` (deleted, moved out or no longer synced), `duplicate`, or `not_sampled` (outside the source's `sample_percent`)."
       },
       "error": {
         "type": "string",
@@ -39379,8 +40086,8 @@
       },
       "oauth_provider_id": {
         "type": "string",
-        "minLength": 1,
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system, as 24 hexadecimal characters."
       },
       "site_url": {
         "type": "string",
@@ -39406,8 +40113,8 @@
       },
       "oauth_provider_id": {
         "type": "string",
-        "minLength": 1,
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system, as 24 hexadecimal characters."
       },
       "site_url": {
         "type": "string",
@@ -39438,8 +40145,8 @@
       },
       "oauth_provider_id": {
         "type": "string",
-        "minLength": 1,
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system, as 24 hexadecimal characters."
       },
       "site_url": {
         "type": "string",
@@ -39480,8 +40187,8 @@
       },
       "oauth_provider_id": {
         "type": "string",
-        "minLength": 1,
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system, as 24 hexadecimal characters."
       },
       "site_url": {
         "type": "string",
@@ -48469,6 +49176,13 @@
     ],
     "description": "How a data store keeps its data. `duckdb`: one DuckDB database file per version. `ducklake`: a DuckLake catalog over Parquet files, for stores too large to rewrite on every change. A `ducklake` store keeps no versions: each write replaces the current one, and snapshots and rollback are refused."
   },
+  "DataStoreStorageFormatArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/DataStoreStorageFormat"
+    },
+    "description": "Storage formats available when creating a data store in this environment."
+  },
   "DataStoreDataWriteVersioning": {
     "type": "string",
     "enum": [
@@ -49426,6 +50140,7 @@
             "items": {
               "properties": {
                 "columns": {
+                  "minItems": 1,
                   "items": {
                     "properties": {
                       "name": {
@@ -49442,7 +50157,7 @@
         }
       }
     ],
-    "description": "Payload for creating multiple tables atomically. Each column name is a SQL identifier of letters, digits and underscores, starting with a letter or underscore, at most 64 characters, and not a reserved SQL keyword."
+    "description": "Payload for creating multiple tables atomically. Each table has at least one column, and each column name is a SQL identifier of letters, digits and underscores, starting with a letter or underscore, at most 64 characters, and not a reserved SQL keyword."
   },
   "DataTable": {
     "type": "object",

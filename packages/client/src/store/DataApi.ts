@@ -14,6 +14,7 @@ import {
     type DataStoreItem,
     type DataStoreMutateRowsPayload,
     type DataStoreMutateRowsResult,
+    type DataStoreStorageFormatArray,
     type DataStoreTableDetail,
     type DataStoreTableDropResult,
     type DataStoreVersion,
@@ -67,6 +68,11 @@ export class DataApi extends DataServerTopic {
      */
     list(): Promise<DataStoreItem[]> {
         return this.get('/');
+    }
+
+    /** Storage formats this environment accepts when creating a store. */
+    listStorageFormats(): Promise<DataStoreStorageFormatArray> {
+        return this.get('/capabilities/storage-formats');
     }
 
     /**

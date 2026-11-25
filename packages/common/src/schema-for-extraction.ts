@@ -8,6 +8,8 @@
  */
 
 const X_EXTRACT = 'x-extract';
+/** Names the sibling properties a property can be derived from; read by the post-extraction repair check. */
+export const X_DERIVED_FROM = 'x-derived-from';
 
 function unescapeJsonPointerSegment(segment: string): string {
     return segment.replace(/~1/g, '/').replace(/~0/g, '~');
@@ -137,15 +139,17 @@ function schemaForExtractionNode(schema: unknown, root: unknown): unknown {
         }
     }
 
-    // Drop the flag from the extraction copy (not needed by providers)
+    // Drop the annotations from the extraction copy (not needed by providers)
     delete node[X_EXTRACT];
+    delete node[X_DERIVED_FROM];
 
     return node;
 }
 
 /**
  * Deep-clones a JSON schema and removes properties (recursively) marked
- * `x-extract: false`, cleaning `required` arrays to match.
+ * `x-extract: false`, cleaning `required` arrays to match. The `x-extract` and
+ * `x-derived-from` annotations are dropped from the copy.
  */
 export function schemaForExtraction<T>(schema: T): T {
     return (schemaForExtractionNode(schema, schema) ?? {}) as T;

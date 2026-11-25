@@ -72,6 +72,8 @@ web_modules/
 # Native CLI build artifacts (published from CI as platform packages)
 /packages/cli-darwin-arm64/bin/vertesia
 /packages/cli-darwin-x64/bin/vertesia
+/packages/cli-darwin-arm64/THIRD-PARTY-NOTICES.txt
+/packages/cli-darwin-x64/THIRD-PARTY-NOTICES.txt
 
 # Yarn Integrity file
 .yarn-integrity

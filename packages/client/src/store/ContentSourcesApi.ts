@@ -8,6 +8,7 @@ import type {
     ContentSourceSchemaDiscovery,
     ContentSourceSiteDiscovery,
     ContentSourceStatus,
+    ContentSourceSummary,
     CreateContentSourcePayload,
     DeleteCountResult,
     DiscoverContentSourceFoldersPayload,
@@ -33,6 +34,14 @@ export class ContentSourcesApi extends ApiTopic {
 
     list(): Promise<ExternalContentSource[]> {
         return this.get('/');
+    }
+
+    /**
+     * Every source with what it syncs (site, library, folder) and how its sync stands: state, schedule, last
+     * successful round. Needs only content read access, and holds no connection or permission settings.
+     */
+    summary(): Promise<ContentSourceSummary[]> {
+        return this.get('/summary');
     }
 
     retrieve(id: string): Promise<ExternalContentSource> {

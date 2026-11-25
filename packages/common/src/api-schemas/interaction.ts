@@ -36,6 +36,7 @@ import {
     OBJECT_ID_PATTERN,
     OPTIONAL_OBJECT_ID_PATTERN,
     PageCountSchema,
+    positiveHttpTimeoutRule,
 } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
 
@@ -85,12 +86,39 @@ export const PendingMcpConnectionSchema = z
             .meta({ description: 'Manifest description of what the server provides (used for discovery).' })
             .optional(),
         namespace: z.string().meta({ description: 'Tool-name prefix for this collection.' }).optional(),
+        required_scope: z
+            .string()
+            .meta({
+                description:
+                    'The scope the server refused a tool call for (`insufficient_scope`): reconnecting asks for it too.',
+            })
+            .optional(),
+        refused_tool: z.string().meta({ description: 'The tool the server refused for `required_scope`.' }).optional(),
     })
     .meta({
         id: 'PendingMcpConnection',
         description:
             "An MCP server the user can connect to but hasn't yet (active + accessible, no OAuth token). Built at tool-discovery time and stored on the conversation state so the agent can discover it (by description) and ask the user to connect.",
     });
+
+export const HeldMcpReconnectSchema = PendingMcpConnectionSchema.extend({
+    held_at: z
+        .string()
+        .meta({
+            format: 'date-time',
+            description: 'When the hold was made: only an answer from the user after this time releases it.',
+        })
+        .optional(),
+    answered: z
+        .boolean()
+        .meta({ description: 'Whether the user has answered since the hold was made, so it can be offered again.' })
+        .optional(),
+}).meta({
+    id: 'HeldMcpReconnect',
+    description:
+        "A reconnect held for the user's answer after an MCP server refused a tool's scope again following a " +
+        'reconnect.',
+});
 
 export const ModelSourceSchema = z
     .enum(ModelSource)
@@ -598,7 +626,7 @@ export const GenerateTestDataPayloadSchema = z
         count: z.number().optional(),
         config: InteractionExecutionConfigurationSchema,
     })
-    .meta({ id: 'GenerateTestDataPayload' });
+    .meta({ id: 'GenerateTestDataPayload', ...positiveHttpTimeoutRule });
 
 export const InteractionSearchQuerySchema = z
     .strictObject({
@@ -642,6 +670,12 @@ export const InteractionListQuerySchema = InteractionSearchQuerySchema.extend({
         .string()
         .regex(/^(?:\s*[+-]?\d[\s\S]*)?$/)
         .meta({ description: 'Filter by version number. Must start with an integer.' })
+        .optional(),
+    // The routes cast a non-empty environment to an ObjectId, and an empty one applies no filter.
+    environment: z
+        .string()
+        .regex(OPTIONAL_OBJECT_ID_PATTERN)
+        .meta({ description: 'Environment ID, as 24 hexadecimal characters. An empty string applies no filter.' })
         .optional(),
     limit: z.number().min(1).max(Number.MAX_SAFE_INTEGER).multipleOf(1).optional(),
     offset: z.number().min(0).max(Number.MAX_SAFE_INTEGER).multipleOf(1).optional(),
@@ -1980,6 +2014,16 @@ export const ConversationStateSchema = z
                     'MCP servers that are active (not disabled) and accessible to the user but not yet OAuth-connected. Surfaced to the agent (via discover_tools) so it can offer to connect.',
             })
             .optional(),
+        held_mcp_reconnects: z
+            .array(HeldMcpReconnectSchema)
+            .meta({
+                description:
+                    'MCP reconnects held after a server refused a tool (`refused_tool`) again although the user ' +
+                    'reconnected to grant `required_scope`; the agent asked the user whether to reconnect, continue ' +
+                    'without it, or stop. Until the user answers, that tool does not run again and its server is not ' +
+                    'offered for reconnection; once they answer, the hold is offered as a reconnect.',
+            })
+            .optional(),
         active_activity_group_id: z
             .string()
             .meta({
@@ -2177,7 +2221,7 @@ export const NamedInteractionExecutionPayloadSchema = z
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
     })
-    .meta({ id: 'NamedInteractionExecutionPayload' });
+    .meta({ id: 'NamedInteractionExecutionPayload', ...positiveHttpTimeoutRule });
 
 export const InteractionExecutionPayloadSchema = z
     .strictObject({
@@ -2220,7 +2264,7 @@ export const InteractionExecutionPayloadSchema = z
                 'Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming.',
         }).optional(),
     })
-    .meta({ id: 'InteractionExecutionPayload' });
+    .meta({ id: 'InteractionExecutionPayload', ...positiveHttpTimeoutRule });
 
 export const AsyncInteractionExecutionPayloadSchema = z
     .object({
@@ -2586,6 +2630,7 @@ export const RunCreatePayloadSchema = z
     })
     .meta({
         id: 'RunCreatePayload',
+        ...positiveHttpTimeoutRule,
         description:
             'Interaction execution payload for creating a new run It uses interaction field (from NamedInteractionExecutionPayload) to pass the interaction ID to run',
     });

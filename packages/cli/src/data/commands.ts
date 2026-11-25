@@ -130,6 +130,12 @@ export async function createDataStore(program: Command, name: string, options: C
     );
 }
 
+export async function listStorageFormats(program: Command, options: CliOptions<{ json?: boolean }>) {
+    const client = await getClient(program);
+    const formats = await client.data.listStorageFormats();
+    console.log(options.json ? JSON.stringify(formats) : formats.join('\n'));
+}
+
 export async function listDataStores(program: Command, options: CliOptions<{ json?: boolean }>) {
     const client = await getClient(program);
     const stores = await client.data.list();

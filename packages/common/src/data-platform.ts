@@ -134,6 +134,7 @@ export const DataStoreStorageFormat = {
 } as const;
 
 export type DataStoreStorageFormat = Wire.DataStoreStorageFormat;
+export type DataStoreStorageFormatArray = Wire.DataStoreStorageFormatArray;
 
 /**
  * Whether a write that changes a store's data, an import or a row mutation, is kept as a version. Writes that change

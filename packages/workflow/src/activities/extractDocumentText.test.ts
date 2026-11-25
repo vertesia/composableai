@@ -9,9 +9,10 @@ import {
     truncateExtractedText,
 } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { markdownWithMarkitdown } from '../conversion/markitdown.js';
 import { mutoolPdfToText } from '../conversion/mutool.js';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
-import { DocumentNotFoundError, SourceTooLargeError } from '../errors.js';
+import { DocumentConversionError, DocumentNotFoundError, SourceTooLargeError } from '../errors.js';
 import { TextExtractionStatus } from '../result-types.js';
 import { fetchBlobHead, withBlobTempFile } from '../utils/blobs.js';
 import { type ExtractDocumentTextParams, extractDocumentText } from './extractDocumentText.js';
@@ -27,6 +28,8 @@ vi.mock('../utils/blobs.js', async (importOriginal) => {
 });
 
 vi.mock('../conversion/mutool.js', () => ({ mutoolPdfToText: vi.fn(async () => 'pdf text') }));
+
+vi.mock('../conversion/markitdown.js', () => ({ markdownWithMarkitdown: vi.fn(async () => 'docx text') }));
 
 vi.mock('../utils/tokens.js', () => ({
     countTokens: vi.fn(() => ({ count: 2, encoding: 'cl100k_base' })),
@@ -288,7 +291,9 @@ describe('extractDocumentText', () => {
                     limit: 'converter',
                 },
             );
-            expect(mutoolPdfToText).toHaveBeenCalledExactlyOnceWith('/tmp/source.pdf');
+            expect(mutoolPdfToText).toHaveBeenCalledExactlyOnceWith('/tmp/source.pdf', {
+                maxOutputBytes: MAX_EXTRACTED_TEXT_BYTES + 1,
+            });
             expect(fetchBlobHead).not.toHaveBeenCalled();
         });
 
@@ -322,6 +327,48 @@ describe('extractDocumentText', () => {
                 message: 'Source too large for text extraction: over 1024 MiB',
             });
             expect(mutoolPdfToText).not.toHaveBeenCalled();
+            expect(setObjectText).not.toHaveBeenCalled();
+        });
+
+        const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+        it('converts a DOCX with markitdown, naming its source and bounding the text read back', async () => {
+            retrieve.mockResolvedValue(createDoc({ content: { type: DOCX, source: SOURCE, etag: 'e' } }));
+            setObjectText.mockResolvedValue({});
+            update.mockResolvedValue({});
+            downloadConverterSource();
+
+            await expect(testEnv.run(extractDocumentText, createPayload())).resolves.toMatchObject({
+                status: TextExtractionStatus.success,
+            });
+            expect(markdownWithMarkitdown).toHaveBeenCalledExactlyOnceWith('/tmp/source.docx', 'docx', {
+                maxOutputBytes: MAX_EXTRACTED_TEXT_BYTES + 1,
+                source: SOURCE,
+            });
+        });
+
+        it('skips a DOCX that decompresses past the parse limit, naming that limit', async () => {
+            retrieve.mockResolvedValue(createDoc({ content: { type: DOCX, source: SOURCE, etag: 'e' } }));
+            downloadConverterSource();
+            vi.mocked(markdownWithMarkitdown).mockRejectedValueOnce(
+                new SourceTooLargeError(SOURCE, 100 * MiB, 300 * MiB),
+            );
+
+            await expect(testEnv.run(extractDocumentText, createPayload())).resolves.toMatchObject({
+                status: TextExtractionStatus.skipped,
+                message: 'Source too large for text extraction: over 100 MiB',
+            });
+            expect(setObjectText).not.toHaveBeenCalled();
+        });
+
+        it('fails, without a retry, on a document the converter rejects', async () => {
+            retrieve.mockResolvedValue(createDoc({ content: { type: DOCX, source: SOURCE, etag: 'e' } }));
+            downloadConverterSource();
+            const rejection = new DocumentConversionError(`${SOURCE} is not a valid DOCX file`);
+            vi.mocked(markdownWithMarkitdown).mockRejectedValueOnce(rejection);
+
+            await expect(testEnv.run(extractDocumentText, createPayload())).rejects.toBe(rejection);
+            expect(rejection.nonRetryable).toBe(true);
             expect(setObjectText).not.toHaveBeenCalled();
         });
 

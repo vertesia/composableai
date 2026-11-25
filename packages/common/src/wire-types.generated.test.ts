@@ -690,9 +690,30 @@ interface Checks {
         W.McpOAuthConnectResponse,
         z.infer<typeof import('./api-schemas/apps.js').McpOAuthConnectResponseSchema>
     >;
+    McpOAuthExchangePayload: Same<
+        W.McpOAuthExchangePayload,
+        z.infer<typeof import('./api-schemas/apps.js').McpOAuthExchangePayloadSchema>
+    >;
     McpOAuthDisconnectResponse: Same<
         W.McpOAuthDisconnectResponse,
         z.infer<typeof import('./api-schemas/apps.js').McpOAuthDisconnectResponseSchema>
+    >;
+    McpStepUpScopeMode: Same<
+        W.McpStepUpScopeMode,
+        z.infer<typeof import('./api-schemas/apps.js').McpStepUpScopeModeSchema>
+    >;
+    AuthorizeRemoteMcpConnectionQuery: Same<
+        W.AuthorizeRemoteMcpConnectionQuery,
+        z.infer<typeof import('./api-schemas/apps.js').AuthorizeRemoteMcpConnectionQuerySchema>
+    >;
+    McpStepUpOutcome: Same<W.McpStepUpOutcome, z.infer<typeof import('./api-schemas/apps.js').McpStepUpOutcomeSchema>>;
+    ReportMcpStepUpOutcomeRequest: Same<
+        W.ReportMcpStepUpOutcomeRequest,
+        z.infer<typeof import('./api-schemas/apps.js').ReportMcpStepUpOutcomeRequestSchema>
+    >;
+    ReportMcpStepUpOutcomeResponse: Same<
+        W.ReportMcpStepUpOutcomeResponse,
+        z.infer<typeof import('./api-schemas/apps.js').ReportMcpStepUpOutcomeResponseSchema>
     >;
     OAuthMetadataResponse: Same<
         W.OAuthMetadataResponse,
@@ -1079,6 +1100,14 @@ interface Checks {
         W.ContentSourceSyncCounts,
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncCountsSchema>
     >;
+    ContentSourceSummary: Same<
+        W.ContentSourceSummary,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSummarySchema>
+    >;
+    ContentSourceRoundSummary: Same<
+        W.ContentSourceRoundSummary,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceRoundSummarySchema>
+    >;
     ContentSourceReport: Same<
         W.ContentSourceReport,
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportSchema>
@@ -1335,6 +1364,10 @@ interface Checks {
     DataStoreStorageFormat: Same<
         W.DataStoreStorageFormat,
         z.infer<typeof import('./api-schemas/data-store.js').DataStoreStorageFormatSchema>
+    >;
+    DataStoreStorageFormatArray: Same<
+        W.DataStoreStorageFormatArray,
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreStorageFormatArraySchema>
     >;
     DataStoreDataWriteVersioning: Same<
         W.DataStoreDataWriteVersioning,
@@ -1836,6 +1869,10 @@ interface Checks {
     ExecutionEnvironmentSettings: Same<
         W.ExecutionEnvironmentSettings,
         z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentSettingsSchema>
+    >;
+    OpenAICompatibleApi: Same<
+        W.OpenAICompatibleApi,
+        z.infer<typeof import('./api-schemas/environment.js').OpenAICompatibleApiSchema>
     >;
     ExecutionEnvironment: Same<
         W.ExecutionEnvironment,
@@ -3399,6 +3436,10 @@ interface Checks {
         W.PendingMcpConnection,
         z.infer<typeof import('./api-schemas/interaction.js').PendingMcpConnectionSchema>
     >;
+    HeldMcpReconnect: Same<
+        W.HeldMcpReconnect,
+        z.infer<typeof import('./api-schemas/interaction.js').HeldMcpReconnectSchema>
+    >;
     UsedSkill: Same<W.UsedSkill, z.infer<typeof import('./api-schemas/interaction.js').UsedSkillSchema>>;
     DocumentPrepOptions: Same<
         W.DocumentPrepOptions,
@@ -3858,6 +3899,22 @@ interface Checks {
     GenerationRunMetadata: Same<
         W.GenerationRunMetadata,
         z.infer<typeof import('./api-schemas/content.js').GenerationRunMetadataSchema>
+    >;
+    ExtractionReport: Same<
+        W.ExtractionReport,
+        z.infer<typeof import('./api-schemas/content.js').ExtractionReportSchema>
+    >;
+    ExtractionNormalization: Same<
+        W.ExtractionNormalization,
+        z.infer<typeof import('./api-schemas/content.js').ExtractionNormalizationSchema>
+    >;
+    ExtractionValidationError: Same<
+        W.ExtractionValidationError,
+        z.infer<typeof import('./api-schemas/content.js').ExtractionValidationErrorSchema>
+    >;
+    ExtractionRepair: Same<
+        W.ExtractionRepair,
+        z.infer<typeof import('./api-schemas/content.js').ExtractionRepairSchema>
     >;
     Transcript: Same<W.Transcript, z.infer<typeof import('./api-schemas/content.js').TranscriptSchema>>;
     TranscriptSegment: Same<
@@ -5018,6 +5075,10 @@ interface Checks {
         W.ExternalContentSourceArray,
         z.infer<typeof import('./api-schemas/content-sources.js').ExternalContentSourceArraySchema>
     >;
+    ContentSourceSummaryArray: Same<
+        W.ContentSourceSummaryArray,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSummaryArraySchema>
+    >;
     CollectionStatusWire: Same<
         W.CollectionStatusWire,
         z.infer<typeof import('./api-schemas/content.js').CollectionStatusSchema>
@@ -5397,6 +5458,14 @@ interface Checks {
     ToolPathParams: Same<
         W.ToolPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').ToolPathParamsSchema>
+    >;
+    NotificationPathParams: Same<
+        W.NotificationPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').NotificationPathParamsSchema>
+    >;
+    ContentSourceRoundPathParams: Same<
+        W.ContentSourceRoundPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').ContentSourceRoundPathParamsSchema>
     >;
     'component:CustomRoleDefinition': Same<
         W.ApiComponentTypes['CustomRoleDefinition'],
@@ -5978,6 +6047,10 @@ interface Checks {
     'component:ExecutionEnvironmentSettings': Same<
         W.ApiComponentTypes['ExecutionEnvironmentSettings'],
         z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentSettingsSchema>
+    >;
+    'component:OpenAICompatibleApi': Same<
+        W.ApiComponentTypes['OpenAICompatibleApi'],
+        z.infer<typeof import('./api-schemas/environment.js').OpenAICompatibleApiSchema>
     >;
     'component:ExecutionEnvironmentCreatePayload': Same<
         W.ApiComponentTypes['ExecutionEnvironmentCreatePayload'],
@@ -6606,6 +6679,10 @@ interface Checks {
     'component:PendingMcpConnection': Same<
         W.ApiComponentTypes['PendingMcpConnection'],
         z.infer<typeof import('./api-schemas/interaction.js').PendingMcpConnectionSchema>
+    >;
+    'component:HeldMcpReconnect': Same<
+        W.ApiComponentTypes['HeldMcpReconnect'],
+        z.infer<typeof import('./api-schemas/interaction.js').HeldMcpReconnectSchema>
     >;
     'component:UsedSkill': Same<
         W.ApiComponentTypes['UsedSkill'],
@@ -7379,6 +7456,10 @@ interface Checks {
     'component:DataStoreStorageFormat': Same<
         W.ApiComponentTypes['DataStoreStorageFormat'],
         z.infer<typeof import('./api-schemas/data-store.js').DataStoreStorageFormatSchema>
+    >;
+    'component:DataStoreStorageFormatArray': Same<
+        W.ApiComponentTypes['DataStoreStorageFormatArray'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreStorageFormatArraySchema>
     >;
     'component:DataStoreDataWriteVersioning': Same<
         W.ApiComponentTypes['DataStoreDataWriteVersioning'],
@@ -8168,6 +8249,22 @@ interface Checks {
         W.ApiComponentTypes['GenerationRunMetadata'],
         z.infer<typeof import('./api-schemas/content.js').GenerationRunMetadataSchema>
     >;
+    'component:ExtractionReport': Same<
+        W.ApiComponentTypes['ExtractionReport'],
+        z.infer<typeof import('./api-schemas/content.js').ExtractionReportSchema>
+    >;
+    'component:ExtractionNormalization': Same<
+        W.ApiComponentTypes['ExtractionNormalization'],
+        z.infer<typeof import('./api-schemas/content.js').ExtractionNormalizationSchema>
+    >;
+    'component:ExtractionValidationError': Same<
+        W.ApiComponentTypes['ExtractionValidationError'],
+        z.infer<typeof import('./api-schemas/content.js').ExtractionValidationErrorSchema>
+    >;
+    'component:ExtractionRepair': Same<
+        W.ApiComponentTypes['ExtractionRepair'],
+        z.infer<typeof import('./api-schemas/content.js').ExtractionRepairSchema>
+    >;
     'component:ContentObjectUserPermissions': Same<
         W.ApiComponentTypes['ContentObjectUserPermissions'],
         z.infer<typeof import('./api-schemas/content.js').ContentObjectUserPermissionsSchema>
@@ -8891,6 +8988,18 @@ interface Checks {
     'component:ContentSourceStatus': Same<
         W.ApiComponentTypes['ContentSourceStatus'],
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceStatusSchema>
+    >;
+    'component:ContentSourceRoundSummary': Same<
+        W.ApiComponentTypes['ContentSourceRoundSummary'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceRoundSummarySchema>
+    >;
+    'component:ContentSourceSummary': Same<
+        W.ApiComponentTypes['ContentSourceSummary'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSummarySchema>
+    >;
+    'component:ContentSourceSummaryArray': Same<
+        W.ApiComponentTypes['ContentSourceSummaryArray'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSummaryArraySchema>
     >;
     'component:ContentSourceReportAction': Same<
         W.ApiComponentTypes['ContentSourceReportAction'],
@@ -9672,6 +9781,10 @@ interface Checks {
         W.ApiComponentTypes['McpOAuthConnectResponse'],
         z.infer<typeof import('./api-schemas/apps.js').McpOAuthConnectResponseSchema>
     >;
+    'component:McpOAuthExchangePayload': Same<
+        W.ApiComponentTypes['McpOAuthExchangePayload'],
+        z.infer<typeof import('./api-schemas/apps.js').McpOAuthExchangePayloadSchema>
+    >;
     'component:OAuthAuthorizeResponse': Same<
         W.ApiComponentTypes['OAuthAuthorizeResponse'],
         z.infer<typeof import('./api-schemas/apps.js').OAuthAuthorizeResponseSchema>
@@ -9679,6 +9792,26 @@ interface Checks {
     'component:OAuthAuthStatusArray': Same<
         W.ApiComponentTypes['OAuthAuthStatusArray'],
         z.infer<typeof import('./api-schemas/apps.js').OAuthAuthStatusArraySchema>
+    >;
+    'component:McpStepUpScopeMode': Same<
+        W.ApiComponentTypes['McpStepUpScopeMode'],
+        z.infer<typeof import('./api-schemas/apps.js').McpStepUpScopeModeSchema>
+    >;
+    'component:AuthorizeRemoteMcpConnectionQuery': Same<
+        W.ApiComponentTypes['AuthorizeRemoteMcpConnectionQuery'],
+        z.infer<typeof import('./api-schemas/apps.js').AuthorizeRemoteMcpConnectionQuerySchema>
+    >;
+    'component:McpStepUpOutcome': Same<
+        W.ApiComponentTypes['McpStepUpOutcome'],
+        z.infer<typeof import('./api-schemas/apps.js').McpStepUpOutcomeSchema>
+    >;
+    'component:ReportMcpStepUpOutcomeRequest': Same<
+        W.ApiComponentTypes['ReportMcpStepUpOutcomeRequest'],
+        z.infer<typeof import('./api-schemas/apps.js').ReportMcpStepUpOutcomeRequestSchema>
+    >;
+    'component:ReportMcpStepUpOutcomeResponse': Same<
+        W.ApiComponentTypes['ReportMcpStepUpOutcomeResponse'],
+        z.infer<typeof import('./api-schemas/apps.js').ReportMcpStepUpOutcomeResponseSchema>
     >;
     'component:SetMcpApiKeyRequest': Same<
         W.ApiComponentTypes['SetMcpApiKeyRequest'],
@@ -11012,6 +11145,14 @@ interface Checks {
         W.ApiComponentTypes['ToolPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').ToolPathParamsSchema>
     >;
+    'component:NotificationPathParams': Same<
+        W.ApiComponentTypes['NotificationPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').NotificationPathParamsSchema>
+    >;
+    'component:ContentSourceRoundPathParams': Same<
+        W.ApiComponentTypes['ContentSourceRoundPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').ContentSourceRoundPathParamsSchema>
+    >;
     'component:WorkflowUsageQuery': Same<
         W.ApiComponentTypes['WorkflowUsageQuery'],
         z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageQuerySchema>
@@ -11224,7 +11365,13 @@ const checks: Checks = {
     McpOAuthTokenRequest: true,
     McpOAuthTokenResponse: true,
     McpOAuthConnectResponse: true,
+    McpOAuthExchangePayload: true,
     McpOAuthDisconnectResponse: true,
+    McpStepUpScopeMode: true,
+    AuthorizeRemoteMcpConnectionQuery: true,
+    McpStepUpOutcome: true,
+    ReportMcpStepUpOutcomeRequest: true,
+    ReportMcpStepUpOutcomeResponse: true,
     OAuthMetadataResponse: true,
     CompositeAppEntry: true,
     CompositeAppLogoOverrides: true,
@@ -11325,6 +11472,8 @@ const checks: Checks = {
     ContentSourceStatus: true,
     ContentSourceSyncRound: true,
     ContentSourceSyncCounts: true,
+    ContentSourceSummary: true,
+    ContentSourceRoundSummary: true,
     ContentSourceReport: true,
     ContentSourceReportEntry: true,
     ContentSourceReportAction: true,
@@ -11396,6 +11545,7 @@ const checks: Checks = {
     DataStoreFullSchemaResponse: true,
     DataStoreStatus: true,
     DataStoreStorageFormat: true,
+    DataStoreStorageFormatArray: true,
     DataStoreDataWriteVersioning: true,
     DataStoreVersioning: true,
     UpdateDataStorePayload: true,
@@ -11531,6 +11681,7 @@ const checks: Checks = {
     LoadBalancingEnvEntryConfig: true,
     MediatorEnvConfig: true,
     ExecutionEnvironmentSettings: true,
+    OpenAICompatibleApi: true,
     ExecutionEnvironment: true,
     ExecutionEnvironmentRef: true,
     ExecutionEnvironmentCreatePayload: true,
@@ -11950,6 +12101,7 @@ const checks: Checks = {
     ExternalizedToolInputRef: true,
     ExternalizedToolInputRefs: true,
     PendingMcpConnection: true,
+    HeldMcpReconnect: true,
     UsedSkill: true,
     DocumentPrepOptions: true,
     DocumentProcessingPhase: true,
@@ -12071,6 +12223,10 @@ const checks: Checks = {
     ContentObjectApiResponse: true,
     ProjectedContentObjectApiResponse: true,
     GenerationRunMetadata: true,
+    ExtractionReport: true,
+    ExtractionNormalization: true,
+    ExtractionValidationError: true,
+    ExtractionRepair: true,
     Transcript: true,
     TranscriptSegment: true,
     ContentSource: true,
@@ -12411,6 +12567,7 @@ const checks: Checks = {
     ProcessEventDeliveryTargetWire: true,
     EventIngestChannelArray: true,
     ExternalContentSourceArray: true,
+    ContentSourceSummaryArray: true,
     CollectionStatusWire: true,
     CollectionArray: true,
     AgentRunArtifactPathArray: true,
@@ -12509,6 +12666,8 @@ const checks: Checks = {
     ProjectAppCapabilityPathParams: true,
     EmbeddingTypePathParams: true,
     ToolPathParams: true,
+    NotificationPathParams: true,
+    ContentSourceRoundPathParams: true,
     'component:CustomRoleDefinition': true,
     'component:CustomRoleDefinitionArray': true,
     'component:CreateCustomRolePayload': true,
@@ -12655,6 +12814,7 @@ const checks: Checks = {
     'component:ExecutionEnvironment': true,
     'component:ExecutionEnvironmentArray': true,
     'component:ExecutionEnvironmentSettings': true,
+    'component:OpenAICompatibleApi': true,
     'component:ExecutionEnvironmentCreatePayload': true,
     'component:ExecutionEnvironmentUpdatePayload': true,
     'component:ExecutionEnvironmentConfigUpdatePayload': true,
@@ -12812,6 +12972,7 @@ const checks: Checks = {
     'component:AgentResourceType': true,
     'component:AgentResourceReference': true,
     'component:PendingMcpConnection': true,
+    'component:HeldMcpReconnect': true,
     'component:UsedSkill': true,
     'component:PlanTask': true,
     'component:Plan': true,
@@ -13006,6 +13167,7 @@ const checks: Checks = {
     'component:DataStoreVersionTableState': true,
     'component:DataStoreStatus': true,
     'component:DataStoreStorageFormat': true,
+    'component:DataStoreStorageFormatArray': true,
     'component:DataStoreDataWriteVersioning': true,
     'component:DataStoreVersioning': true,
     'component:ImportDataFormat': true,
@@ -13203,6 +13365,10 @@ const checks: Checks = {
     'component:ProcessScriptResourceMap': true,
     'component:ProcessResourcesDefinition': true,
     'component:GenerationRunMetadata': true,
+    'component:ExtractionReport': true,
+    'component:ExtractionNormalization': true,
+    'component:ExtractionValidationError': true,
+    'component:ExtractionRepair': true,
     'component:ContentObjectUserPermissions': true,
     'component:ContentSource': true,
     'component:ContentObjectStatus': true,
@@ -13384,6 +13550,9 @@ const checks: Checks = {
     'component:ContentSourceSyncCounts': true,
     'component:ContentSourceSyncRound': true,
     'component:ContentSourceStatus': true,
+    'component:ContentSourceRoundSummary': true,
+    'component:ContentSourceSummary': true,
+    'component:ContentSourceSummaryArray': true,
     'component:ContentSourceReportAction': true,
     'component:ContentSourceReportEntry': true,
     'component:ContentSourceReportQuery': true,
@@ -13579,8 +13748,14 @@ const checks: Checks = {
     'component:OAuthMetadataResponse': true,
     'component:McpOAuthDisconnectResponse': true,
     'component:McpOAuthConnectResponse': true,
+    'component:McpOAuthExchangePayload': true,
     'component:OAuthAuthorizeResponse': true,
     'component:OAuthAuthStatusArray': true,
+    'component:McpStepUpScopeMode': true,
+    'component:AuthorizeRemoteMcpConnectionQuery': true,
+    'component:McpStepUpOutcome': true,
+    'component:ReportMcpStepUpOutcomeRequest': true,
+    'component:ReportMcpStepUpOutcomeResponse': true,
     'component:SetMcpApiKeyRequest': true,
     'component:McpApiKeyStatus': true,
     'component:AuditAdoptionActiveDays': true,
@@ -13914,6 +14089,8 @@ const checks: Checks = {
     'component:ProjectAppCapabilityPathParams': true,
     'component:EmbeddingTypePathParams': true,
     'component:ToolPathParams': true,
+    'component:NotificationPathParams': true,
+    'component:ContentSourceRoundPathParams': true,
     'component:WorkflowUsageQuery': true,
     'component:WorkflowUsageClass': true,
     'component:WorkflowUsageStanding': true,
@@ -13922,6 +14099,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2889);
+        expect(Object.keys(checks)).toHaveLength(2925);
     });
 });

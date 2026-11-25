@@ -256,6 +256,11 @@ export const DataStoreStorageFormatSchema = z.enum(DataStoreStorageFormat).meta(
         'no versions: each write replaces the current one, and snapshots and rollback are refused.',
 });
 
+export const DataStoreStorageFormatArraySchema = z.array(DataStoreStorageFormatSchema).meta({
+    id: 'DataStoreStorageFormatArray',
+    description: 'Storage formats available when creating a data store in this environment.',
+});
+
 export const ImportDataFormatSchema = z
     .enum(['json', 'csv', 'parquet'])
     .meta({ id: 'ImportDataFormat', description: 'Data format for external sources.' });
@@ -612,7 +617,10 @@ const NEW_TABLE_COLUMN_NAME_RULE = {
                 tables: {
                     items: {
                         properties: {
+                            // Every new table has at least one column. Stated here, not on `CreateTablePayload`: a
+                            // schema update skips the tables it lists that already exist, whatever their columns.
                             columns: {
+                                minItems: 1,
                                 items: {
                                     properties: {
                                         name: { type: 'string', pattern: '^[a-zA-Z_][a-zA-Z0-9_]*$', maxLength: 64 },
@@ -635,7 +643,8 @@ export const CreateTablesPayloadSchema = z
     .meta({
         id: 'CreateTablesPayload',
         description:
-            'Payload for creating multiple tables atomically. Each column name is a SQL identifier of letters, ' +
+            'Payload for creating multiple tables atomically. Each table has at least one column, and each ' +
+            'column name is a SQL identifier of letters, ' +
             'digits and underscores, starting with a letter or underscore, at most 64 characters, and not a ' +
             'reserved SQL keyword.',
         ...NEW_TABLE_COLUMN_NAME_RULE,

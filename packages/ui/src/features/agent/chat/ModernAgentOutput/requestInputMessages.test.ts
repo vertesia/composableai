@@ -8,9 +8,13 @@ import {
     getRequestInputMessageKey,
     getRequestInputResponseIdFromMetadata,
     getRequestInputResponseMetadata,
+    getToolApprovalEditConfig,
+    getToolApprovalEditResponseMetadata,
     getToolApprovalResponseMetadata,
     isRequestInputAnsweredForSession,
     markRequestInputIdAnsweredForSession,
+    TOOL_APPROVAL_REDACTED_PLACEHOLDER,
+    validateToolApprovalEdit,
 } from './requestInputMessages';
 
 const APPROVAL_KEY = 'create_interaction:name:JDE AR Payment Processing Agent';
@@ -212,5 +216,215 @@ describe('request input correlation', () => {
             }),
         ).toBe('request-1');
         expect(getRequestInputResponseIdFromMetadata({ request_input_response: {} })).toBeUndefined();
+    });
+});
+
+describe('"Edit and run" on a tool approval prompt', () => {
+    const SHOWN_INPUT = {
+        name: 'Quarterly plan',
+        api_key: TOOL_APPROVAL_REDACTED_PLACEHOLDER,
+        headers: { authorization: TOOL_APPROVAL_REDACTED_PLACEHOLDER, trace: 'one' },
+    };
+
+    function makeEditableRequest(supportsEdit: unknown = true, input: unknown = SHOWN_INPUT): AgentMessage {
+        const request = makeApprovalRequestForToolUse('tool-1');
+        const details = request.details as Record<string, unknown>;
+        return {
+            ...request,
+            details: {
+                ...details,
+                tool_approval: {
+                    ...(details.tool_approval as Record<string, unknown>),
+                    input,
+                    supports_edit: supportsEdit,
+                },
+            },
+        } as unknown as AgentMessage;
+    }
+
+    it('is offered only when the worker says the call can be edited', () => {
+        expect(getToolApprovalEditConfig(makeApprovalRequest())).toBeUndefined();
+        expect(getToolApprovalEditConfig(makeEditableRequest(false))).toBeUndefined();
+        expect(getToolApprovalEditConfig(makeEditableRequest('true'))).toBeUndefined();
+        expect(getToolApprovalEditConfig(makeEditableRequest())).toEqual({
+            input: SHOWN_INPUT,
+            redactedPaths: ['api_key', 'headers.authorization'],
+        });
+    });
+
+    it('sends the decision, the prompt it answers and the edited arguments', () => {
+        const input = { ...SHOWN_INPUT, name: 'Q4 plan' };
+        expect(getToolApprovalEditResponseMetadata(makeEditableRequest(), input)).toEqual({
+            tool_approval_response: {
+                decision: 'allow_edited',
+                approval_key: APPROVAL_KEY,
+                request_id: 'tool-1',
+                input,
+            },
+        });
+    });
+
+    it('accepts an edit that keeps or removes the locked fields', () => {
+        const config = getToolApprovalEditConfig(makeEditableRequest());
+        if (!config) throw new Error('expected an edit config');
+        const edited = { ...SHOWN_INPUT, name: 'Q4 plan' };
+        expect(validateToolApprovalEdit(config, JSON.stringify(edited))).toEqual({ input: edited });
+        const { api_key: _removed, ...withoutKey } = SHOWN_INPUT;
+        expect(validateToolApprovalEdit(config, JSON.stringify(withoutKey))).toEqual({ input: withoutKey });
+    });
+
+    it('reports each problem with an edit', () => {
+        const config = getToolApprovalEditConfig(makeEditableRequest());
+        if (!config) throw new Error('expected an edit config');
+        const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
+
+        expect(validateToolApprovalEdit(config, '{ name: ')).toEqual({ problem: { code: 'invalid_json' } });
+        expect(check(['a'])).toEqual({ problem: { code: 'not_object' } });
+        expect(check({ ...SHOWN_INPUT, api_key: 'sk-typed' })).toEqual({
+            problem: { code: 'redacted_changed', path: 'api_key' },
+        });
+        expect(check({ ...SHOWN_INPUT, headers: { authorization: 'Bearer x', trace: 'one' } })).toEqual({
+            problem: { code: 'redacted_changed', path: 'headers.authorization' },
+        });
+        expect(check({ ...SHOWN_INPUT, name: TOOL_APPROVAL_REDACTED_PLACEHOLDER })).toEqual({
+            problem: { code: 'placeholder_added', path: 'name' },
+        });
+        expect(check({ ...SHOWN_INPUT, tags: [TOOL_APPROVAL_REDACTED_PLACEHOLDER] })).toEqual({
+            problem: { code: 'placeholder_added', path: 'tags[0]' },
+        });
+    });
+
+    it('locks an array that holds a redacted value, as the workflow does', () => {
+        const shown = {
+            name: 'batch',
+            calls: [
+                { token: TOOL_APPROVAL_REDACTED_PLACEHOLDER, id: 'a' },
+                { token: TOOL_APPROVAL_REDACTED_PLACEHOLDER, id: 'b' },
+            ],
+            tags: ['x'],
+        };
+        const config = getToolApprovalEditConfig(makeEditableRequest(true, shown));
+        if (!config) throw new Error('expected an edit config');
+        const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
+
+        const changedId = structuredClone(shown);
+        changedId.calls[0].id = 'z';
+        expect(check(changedId)).toEqual({ problem: { code: 'locked_array_changed', path: 'calls' } });
+        expect(check({ ...shown, calls: [shown.calls[1], shown.calls[0]] })).toEqual({
+            problem: { code: 'locked_array_changed', path: 'calls' },
+        });
+        expect(check({ ...shown, calls: shown.calls.slice(0, 1) })).toEqual({
+            problem: { code: 'locked_array_changed', path: 'calls' },
+        });
+
+        const { calls: _removed, ...withoutCalls } = shown;
+        expect(check(withoutCalls)).toEqual({ input: withoutCalls });
+        expect(check({ ...shown, name: 'other', tags: ['x', 'y'] })).toHaveProperty('input');
+    });
+
+    it('checks JSON text the way the workflow decodes it', () => {
+        const config = getToolApprovalEditConfig(makeEditableRequest());
+        if (!config) throw new Error('expected an edit config');
+        const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
+
+        expect(check({ ...SHOWN_INPUT, headers: '{"authorization":"Bearer typed","trace":"one"}' })).toEqual({
+            problem: { code: 'redacted_changed', path: 'headers.authorization' },
+        });
+        expect(check({ ...SHOWN_INPUT, note: '{"x":"\\u005BREDACTED]"}' })).toEqual({
+            problem: { code: 'placeholder_added', path: 'note.x' },
+        });
+        expect(check({ ...SHOWN_INPUT, headers: '{"trace":"two"}' })).toHaveProperty('input');
+    });
+
+    it('rejects added credentials before sending them, including nested JSON text', () => {
+        const config = getToolApprovalEditConfig(makeEditableRequest());
+        if (!config) throw new Error('expected an edit config');
+        const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
+
+        expect(check({ ...SHOWN_INPUT, password: 'synthetic-password' })).toEqual({
+            problem: { code: 'secret_added', path: 'password' },
+        });
+        expect(
+            check({
+                ...SHOWN_INPUT,
+                options: JSON.stringify({ request: JSON.stringify({ api_key: 'synthetic-key' }) }),
+            }),
+        ).toEqual({ problem: { code: 'secret_added', path: 'options.request.api_key' } });
+        expect(check({ ...SHOWN_INPUT, options: JSON.stringify({ request: '{"x":"\\u005BREDACTED]"}' }) })).toEqual({
+            problem: { code: 'placeholder_added', path: 'options.request.x' },
+        });
+        expect(check({ ...SHOWN_INPUT, options: JSON.stringify({ request: '{"trace":"two"}' }) })).toHaveProperty(
+            'input',
+        );
+    });
+
+    it('locks literal keys containing dots and brackets', () => {
+        const shown = {
+            'headers.v1': { 'access[token]': TOOL_APPROVAL_REDACTED_PLACEHOLDER },
+            'calls[0]': [{ token: TOOL_APPROVAL_REDACTED_PLACEHOLDER, id: 'a' }],
+        };
+        const config = getToolApprovalEditConfig(makeEditableRequest(true, shown));
+        if (!config) throw new Error('expected an edit config');
+        const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
+
+        expect(check({ ...shown, 'headers.v1': { 'access[token]': 'synthetic-key' } })).toEqual({
+            problem: { code: 'redacted_changed', path: 'headers.v1.access[token]' },
+        });
+        expect(check({ ...shown, 'calls[0]': [{ token: TOOL_APPROVAL_REDACTED_PLACEHOLDER, id: 'b' }] })).toEqual({
+            problem: { code: 'locked_array_changed', path: 'calls[0]' },
+        });
+        expect(check(shown)).toHaveProperty('input');
+    });
+
+    it('refuses a changed credential inside JSON text, which reaches the client unredacted', () => {
+        const shown = { name: 'call', headers: '{"authorization":"Bearer original","trace":"one"}' };
+        const config = getToolApprovalEditConfig(makeEditableRequest(true, shown));
+        if (!config) throw new Error('expected an edit config');
+        expect(config.redactedPaths).toEqual([]);
+        const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
+
+        expect(check({ ...shown, headers: '{"authorization":"Bearer replaced","trace":"one"}' })).toEqual({
+            problem: { code: 'secret_changed', path: 'headers.authorization' },
+        });
+        expect(check({ ...shown, headers: { authorization: 'Bearer replaced', trace: 'one' } })).toEqual({
+            problem: { code: 'secret_changed', path: 'headers.authorization' },
+        });
+        // Keeping the credential, or removing it, is allowed.
+        expect(check({ ...shown, headers: '{"authorization":"Bearer original","trace":"two"}' })).toHaveProperty(
+            'input',
+        );
+        expect(check({ ...shown, headers: '{"trace":"two"}' })).toHaveProperty('input');
+    });
+
+    it('locks the redacted values inside JSON text the workflow redacted', () => {
+        const shown = {
+            name: 'call',
+            headers: '{"authorization":"[REDACTED]","trace":"one"}',
+            calls: '[{"token":"[REDACTED]","id":"a"}]',
+        };
+        const config = getToolApprovalEditConfig(makeEditableRequest(true, shown));
+        if (!config) throw new Error('expected an edit config');
+        expect(config.redactedPaths).toEqual(['headers.authorization', 'calls[0].token']);
+        const check = (value: unknown) => validateToolApprovalEdit(config, JSON.stringify(value));
+
+        expect(check({ ...shown, headers: '{"authorization":"[REDACTED]","trace":"two"}' })).toHaveProperty('input');
+        expect(check({ ...shown, headers: { authorization: '[REDACTED]', trace: 'two' } })).toHaveProperty('input');
+        expect(check({ ...shown, headers: '{"authorization":"Bearer typed","trace":"one"}' })).toEqual({
+            problem: { code: 'redacted_changed', path: 'headers.authorization' },
+        });
+        expect(check({ ...shown, headers: '{"authorization":"[REDACTED]","note":"[REDACTED]"}' })).toEqual({
+            problem: { code: 'placeholder_added', path: 'headers.note' },
+        });
+        expect(check({ ...shown, calls: '[{"token":"[REDACTED]","id":"b"}]' })).toEqual({
+            problem: { code: 'locked_array_changed', path: 'calls' },
+        });
+    });
+
+    it('marks the prompt answered once the edit is sent', () => {
+        const request = makeEditableRequest();
+        const metadata = getToolApprovalEditResponseMetadata(request, SHOWN_INPUT);
+        const answer = makeUserAnswer('Run this action with my edited arguments.', metadata);
+        const answered = getAnsweredToolApprovalRequestInputKeys([request, answer]);
+        expect(answered.has(getRequestInputMessageKey(request))).toBe(true);
     });
 });

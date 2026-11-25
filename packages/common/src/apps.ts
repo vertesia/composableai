@@ -585,7 +585,22 @@ export type McpOAuthTokenResponse = Wire.McpOAuthTokenResponse;
 
 export type McpOAuthConnectResponse = Wire.McpOAuthConnectResponse;
 
+export type McpOAuthExchangePayload = Wire.McpOAuthExchangePayload;
+
 export type McpOAuthDisconnectResponse = Wire.McpOAuthDisconnectResponse;
+
+/** Which scope a step-up authorization asks for. */
+export type McpStepUpScopeMode = Wire.McpStepUpScopeMode;
+
+/** Optional step-up parameters for authorizing a remote MCP connection again. */
+export type AuthorizeRemoteMcpConnectionQuery = Wire.AuthorizeRemoteMcpConnectionQuery;
+
+/** What became of a step-up recorded on a user's remote MCP grant. */
+export type McpStepUpOutcome = Wire.McpStepUpOutcome;
+
+export type ReportMcpStepUpOutcomeRequest = Wire.ReportMcpStepUpOutcomeRequest;
+
+export type ReportMcpStepUpOutcomeResponse = Wire.ReportMcpStepUpOutcomeResponse;
 
 /**
  * Response from OAuth metadata endpoint

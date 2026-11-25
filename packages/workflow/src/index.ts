@@ -37,6 +37,18 @@ export { type OutboundFetch, setOutboundFetch } from './security/ssrf.js';
 export * from './utils/activity-info.js';
 export * from './utils/blobs.js';
 export * from './utils/client.js';
+export * from './utils/cpu-slots.js';
+export {
+    type DerivationGap,
+    type ExtractionInvalidValue,
+    type ExtractionNormalizationEntry,
+    findDerivationGaps,
+    type NormalizeExtractionResult,
+    normalizeExtractedProperties,
+    type ValidateAndRepairOptions,
+    type ValidateAndRepairResult,
+    validateAndRepairExtraction,
+} from './utils/extraction-validation.js';
 export * from './utils/project-cache.js';
 export * from './utils/renditions.js';
 export * from './utils/source-limits.js';

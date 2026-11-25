@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { AUDIT_ACTIONS, AUDIT_AGGREGATION_BATCH_MAX_QUERIES, AUDIT_AGGREGATION_DIMENSIONS } from '../audit-trail.js';
 import { NumberValueMapSchema } from './interaction.js';
-import { PageCountSchema } from './schema-primitives.js';
+import { conditional, PageCountSchema } from './schema-primitives.js';
 
 // The audit trail: the events `GET /audit-trail` pages through and the aggregation `POST
 // /audit-trail/aggregate` computes over them.
@@ -94,7 +94,7 @@ export const AuditAggregationMetricSchema = z
             }),
         operation: AuditAggregationOperationSchema,
         field: AuditAggregationDistinctFieldSchema.meta({ description: 'Required for count_distinct.' }).optional(),
-        // Required, and bounded, only for the meter operations: the rule spans two fields, so the descriptions state it.
+        // Required, and bounded, only for the meter operations: the conditional below states the rule.
         meterCategory: z
             .string()
             .meta({ description: 'Required for sum_meter and average_meter, as 1 to 128 characters.' })
@@ -104,7 +104,25 @@ export const AuditAggregationMetricSchema = z
             .meta({ description: 'Required for sum_meter and average_meter, as 1 to 128 characters.' })
             .optional(),
     })
-    .meta({ id: 'AuditAggregationMetric' });
+    .meta({
+        id: 'AuditAggregationMetric',
+        // The aggregation validator refuses a meter operation without both meter fields, and count_distinct without
+        // its field.
+        ...conditional(
+            { required: ['operation'], properties: { operation: { enum: ['sum_meter', 'average_meter'] } } },
+            {
+                required: ['meterCategory', 'meterType'],
+                properties: {
+                    meterCategory: { minLength: 1, maxLength: 128 },
+                    meterType: { minLength: 1, maxLength: 128 },
+                },
+            },
+            conditional(
+                { required: ['operation'], properties: { operation: { const: 'count_distinct' } } },
+                { required: ['field'] },
+            ),
+        ),
+    });
 
 export const AuditAggregationGroupSchema = z
     .strictObject({

@@ -1,9 +1,12 @@
 import { ApplicationFailure, log } from '@temporalio/activity';
+import { ServerError } from '@vertesia/api-fetch-client';
 import {
     type ContentMetadata,
     type ContentSource,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
+    type ExtractionReport,
+    type GenerationRunMetadata,
     type InteractionExecutionConfiguration,
     type JSONObject,
     mergePreservingNonExtractable,
@@ -13,6 +16,7 @@ import {
 } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { contentHash } from '../utils/blobs.js';
+import { validateAndRepairExtraction } from '../utils/extraction-validation.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
 import {
     executeInteractionFromActivity,
@@ -84,7 +88,11 @@ export interface GenerateDocumentProperties extends DSLActivitySpec<GenerateDocu
     name: 'generateDocumentProperties';
 }
 export type GenerateDocumentPropertiesResult =
-    | { status: 'completed' }
+    | {
+          status: 'completed';
+          /** How the model output was checked against the schema; absent when it conformed as returned. */
+          report?: ExtractionReport;
+      }
     | { status: 'failed'; error: string }
     | { document: string; status: 'skipped'; message: string };
 
@@ -122,6 +130,10 @@ export function computeExtractionFingerprint(input: {
     text_etag?: string | null;
     /** Model/profile changes must invalidate extracted properties. */
     config?: InteractionExecutionConfiguration;
+    /** The file name and folder the extraction receives as context: renaming or moving a document can change
+     *  what it names (a family, a period, a party), so they must invalidate too. Undefined (callers that do not
+     *  pass them) keeps previously stored hashes valid. */
+    file_context?: { file_name?: string; location?: string };
 }): string {
     const normalizedConfig = input.config
         ? (normalizeFingerprintValue(input.config) as Record<string, unknown>)
@@ -137,6 +149,9 @@ export function computeExtractionFingerprint(input: {
             object_schema: input.object_schema,
             ...(input.evidence ? { evidence: input.evidence } : {}),
             ...(input.text_etag !== undefined ? { text_etag: input.text_etag } : {}),
+            ...(input.file_context?.file_name || input.file_context?.location
+                ? { file_context: { file_name: input.file_context.file_name, location: input.file_context.location } }
+                : {}),
         }),
     );
 }
@@ -206,6 +221,7 @@ export async function generateDocumentProperties(
         evidence: evidenceImages?.map((image) => image.source ?? image.name ?? ''),
         // text may change under the same content etag; only vision-only extraction ignores it
         text_etag: source === 'vision' ? undefined : (doc.text_etag ?? null),
+        file_context: { file_name: doc.name || undefined, location: doc.location || undefined },
     });
 
     if (params.skip_if_fresh && !payload.vars?.forceGeneration) {
@@ -265,6 +281,10 @@ export async function generateDocumentProperties(
         images: scopedImages,
         extraction_instructions: params.instructions,
         human_context: project?.configuration?.human_context ?? undefined,
+        // Context for values the content leaves ambiguous (a template family, a period, a party): the prompt tells
+        // the model that the content wins when they disagree.
+        file_name: doc.name || undefined,
+        location: doc.location || undefined,
     };
 
     // Strip properties marked x-extract:false so constrained decoding cannot invent them.
@@ -320,24 +340,68 @@ export async function generateDocumentProperties(
 
     log.debug(`Extracted information from object ${objectId} with type ${type.name}`, { runId: infoRes.id });
     const extracted = infoRes.result.object<JSONObject>() ?? {};
+    const checked = await validateAndRepairExtraction(extracted, {
+        extractionSchema,
+        objectSchema: type.object_schema,
+        instructions: params.instructions,
+        repair: async (repairSchema, instructions) => {
+            const repairRes = await executeInteractionFromActivity(
+                client,
+                interactionName,
+                {
+                    ...params,
+                    include_previous_error: false,
+                    result_schema: repairSchema as typeof extractionSchema,
+                    validate_result: type.strict_mode,
+                },
+                { ...promptData, extraction_instructions: instructions },
+                payload.debug_mode ?? false,
+            );
+            log.info(`Ran the extraction repair call for ${objectId}`, { runId: repairRes.id, firstRunId: infoRes.id });
+            return repairRes.result.object<JSONObject>() ?? {};
+        },
+        onRepairError: (error) => {
+            log.warn(`Extraction repair call failed for ${objectId}; keeping the first extraction`, {
+                error: toRetryableError(error).message,
+            });
+        },
+    });
+    const report = checked.report;
+    if (report) {
+        log.info(`Checked extracted properties of ${objectId} against the schema of ${type.name}`, {
+            runId: infoRes.id,
+            normalized: report.normalized?.length ?? 0,
+            cleared: report.cleared?.map((entry) => entry.path),
+            repair: report.repair,
+        });
+    }
     const existing =
         doc.properties && typeof doc.properties === 'object' && !Array.isArray(doc.properties)
             ? (doc.properties as Record<string, unknown>)
             : {};
-    const properties = mergePreservingNonExtractable(existing, extracted, type.object_schema) as JSONObject;
-    await client.objects.update(
-        doc.id,
-        {
-            properties,
-            generation_run_info: {
-                id: infoRes.id,
-                date: new Date().toISOString(),
-                model: infoRes.modelId ?? '',
-                extraction_fingerprint: extractionFingerprint,
-            },
-        },
-        { suppressWorkflows: true },
-    );
+    const properties = mergePreservingNonExtractable(existing, checked.properties, type.object_schema) as JSONObject;
+    const runInfo: GenerationRunMetadata = {
+        id: infoRes.id,
+        date: new Date().toISOString(),
+        model: infoRes.modelId ?? '',
+        extraction_fingerprint: extractionFingerprint,
+    };
+    try {
+        await client.objects.update(
+            doc.id,
+            { properties, generation_run_info: report ? { ...runInfo, extraction_report: report } : runInfo },
+            { suppressWorkflows: true },
+        );
+    } catch (error: unknown) {
+        // A server older than `extraction_report` rejects the unknown field: store the properties without it.
+        if (!report || !(error instanceof ServerError) || error.status !== 400) {
+            throw error;
+        }
+        log.warn(`Server rejected the extraction report of ${objectId}; storing the properties without it`, {
+            error: error.message,
+        });
+        await client.objects.update(doc.id, { properties, generation_run_info: runInfo }, { suppressWorkflows: true });
+    }
 
-    return { status: 'completed' };
+    return report ? { status: 'completed', report } : { status: 'completed' };
 }

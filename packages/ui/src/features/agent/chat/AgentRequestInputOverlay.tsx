@@ -5,6 +5,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { ChevronDown, ChevronUp, XIcon } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
 import { useAcknowledgeOnRender } from '../../notifications/NotificationAcknowledgement.js';
+import { McpStepUpButton } from '../../oauth/McpStepUpButton.js';
 import { RemoteMcpConnectionButton } from '../../oauth/RemoteMcpConnectionButton.js';
 import { ComposerOverlay, ComposerOverlayQuestion } from './ComposerOverlay';
 import { getRequestInputOccurrence } from './ModernAgentOutput/notificationAcknowledgement.js';
@@ -16,6 +17,7 @@ import {
     type RequestInputMessageWithUx,
     sendRequestInputResponse,
 } from './ModernAgentOutput/requestInputMessages';
+import { toolApprovalEditActionFor } from './ToolApprovalEditAction';
 
 export interface AgentRequestInputOverlayProps {
     message?: RequestInputMessageWithUx;
@@ -46,6 +48,32 @@ function McpRequestInputControls({ mcpConnect, onMcpConnected, onDecline, disabl
     const { client } = useUserSession();
     const { t } = useUITranslation();
 
+    const decline = (
+        <Button variant="ghost" size="sm" onClick={onDecline} disabled={disabled}>
+            <XIcon className="size-4" />
+            <span>{t('mcpOAuth.decline')}</span>
+        </Button>
+    );
+
+    // A step-up: the user is connected, so the agent resumes once the reconnect completes, whether or not the
+    // authorization server granted the scope. The agent learns which on its next call.
+    if (mcpConnect.required_scope) {
+        return (
+            <div className="flex shrink-0 items-center justify-end gap-2">
+                <McpStepUpButton
+                    appId={mcpConnect.app_install_id}
+                    collectionId={mcpConnect.collection_id}
+                    collectionName={mcpConnect.name}
+                    requiredScope={mcpConnect.required_scope}
+                    refusedTool={mcpConnect.refused_tool}
+                    onGranted={() => onMcpConnected?.(mcpConnect)}
+                    disabled={disabled}
+                />
+                {decline}
+            </div>
+        );
+    }
+
     return (
         <div className="flex shrink-0 items-center justify-end gap-2">
             <RemoteMcpConnectionButton
@@ -67,10 +95,7 @@ function McpRequestInputControls({ mcpConnect, onMcpConnected, onDecline, disabl
                 }}
                 readOnly={disabled}
             />
-            <Button variant="ghost" size="sm" onClick={onDecline} disabled={disabled}>
-                <XIcon className="size-4" />
-                <span>{t('mcpOAuth.decline')}</span>
-            </Button>
+            {decline}
         </div>
     );
 }
@@ -176,6 +201,7 @@ function PendingRequestInputOverlay({
                     onSelect={(optionId) => send(optionId, getToolApprovalResponseMetadata(message, optionId))}
                     onMultiSelect={(optionIds) => send(optionIds.join(', '))}
                     onSubmit={(value) => send(value, freeResponse?.metadata)}
+                    extraActions={toolApprovalEditActionFor(message, send, isDisabled)}
                     isLoading={isDisabled}
                     headerAction={collapseButton}
                     responseControlsId={contentId}

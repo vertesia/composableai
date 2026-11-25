@@ -45,6 +45,43 @@ async function commitOwner(api, repo, sha, depth = 0) {
     return human(commit.author) ? commit.author.login : null;
 }
 
+// The cherry-pick workflow opens a backport with conflicts as a draft, and its completion announces
+// the drafts: pull_request_target, which saw them open, is blocked in public repositories from
+// 2026-12-02. The run names the head branch and commit of the merged PR, not its number.
+const BACKPORT_WORKFLOW = '.github/workflows/backport.yaml';
+
+async function backportDrafts(api, repo, run) {
+    if (run.event !== 'pull_request' || !['success', 'failure'].includes(run.conclusion)) return null;
+    if (run.head_repository?.full_name !== repo) return null;
+    const owner = repo.split('/')[0];
+    const merged = await api(`repos/${repo}/pulls?state=closed&head=${owner}:${encodeURIComponent(run.head_branch)}&per_page=100`);
+    const original = merged.find((pr) => pr.merged_at && pr.head.sha === run.head_sha);
+    if (!original) return null;
+    const refs = await api(`repos/${repo}/git/matching-refs/heads/backport-${original.number}-to-`);
+    const drafts = [];
+    for (const { ref } of refs) {
+        const branch = ref.replace(/^refs\/heads\//, '');
+        const kind = kindOf(repo, branch);
+        if (kind?.original !== String(original.number)) continue;
+        const prs = await api(`repos/${repo}/pulls?state=open&head=${owner}:${encodeURIComponent(branch)}&per_page=100`);
+        if (prs.length !== 1) continue;
+        const [pr] = prs;
+        if (!pr.draft || pr.head.repo?.full_name !== repo || normalizeBotLogin(pr.user.login) !== kind.bot) continue;
+        if (!/^(main|release\/\d+\.\d+)$/.test(pr.base.ref)) continue;
+        // An older draft of the same PR was announced by the run that opened it.
+        if (Date.parse(pr.created_at) < Date.parse(run.run_started_at)) continue;
+        drafts.push(pr);
+    }
+    if (drafts.length === 0) return null;
+    const login = await prOwner(api, repo, drafts[0], kindOf(repo, drafts[0].head.ref));
+    if (!login) throw new Error(`Cannot resolve a human author for ${drafts[0].html_url}`);
+    const links = drafts.map((pr) => `<${pr.html_url}|${repo}#${pr.number}>`).join(', ');
+    return {
+        login,
+        message: `Backport needs your attention: ${links}\nCreated as a draft with conflicts. Resolve the conflicts and mark the PR ready for review.\n<${run.html_url}|Workflow run>`,
+    };
+}
+
 export async function notification({ repo, eventName, event, inputs = {}, runUrl }, api) {
     if (!['vertesia/studio', 'vertesia/composableai', 'vertesia/llumiverse'].includes(repo)) return null;
     if (inputs.source_repository) {
@@ -60,6 +97,7 @@ export async function notification({ repo, eventName, event, inputs = {}, runUrl
 
     const called = Boolean(inputs.reason);
     const run = event.workflow_run;
+    if (!called && eventName === 'workflow_run' && run.path === BACKPORT_WORKFLOW) return backportDrafts(api, repo, run);
     let branch = inputs.branch;
     let sha = inputs.sha;
     let reason = inputs.reason;
@@ -87,11 +125,6 @@ export async function notification({ repo, eventName, event, inputs = {}, runUrl
             if (!login) throw new Error('Cannot resolve a human author for the failed branch CI');
             return { login, message: `CI needs your attention on ${repo} branch ${escapeSlack(branch)}.\n${escapeSlack(reason)}\n<https://github.com/${repo}/commit/${sha}|Commit ${sha.slice(0, 7)}> · <${detailsUrl}|Failed workflow run>` };
         }
-    } else if (!called && eventName === 'pull_request_target') {
-        if (!event.pull_request.draft) return null;
-        branch = event.pull_request.head.ref;
-        sha = event.pull_request.head.sha;
-        reason = 'Created as a draft with conflicts. Resolve the conflicts and mark the PR ready for review.';
     } else if (!called) {
         return null;
     }
@@ -103,8 +136,6 @@ export async function notification({ repo, eventName, event, inputs = {}, runUrl
     const pr = prs[0];
     if (pr.head.repo?.full_name !== repo || pr.head.sha !== sha || normalizeBotLogin(pr.user.login) !== kind.bot) return null;
     if (!/^(main|release\/\d+\.\d+)$/.test(pr.base.ref)) return null;
-    // Creation precedes label/assignee updates; resolve provenance from GitHub instead.
-    if (!called && eventName === 'pull_request_target' && !pr.draft) return null;
     const login = await prOwner(api, repo, pr, kind);
     if (!login && kind.upstream) return null;
     if (!login) throw new Error(`Cannot resolve a human author for ${pr.html_url}`);
@@ -116,13 +147,15 @@ export async function notification({ repo, eventName, event, inputs = {}, runUrl
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
     const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+    // gh output is buffered whole: a commit response lists every changed file, and a large commit is
+    // past execFileSync's 1 MiB default (ENOBUFS).
     const result = await notification({
         repo: process.env.GITHUB_REPOSITORY,
         eventName: process.env.GITHUB_EVENT_NAME,
         event,
         inputs: JSON.parse(process.env.NOTIFICATION_INPUTS || '{}'),
         runUrl: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
-    }, async (path) => JSON.parse(execFileSync('gh', ['api', path], { encoding: 'utf8' })));
+    }, async (path) => JSON.parse(execFileSync('gh', ['api', path], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })));
     if (result) {
         appendFileSync(process.env.GITHUB_OUTPUT, `login=${result.login}\nmessage=${JSON.stringify(result.message)}\n`);
     }

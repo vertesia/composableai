@@ -1,5 +1,5 @@
 import type { Command } from 'commander';
-import { createDataStore, importData, listDataStores, updateDataStore } from './commands.js';
+import { createDataStore, importData, listDataStores, listStorageFormats, updateDataStore } from './commands.js';
 import { collectParam, exportDashboard, exportDashboardPreview, listDashboards } from './dashboards.js';
 
 export function registerDataCommand(program: Command) {
@@ -10,6 +10,13 @@ export function registerDataCommand(program: Command) {
         .option('--json', 'Output full JSON instead of tab-separated text')
         .action(async (options: Record<string, unknown>) => {
             await listDataStores(program, options);
+        });
+
+    data.command('storage-formats')
+        .description('List storage formats available for new data stores')
+        .option('--json', 'Output JSON')
+        .action(async (options: Record<string, unknown>) => {
+            await listStorageFormats(program, options);
         });
 
     data.command('create <name>')

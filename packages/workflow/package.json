@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/workflow",
-    "version": "1.7.0-dev",
+    "version": "1.7.0-dev.20261120.100641Z",
     "type": "module",
     "description": "Vertesia workflow DSL",
     "main": "./lib/index.js",
@@ -24,9 +24,9 @@
     "license": "Apache-2.0",
     "devDependencies": {
         "@smithy/types": "^4.20.0",
-        "@temporalio/proto": "^1.25.0",
-        "@temporalio/testing": "^1.25.0",
-        "@temporalio/worker": "^1.25.0",
+        "@temporalio/proto": "^1.26.0",
+        "@temporalio/testing": "^1.26.0",
+        "@temporalio/worker": "^1.26.0",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "catalog:",
         "@types/papaparse": "^5.5.2",
@@ -36,14 +36,14 @@
         "vitest": "catalog:"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.1162.0",
-        "@aws-sdk/client-textract": "^3.1162.0",
-        "@aws-sdk/credential-providers": "^3.1162.0",
+        "@aws-sdk/client-s3": "^3.1167.0",
+        "@aws-sdk/client-textract": "^3.1167.0",
+        "@aws-sdk/credential-providers": "^3.1167.0",
         "@azure/storage-blob": "^12.34.0",
-        "@google-cloud/storage": "^8.4.0",
+        "@google-cloud/storage": "^9.0.0",
         "@llumiverse/common": "workspace:*",
-        "@temporalio/activity": "^1.25.0",
-        "@temporalio/workflow": "^1.25.0",
+        "@temporalio/activity": "^1.26.0",
+        "@temporalio/workflow": "^1.26.0",
         "@vertesia/api-fetch-client": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
@@ -54,7 +54,7 @@
         "ms": "3.0.0-canary.202508261828",
         "node-web-stream-adapters": "^0.2.1",
         "p-limit": "^7.3.3",
-        "papaparse": "^5.7.0",
+        "papaparse": "^5.7.1",
         "seedrandom": "^3.0.5",
         "tiktoken": "^1.0.22",
         "tmp": "^0.2.7",
@@ -106,6 +106,10 @@
             "types": "./lib/utils/tokens.d.ts",
             "default": "./lib/utils/tokens.js"
         },
+        "./utils/cpu-slots": {
+            "types": "./lib/utils/cpu-slots.d.ts",
+            "default": "./lib/utils/cpu-slots.js"
+        },
         "./utils/blobs": {
             "types": "./lib/utils/blobs.d.ts",
             "default": "./lib/utils/blobs.js"
@@ -146,10 +150,10 @@
         "agents",
         "typescript"
     ],
-    "gitHead": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
+    "gitHead": "0b4dcc5c9e17a0fdb8771fee841f98efac7e2a2c",
     "releaseIdentity": {
-        "source_sha": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
-        "dependency_sha": "93466e47b06db23ac3c800e248d170afe65e5006",
-        "lock_sha256": "117e1c8068aa07d59117323a51ceccfc96cab543e50c03eb7efc19709d6f5e6b"
+        "source_sha": "0b4dcc5c9e17a0fdb8771fee841f98efac7e2a2c",
+        "dependency_sha": "03036cb597143f5875280772be09363dd03a815b",
+        "lock_sha256": "cb02511f3cf2336c054ce40df0fded2a938cf3f192df24b3f73586f0050a4ea0"
     }
 }
