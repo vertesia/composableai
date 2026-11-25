@@ -1592,6 +1592,7 @@ export type McpOAuthTokenResponse = {
     user_grant?: boolean | undefined;
     step_up_scope?: string | undefined;
     step_up_tool?: string | undefined;
+    step_up_attempt?: string | undefined;
 };
 export type McpOAuthConnectResponse = {
     success: boolean;
@@ -1622,6 +1623,7 @@ export type ReportMcpStepUpOutcomeRequest = {
     scope: string;
     outcome: McpStepUpOutcome;
     tool_name?: string | undefined;
+    step_up_attempt?: string | undefined;
 };
 export type ReportMcpStepUpOutcomeResponse = {
     cleared: boolean;

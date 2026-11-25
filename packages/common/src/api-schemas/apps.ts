@@ -469,6 +469,13 @@ export const McpOAuthTokenResponseSchema = z
             })
             .optional(),
         step_up_tool: z.string().meta({ description: 'The tool whose refusal led to `step_up_scope`.' }).optional(),
+        step_up_attempt: z
+            .string()
+            .meta({
+                description:
+                    'The id of the reconnect that recorded `step_up_scope`, to send back when reporting its outcome.',
+            })
+            .optional(),
     })
     .meta({ id: 'McpOAuthTokenResponse' });
 
@@ -519,6 +526,15 @@ export const ReportMcpStepUpOutcomeRequestSchema = z
         scope: z.string().max(512).meta({ description: 'The step-up scope, as the token response gave it.' }),
         outcome: McpStepUpOutcomeSchema,
         tool_name: z.string().max(256).meta({ description: 'The tool that was called.' }).optional(),
+        step_up_attempt: z
+            .string()
+            .max(64)
+            .meta({
+                description:
+                    'The `step_up_attempt` the token response gave with `step_up_scope`. With it, `used` clears ' +
+                    'only that step-up: one a later reconnect recorded for the same scope stays.',
+            })
+            .optional(),
     })
     .meta({
         id: 'ReportMcpStepUpOutcomeRequest',

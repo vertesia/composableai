@@ -18208,6 +18208,10 @@
       "step_up_tool": {
         "type": "string",
         "description": "The tool whose refusal led to `step_up_scope`."
+      },
+      "step_up_attempt": {
+        "type": "string",
+        "description": "The id of the reconnect that recorded `step_up_scope`, to send back when reporting its outcome."
       }
     },
     "required": [
@@ -18426,6 +18430,11 @@
         "type": "string",
         "maxLength": 256,
         "description": "The tool that was called."
+      },
+      "step_up_attempt": {
+        "type": "string",
+        "maxLength": 64,
+        "description": "The `step_up_attempt` the token response gave with `step_up_scope`. With it, `used` clears only that step-up: one a later reconnect recorded for the same scope stays."
       }
     },
     "required": [
