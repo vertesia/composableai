@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import type { DSLWorkflowSpec } from '@vertesia/common';
 import { errorMessage } from '../utils/options.js';
-import { ValidationError } from './validation.js';
+import { ValidationError, validateWorkflow } from './validation.js';
 
 function parseJSON(content: string): DSLWorkflowSpec {
     try {
@@ -11,6 +11,10 @@ function parseJSON(content: string): DSLWorkflowSpec {
     }
 }
 
-export async function loadJSONWorkflowDefinition(file: string): Promise<DSLWorkflowSpec> {
-    return parseJSON(await readFile(file, 'utf-8'));
+export async function loadJSONWorkflowDefinition(
+    file: string,
+    skipValidation: boolean = false,
+): Promise<DSLWorkflowSpec> {
+    const spec = parseJSON(await readFile(file, 'utf-8'));
+    return skipValidation ? spec : validateWorkflow(spec);
 }
