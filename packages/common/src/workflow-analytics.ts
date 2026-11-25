@@ -139,13 +139,16 @@ export type ToolErrorClass =
 
 /**
  * Reason codes recorded on a successful tool call whose result looks suspicious. They only measure: none of them
- * proves the result wrong, and the model sees the result unchanged.
+ * proves the result wrong, and apart from `attachment_omitted_for_model` the model sees the result unchanged.
  *
  * - `empty_success`: no content and no files.
  * - `error_shaped_success`: a body shaped like an error (`{"error": …}`, `success: false`, an HTTP error page).
  * - `empty_collection`: an empty list, or an object whose only collections are empty.
  * - `schema_invalid`: an MCP tool's `structuredContent` does not match the `outputSchema` it declared.
  * - `schema_missing_structured`: an MCP tool declared an `outputSchema` but returned no `structuredContent`.
+ * - `attachment_omitted_for_model`: the result carries an attachment the run's model cannot read in a tool result
+ *   (audio for Claude or Gemini, an image type Claude refuses, …). Unlike the other codes this one does change what
+ *   the model sees: the LLM driver replaces the attachment with a text note. The user still sees the attachment.
  *
  * The list may grow; readers must accept codes they do not know.
  */
@@ -155,6 +158,7 @@ export const ToolResultChecks = {
     empty_collection: 'empty_collection',
     schema_invalid: 'schema_invalid',
     schema_missing_structured: 'schema_missing_structured',
+    attachment_omitted_for_model: 'attachment_omitted_for_model',
 } as const;
 
 export type ToolResultCheck = (typeof ToolResultChecks)[keyof typeof ToolResultChecks];
