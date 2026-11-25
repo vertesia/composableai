@@ -48,7 +48,7 @@
         "acorn-walk": "8.3.5",
         "dayjs": "^1.11.23",
         "lru-cache": "^11.5.3",
-        "papaparse": "^5.7.0"
+        "papaparse": "^5.7.1"
     },
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
