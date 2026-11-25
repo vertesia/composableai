@@ -3416,6 +3416,10 @@ interface Checks {
         W.PendingMcpConnection,
         z.infer<typeof import('./api-schemas/interaction.js').PendingMcpConnectionSchema>
     >;
+    HeldMcpReconnect: Same<
+        W.HeldMcpReconnect,
+        z.infer<typeof import('./api-schemas/interaction.js').HeldMcpReconnectSchema>
+    >;
     UsedSkill: Same<W.UsedSkill, z.infer<typeof import('./api-schemas/interaction.js').UsedSkillSchema>>;
     DocumentPrepOptions: Same<
         W.DocumentPrepOptions,
@@ -6655,6 +6659,10 @@ interface Checks {
     'component:PendingMcpConnection': Same<
         W.ApiComponentTypes['PendingMcpConnection'],
         z.infer<typeof import('./api-schemas/interaction.js').PendingMcpConnectionSchema>
+    >;
+    'component:HeldMcpReconnect': Same<
+        W.ApiComponentTypes['HeldMcpReconnect'],
+        z.infer<typeof import('./api-schemas/interaction.js').HeldMcpReconnectSchema>
     >;
     'component:UsedSkill': Same<
         W.ApiComponentTypes['UsedSkill'],
@@ -12048,6 +12056,7 @@ const checks: Checks = {
     ExternalizedToolInputRef: true,
     ExternalizedToolInputRefs: true,
     PendingMcpConnection: true,
+    HeldMcpReconnect: true,
     UsedSkill: true,
     DocumentPrepOptions: true,
     DocumentProcessingPhase: true,
@@ -12918,6 +12927,7 @@ const checks: Checks = {
     'component:AgentResourceType': true,
     'component:AgentResourceReference': true,
     'component:PendingMcpConnection': true,
+    'component:HeldMcpReconnect': true,
     'component:UsedSkill': true,
     'component:PlanTask': true,
     'component:Plan': true,
@@ -14039,6 +14049,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2913);
+        expect(Object.keys(checks)).toHaveLength(2915);
     });
 });

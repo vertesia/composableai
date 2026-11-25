@@ -14068,6 +14068,50 @@
     "additionalProperties": false,
     "description": "An MCP server the user can connect to but hasn't yet (active + accessible, no OAuth token). Built at tool-discovery time and stored on the conversation state so the agent can discover it (by description) and ask the user to connect."
   },
+  "HeldMcpReconnect": {
+    "type": "object",
+    "properties": {
+      "app_install_id": {
+        "type": "string",
+        "description": "The app installation id owning the collection (used for OAuth operations)."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "The MCP tool-collection id."
+      },
+      "name": {
+        "type": "string",
+        "description": "Human-readable label for the server/collection."
+      },
+      "description": {
+        "type": "string",
+        "description": "Manifest description of what the server provides (used for discovery)."
+      },
+      "namespace": {
+        "type": "string",
+        "description": "Tool-name prefix for this collection."
+      },
+      "required_scope": {
+        "type": "string",
+        "description": "The scope the server refused a tool call for (`insufficient_scope`): reconnecting asks for it too."
+      },
+      "refused_tool": {
+        "type": "string",
+        "description": "The tool the server refused for `required_scope`."
+      },
+      "answered": {
+        "type": "boolean",
+        "description": "Whether the user has answered since the hold was made, so it can be offered again."
+      }
+    },
+    "required": [
+      "app_install_id",
+      "collection_id",
+      "name"
+    ],
+    "additionalProperties": false,
+    "description": "A reconnect held for the user's answer after an MCP server refused a tool's scope again following a reconnect."
+  },
   "UsedSkill": {
     "type": "object",
     "properties": {
@@ -14406,12 +14450,12 @@
         },
         "description": "MCP servers that are active (not disabled) and accessible to the user but not yet OAuth-connected. Surfaced to the agent (via discover_tools) so it can offer to connect."
       },
-      "mcp_reconnects_awaiting_answer": {
+      "held_mcp_reconnects": {
         "type": "array",
         "items": {
-          "$ref": "#/components/schemas/PendingMcpConnection"
+          "$ref": "#/components/schemas/HeldMcpReconnect"
         },
-        "description": "MCP reconnects held for the user's answer. Each is for a tool (`refused_tool`) the server refused again after the user reconnected to grant `required_scope`: the agent asked the user whether to reconnect, continue without it, or stop. Until the user answers, that tool does not run again and the reconnect is not offered."
+        "description": "MCP reconnects held after a server refused a tool (`refused_tool`) again although the user reconnected to grant `required_scope`; the agent asked the user whether to reconnect, continue without it, or stop. Until the user answers, that tool does not run again and its server is not offered for reconnection; once they answer, the hold is offered as a reconnect."
       },
       "active_activity_group_id": {
         "type": "string",

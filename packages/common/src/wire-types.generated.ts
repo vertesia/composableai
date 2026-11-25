@@ -8042,6 +8042,17 @@ export type PendingMcpConnection = {
     required_scope?: string | undefined;
     refused_tool?: string | undefined;
 };
+/** A reconnect held for the user's answer after an MCP server refused a tool's scope again following a reconnect. */
+export type HeldMcpReconnect = {
+    app_install_id: string;
+    collection_id: string;
+    name: string;
+    description?: string | undefined;
+    namespace?: string | undefined;
+    required_scope?: string | undefined;
+    refused_tool?: string | undefined;
+    answered?: boolean | undefined;
+};
 /** Skill metadata tracked when a skill is used */
 export type UsedSkill = {
     name: string;
@@ -11270,7 +11281,7 @@ export type ConversationStateWire = {
     initialization_call_ids?: string[] | undefined;
     disabled_mcp_collections?: string[] | undefined;
     pending_mcp_connections?: PendingMcpConnection[] | undefined;
-    mcp_reconnects_awaiting_answer?: PendingMcpConnection[] | undefined;
+    held_mcp_reconnects?: HeldMcpReconnect[] | undefined;
     active_activity_group_id?: string | undefined;
     finish_reason?: string | undefined;
     llm_attempt?: number | undefined;
@@ -12340,6 +12351,7 @@ export interface ApiComponentTypes {
     AgentResourceType: AgentResourceType;
     AgentResourceReference: AgentResourceReference;
     PendingMcpConnection: PendingMcpConnection;
+    HeldMcpReconnect: HeldMcpReconnect;
     UsedSkill: UsedSkill;
     PlanTask: PlanTask;
     Plan: Plan;

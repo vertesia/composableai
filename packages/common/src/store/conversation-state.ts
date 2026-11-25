@@ -226,11 +226,12 @@ export interface ConversationState {
     pending_mcp_connections?: PendingMcpConnection[];
 
     /**
-     * MCP reconnects held for the user's answer. Each is for a tool (`refused_tool`) the server refused again after
-     * the user reconnected to grant `required_scope`: the agent asked the user whether to reconnect, continue without
-     * it, or stop. Until the user answers, that tool does not run again and the reconnect is not offered.
+     * MCP reconnects held after a server refused a tool (`refused_tool`) again although the user reconnected to grant
+     * `required_scope`: the agent asked the user whether to reconnect, continue without it, or stop. Until the user
+     * answers, that tool does not run again and its server is not offered for reconnection; once they answer
+     * (`answered`), the hold is offered as a reconnect.
      */
-    mcp_reconnects_awaiting_answer?: PendingMcpConnection[];
+    held_mcp_reconnects?: HeldMcpReconnect[];
 
     /**
      * Current activity group ID for internal tool-execution progress messages.
@@ -311,6 +312,9 @@ export const CONVERSATION_CATALOG_ARTIFACT_KEY = 'catalog.json';
  * discover it (by description) and ask the user to connect.
  */
 export type PendingMcpConnection = Wire.PendingMcpConnection;
+
+/** A reconnect held for the user's answer after an MCP server refused a tool's scope again following a reconnect. */
+export type HeldMcpReconnect = Wire.HeldMcpReconnect;
 
 /** Skill metadata collected at workflow start for upfront sandbox hydration */
 export interface AvailableSkill {

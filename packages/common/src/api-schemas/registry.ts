@@ -607,6 +607,7 @@ import {
     GeneratedTestDataRecordSchema,
     GenerateTestDataPayloadSchema,
     GetRunQuerySchema,
+    HeldMcpReconnectSchema,
     InCodeInteractionSchema,
     InCodePromptSchema,
     InitialToolCallSchema,
@@ -1341,6 +1342,7 @@ const AGENT_CONVERSATION_SCHEMAS = {
     AgentResourceType: AgentResourceTypeSchema,
     AgentResourceReference: AgentResourceReferenceSchema,
     PendingMcpConnection: PendingMcpConnectionSchema,
+    HeldMcpReconnect: HeldMcpReconnectSchema,
     // The conversation itself, and what it accumulates.
     UsedSkill: UsedSkillSchema,
     PlanTask: PlanTaskSchema,
@@ -3632,6 +3634,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'PendingToolApprovalResults',
     'AgentResourceReference',
     'PendingMcpConnection',
+    'HeldMcpReconnect',
     'UsedSkill',
     'PlanTask',
     'Plan',
