@@ -36,7 +36,7 @@
         "vitest": "catalog:"
     },
     "peerDependencies": {
-        "hono": "^4.13.17"
+        "hono": "^4.13.19"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
