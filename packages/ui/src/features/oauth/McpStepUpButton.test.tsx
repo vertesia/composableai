@@ -85,6 +85,25 @@ describe('McpStepUpButton', () => {
         expect(mocks.getCollectionStatus).toHaveBeenCalledWith('app1', 'jira');
     });
 
+    it('offers the refused scope alone after an unconfirmed attempt, which an app on another origin needs', async () => {
+        mocks.getCollectionStatus.mockResolvedValue({ authenticated: true });
+        const onGranted = renderButton();
+        await grant();
+
+        // The authorization server refused the union with invalid_scope, but the message never reached this origin.
+        mocks.popupOptions?.onComplete(undefined);
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Ask for this permission only' }));
+        await waitFor(() =>
+            expect(mocks.authorize).toHaveBeenLastCalledWith(
+                'app1',
+                'jira',
+                expect.objectContaining({ scope_mode: 'challenged' }),
+            ),
+        );
+        expect(onGranted).not.toHaveBeenCalled();
+    });
+
     it('does not resume on a grant from another attempt', async () => {
         mocks.getCollectionStatus.mockResolvedValue({ authenticated: true, step_up_attempt: 'attempt-other' });
         const onGranted = renderButton();

@@ -67,6 +67,9 @@ export function McpStepUpButton({
     const [authorizing, setAuthorizing] = useState(false);
     const [scopeMode, setScopeMode] = useState<McpStepUpScopeMode>('union');
     const attemptRef = useRef<StepUpAttempt | undefined>(undefined);
+    // A union attempt that ended without a confirmed grant. An app on another origin than the callback page never
+    // hears an `invalid_scope` refusal, so it then also offers to ask for the refused scope alone.
+    const [unconfirmed, setUnconfirmed] = useState(false);
     const displayName = collectionName ?? collectionId;
 
     const reportFailure = (detail: string) => {
@@ -104,6 +107,7 @@ export function McpStepUpButton({
                 .then(({ granted, missing }) => {
                     setAuthorizing(false);
                     if (granted) onGranted(missing);
+                    else if (scopeMode === 'union') setUnconfirmed(true);
                 })
                 .catch((error: unknown) => {
                     setAuthorizing(false);
@@ -116,13 +120,15 @@ export function McpStepUpButton({
         },
     });
 
-    const handleGrant = async () => {
+    const handleGrant = async (mode: McpStepUpScopeMode = scopeMode) => {
         try {
             setAuthorizing(true);
+            setUnconfirmed(false);
+            if (mode !== scopeMode) setScopeMode(mode);
             const response = await client.remoteMcpConnections.authorize(appId, collectionId, {
                 required_scope: requiredScope,
                 ...(refusedTool ? { refused_tool: refusedTool } : {}),
-                scope_mode: scopeMode,
+                scope_mode: mode,
             });
             if (response.authorization_url) {
                 attemptRef.current = { state: response.state, id: response.step_up_attempt };
@@ -143,6 +149,9 @@ export function McpStepUpButton({
             {scopeMode === 'challenged' && (
                 <span className="text-xs text-attention">{t('mcpOAuth.stepUpInvalidScope')}</span>
             )}
+            {unconfirmed && scopeMode === 'union' && (
+                <span className="text-xs text-attention">{t('mcpOAuth.stepUpNotConfirmed')}</span>
+            )}
             <Button variant="outline" size="sm" onClick={() => void handleGrant()} disabled={disabled || authorizing}>
                 {authorizing ? (
                     <>
@@ -158,6 +167,11 @@ export function McpStepUpButton({
                     </>
                 )}
             </Button>
+            {unconfirmed && scopeMode === 'union' && !authorizing && (
+                <Button variant="ghost" size="sm" onClick={() => void handleGrant('challenged')} disabled={disabled}>
+                    {t('mcpOAuth.stepUpChallengedOnly')}
+                </Button>
+            )}
         </div>
     );
 }
