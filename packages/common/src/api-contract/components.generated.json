@@ -14099,6 +14099,11 @@
         "type": "string",
         "description": "The tool the server refused for `required_scope`."
       },
+      "held_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the hold was made: only an answer from the user after this time releases it."
+      },
       "answered": {
         "type": "boolean",
         "description": "Whether the user has answered since the hold was made, so it can be offered again."

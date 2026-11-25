@@ -102,6 +102,13 @@ export const PendingMcpConnectionSchema = z
     });
 
 export const HeldMcpReconnectSchema = PendingMcpConnectionSchema.extend({
+    held_at: z
+        .string()
+        .meta({
+            format: 'date-time',
+            description: 'When the hold was made: only an answer from the user after this time releases it.',
+        })
+        .optional(),
     answered: z
         .boolean()
         .meta({ description: 'Whether the user has answered since the hold was made, so it can be offered again.' })

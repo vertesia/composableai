@@ -8051,6 +8051,7 @@ export type HeldMcpReconnect = {
     namespace?: string | undefined;
     required_scope?: string | undefined;
     refused_tool?: string | undefined;
+    held_at?: string | undefined;
     answered?: boolean | undefined;
 };
 /** Skill metadata tracked when a skill is used */
