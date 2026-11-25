@@ -30,10 +30,14 @@
         "./vite": {
             "types": "./lib/vite/index.d.ts",
             "default": "./lib/vite/index.js"
+        },
+        "./licenses": {
+            "types": "./lib/licenses/index.d.ts",
+            "default": "./lib/licenses/index.js"
         }
     },
     "devDependencies": {
-        "@hono/node-server": "^2.1.6",
+        "@hono/node-server": "^2.1.9",
         "@types/js-yaml": "^4.0.9",
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
@@ -46,14 +50,14 @@
         "@vertesia/common": "workspace:*",
         "@vertesia/studio-utils": "workspace:*",
         "ajv": "^8.20.0",
-        "es-module-lexer": "^3.0.4",
+        "es-module-lexer": "^3.0.5",
         "esbuild": "^0.28.2",
         "js-yaml": "^5.5.0",
         "zod": "catalog:"
     },
     "peerDependencies": {
-        "@hono/node-server": "^2.1.6",
-        "vite": "^8.3.7"
+        "@hono/node-server": "^2.1.9",
+        "vite": "^8.3.8"
     },
     "peerDependenciesMeta": {
         "@hono/node-server": {

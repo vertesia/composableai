@@ -134,6 +134,14 @@ export const ContentSourceSchema = z
         type: z.string().optional(),
         name: z.string().optional(),
         etag: z.string().optional(),
+        sha256: z
+            .string()
+            .regex(/^[0-9a-f]{64}$/)
+            .meta({
+                description:
+                    'Lowercase hex SHA-256 of the content bytes, as computed by the uploader. Unlike `etag`, it does not depend on how the storage provider stores the file: an S3 object encrypted with a KMS key, or uploaded in parts, has an etag that is not a hash of its bytes. Omitted when the uploader did not compute it.',
+            })
+            .optional(),
     })
     .meta({ id: 'ContentSource' });
 
@@ -1048,7 +1056,10 @@ export const ListContentObjectExportsResponseSchema = z
 
 export const ExportPropertiesPayloadSchema = z
     .strictObject({
-        objectIds: z.array(z.string()),
+        // The export casts each ID to an ObjectId; an empty list exports every readable object.
+        objectIds: z
+            .array(z.string().regex(OBJECT_ID_PATTERN))
+            .meta({ description: 'Content object IDs, as 24 hexadecimal characters. Empty exports all objects.' }),
         // A pattern rather than an enum keeps the published type a string for existing SDK callers.
         type: z
             .string()

@@ -35,7 +35,9 @@ export const SharePointContentSourcePermissionsSchema = z
     .strictObject({
         mode: z.literal('source'),
         entra_tenant_id: z.uuid(),
-        scim_connection_id: z.string().regex(OBJECT_ID_PATTERN),
+        scim_connection_id: z.string().regex(OBJECT_ID_PATTERN).optional().meta({
+            description: 'Optional verified Entra SCIM connection. Required for tenant_group_id.',
+        }),
         tenant_group_id: z.string().regex(OBJECT_ID_PATTERN).optional(),
         refresh_minutes: z.number().int().min(15).max(1440).optional(),
         max_stale_hours: z.number().int().min(1).max(168).optional(),
@@ -214,9 +216,15 @@ export const ExternalContentSourceArraySchema = z
 const commonCreateFields = {
     name: z.string().min(1).max(CONTENT_SOURCE_NAME_MAX_LENGTH).meta({ description: 'Unique within the project.' }),
     description: z.string().optional(),
-    oauth_provider_id: z.string().min(1).meta({
-        description: 'An OAuth provider of this project with grant type `client_credentials` for the system.',
-    }),
+    // The server reads the provider by its ID, which the OAuth provider routes accept only as an ObjectId.
+    oauth_provider_id: z
+        .string()
+        .regex(OBJECT_ID_PATTERN)
+        .meta({
+            description:
+                'An OAuth provider of this project with grant type `client_credentials` for the system, as 24 ' +
+                'hexadecimal characters.',
+        }),
     location_root: z
         .string()
         .meta({ description: 'The `location` root for synced documents. Defaults to `/<type>/<name>`.' })

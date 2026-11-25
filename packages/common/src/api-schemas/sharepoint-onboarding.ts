@@ -4,6 +4,10 @@ const guid = z.string().regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-
 const id = z.string().regex(/^[0-9a-f]{24}$/);
 const state = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 
+export const SharePointRegionSchema = z
+    .strictObject({ region: z.string().min(1).meta({ description: 'Assigned Vertesia region identifier.' }) })
+    .meta({ id: 'SharePointRegion' });
+
 export const BeginSharePointOrganizationLinkPayloadSchema = z
     .strictObject({ tenant_id: guid })
     .meta({ id: 'BeginSharePointOrganizationLinkPayload' });

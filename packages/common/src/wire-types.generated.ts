@@ -1560,6 +1560,7 @@ export type OAuthAuthStatus = {
     mcp_server_url: string;
     expires_at?: string | undefined;
     scope?: string | undefined;
+    step_up_attempt?: string | undefined;
 };
 /**
  * Response from OAuth authorization endpoint
@@ -1568,6 +1569,7 @@ export type OAuthAuthorizeResponse = {
     authorization_url?: string | undefined;
     state?: string | undefined;
     connected?: boolean | undefined;
+    step_up_attempt?: string | undefined;
 };
 /**
  * Payload for storing the static bearer token of an `auth: 'api_key'` MCP collection.
@@ -1588,9 +1590,14 @@ export type McpOAuthTokenRequest = {
 };
 export type McpOAuthTokenResponse = {
     access_token: string;
+    user_grant?: boolean | undefined;
+    step_up_scope?: string | undefined;
+    step_up_tool?: string | undefined;
+    step_up_attempt?: string | undefined;
 };
 export type McpOAuthConnectResponse = {
     success: boolean;
+    missing_scope?: string | undefined;
 };
 export type McpOAuthExchangePayload = {
     code: string;
@@ -1600,6 +1607,27 @@ export type McpOAuthExchangePayload = {
 export type McpOAuthDisconnectResponse = {
     success: boolean;
     message: string;
+};
+/** Which scope a step-up authorization asks for. */
+export type McpStepUpScopeMode = 'union' | 'challenged';
+/** Optional step-up parameters for authorizing a remote MCP connection again. */
+export type AuthorizeRemoteMcpConnectionQuery = {
+    required_scope?: string | undefined;
+    refused_tool?: string | undefined;
+    scope_mode?: McpStepUpScopeMode | undefined;
+};
+/** What became of a step-up recorded on a user's remote MCP grant. */
+export type McpStepUpOutcome = 'used' | 'refused_again';
+export type ReportMcpStepUpOutcomeRequest = {
+    app_install_id: string;
+    collection_id: string;
+    scope: string;
+    outcome: McpStepUpOutcome;
+    tool_name?: string | undefined;
+    step_up_attempt?: string | undefined;
+};
+export type ReportMcpStepUpOutcomeResponse = {
+    cleared: boolean;
 };
 /**
  * Response from OAuth metadata endpoint
@@ -2428,7 +2456,7 @@ export type ProjectContentSourcePermissions = {
 export type SharePointContentSourcePermissions = {
     mode: 'source';
     entra_tenant_id: string;
-    scim_connection_id: string;
+    scim_connection_id?: string | undefined;
     tenant_group_id?: string | undefined;
     refresh_minutes?: number | undefined;
     max_stale_hours?: number | undefined;
@@ -4231,8 +4259,10 @@ export type MediatorEnvConfig = {
 };
 export type ExecutionEnvironmentSettings = {
     default_headers?: StringValueMap | undefined;
+    openai_api?: OpenAICompatibleApi | undefined;
     [k: string]: unknown;
 };
+export type OpenAICompatibleApi = 'responses' | 'chat_completions';
 export type ExecutionEnvironment = {
     id: string;
     name: string;
@@ -7633,6 +7663,9 @@ export type SharePointOrganizationReader = {
     subject: string;
     audience: string;
 };
+export type SharePointRegion = {
+    region: string;
+};
 export type SharePointLibraryContext = {
     site_hostname: string;
     site_collection_id: string;
@@ -8220,6 +8253,20 @@ export type PendingMcpConnection = {
     name: string;
     description?: string | undefined;
     namespace?: string | undefined;
+    required_scope?: string | undefined;
+    refused_tool?: string | undefined;
+};
+/** A reconnect held for the user's answer after an MCP server refused a tool's scope again following a reconnect. */
+export type HeldMcpReconnect = {
+    app_install_id: string;
+    collection_id: string;
+    name: string;
+    description?: string | undefined;
+    namespace?: string | undefined;
+    required_scope?: string | undefined;
+    refused_tool?: string | undefined;
+    held_at?: string | undefined;
+    answered?: boolean | undefined;
 };
 /** Skill metadata tracked when a skill is used */
 export type UsedSkill = {
@@ -9222,6 +9269,7 @@ export type ContentSource = {
     type?: string | undefined;
     name?: string | undefined;
     etag?: string | undefined;
+    sha256?: string | undefined;
 };
 export type RevisionInfo = {
     parent?: string | undefined;
@@ -11449,6 +11497,7 @@ export type ConversationStateWire = {
     initialization_call_ids?: string[] | undefined;
     disabled_mcp_collections?: string[] | undefined;
     pending_mcp_connections?: PendingMcpConnection[] | undefined;
+    held_mcp_reconnects?: HeldMcpReconnect[] | undefined;
     active_activity_group_id?: string | undefined;
     finish_reason?: string | undefined;
     llm_attempt?: number | undefined;
@@ -12186,6 +12235,12 @@ export type EmbeddingTypePathParams = {
 export type ToolPathParams = {
     toolName?: string | undefined;
 };
+export type NotificationPathParams = {
+    notificationId?: string | undefined;
+};
+export type ContentSourceRoundPathParams = {
+    roundId?: string | undefined;
+};
 /** The wire type of every registry component, by component name: what `ApiComponentType<N>` resolves. */
 export interface ApiComponentTypes {
     CustomRoleDefinition: CustomRoleDefinition;
@@ -12271,6 +12326,7 @@ export interface ApiComponentTypes {
     ConfigureSharePointOrganizationReaderPayload: ConfigureSharePointOrganizationReaderPayload;
     SharePointOrganizationReader: SharePointOrganizationReader;
     SharePointOrganizations: SharePointOrganizations;
+    SharePointRegion: SharePointRegion;
     SharePointLibraryContext: SharePointLibraryContext;
     SharePointLibraryReceipt: SharePointLibraryReceipt;
     SharePointLibraryRequest: SharePointLibraryRequest;
@@ -12355,6 +12411,7 @@ export interface ApiComponentTypes {
     ExecutionEnvironment: ExecutionEnvironment;
     ExecutionEnvironmentArray: ExecutionEnvironmentArray;
     ExecutionEnvironmentSettings: ExecutionEnvironmentSettings;
+    OpenAICompatibleApi: OpenAICompatibleApi;
     ExecutionEnvironmentCreatePayload: ExecutionEnvironmentCreatePayload;
     ExecutionEnvironmentUpdatePayload: ExecutionEnvironmentUpdatePayload;
     ExecutionEnvironmentConfigUpdatePayload: ExecutionEnvironmentConfigUpdatePayload;
@@ -12532,6 +12589,7 @@ export interface ApiComponentTypes {
     AgentResourceType: AgentResourceType;
     AgentResourceReference: AgentResourceReference;
     PendingMcpConnection: PendingMcpConnection;
+    HeldMcpReconnect: HeldMcpReconnect;
     UsedSkill: UsedSkill;
     PlanTask: PlanTask;
     Plan: Plan;
@@ -13315,6 +13373,11 @@ export interface ApiComponentTypes {
     McpOAuthExchangePayload: McpOAuthExchangePayload;
     OAuthAuthorizeResponse: OAuthAuthorizeResponse;
     OAuthAuthStatusArray: OAuthAuthStatusArray;
+    McpStepUpScopeMode: McpStepUpScopeMode;
+    AuthorizeRemoteMcpConnectionQuery: AuthorizeRemoteMcpConnectionQuery;
+    McpStepUpOutcome: McpStepUpOutcome;
+    ReportMcpStepUpOutcomeRequest: ReportMcpStepUpOutcomeRequest;
+    ReportMcpStepUpOutcomeResponse: ReportMcpStepUpOutcomeResponse;
     SetMcpApiKeyRequest: SetMcpApiKeyRequest;
     McpApiKeyStatus: McpApiKeyStatus;
     AuditAdoptionActiveDays: AuditAdoptionActiveDays;
@@ -13648,6 +13711,8 @@ export interface ApiComponentTypes {
     ProjectAppCapabilityPathParams: ProjectAppCapabilityPathParams;
     EmbeddingTypePathParams: EmbeddingTypePathParams;
     ToolPathParams: ToolPathParams;
+    NotificationPathParams: NotificationPathParams;
+    ContentSourceRoundPathParams: ContentSourceRoundPathParams;
     WorkflowUsageQuery: WorkflowUsageQuery;
     WorkflowUsageClass: WorkflowUsageClass;
     WorkflowUsageStanding: WorkflowUsageStanding;

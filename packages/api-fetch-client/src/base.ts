@@ -288,8 +288,28 @@ function rateLimitMetadata(res: Response): RateLimitMetadata | undefined {
     };
 }
 
-function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+/**
+ * Wait `ms` milliseconds, or less: it resolves as soon as `signal` aborts (at once if it already has),
+ * and clears its timer and listener either way. The caller checks the signal afterwards.
+ */
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+    if (signal?.aborted) return Promise.resolve();
+    return new Promise((resolve) => {
+        const done = () => {
+            clearTimeout(timer);
+            signal?.removeEventListener('abort', done);
+            resolve();
+        };
+        const timer = setTimeout(done, ms);
+        signal?.addEventListener('abort', done, { once: true });
+    });
+}
+
+/** The error a fetch rejects with for an aborted signal: its reason, or an `AbortError` when it has none. */
+function abortReason(signal: AbortSignal): Error {
+    return signal.reason === undefined
+        ? new DOMException('This operation was aborted', 'AbortError')
+        : toError(signal.reason);
 }
 
 function retryDelayMs(policy: NormalizedRetryPolicy, attempt: number, res?: Response): number {
@@ -721,7 +741,7 @@ export abstract class ClientBase {
                     if (!aborted) this.handleConnectionError(connectionError);
                     this.throwError(connectionError);
                 }
-                await this.waitBeforeRetry(retryPolicy, attempt);
+                await this.waitBeforeRetry(req, params?.signal, retryDelayMs(retryPolicy, attempt));
                 attempt++;
                 continue;
             }
@@ -730,7 +750,7 @@ export abstract class ClientBase {
                 const delay = pacingDelayMs(res, pacing);
                 if (delay !== undefined) {
                     await discardBody(res);
-                    await sleep(delay);
+                    await this.waitBeforeRetry(req, params?.signal, delay);
                     pacingAttemptsUsed++;
                     continue;
                 }
@@ -739,7 +759,7 @@ export abstract class ClientBase {
                 const delay = retryDelayMs(retryPolicy, attempt, res);
                 if (delay <= MAX_RETRY_TIMER_MS) {
                     await discardBody(res);
-                    await sleep(delay);
+                    await this.waitBeforeRetry(req, params?.signal, delay);
                     attempt++;
                     continue;
                 }
@@ -809,8 +829,16 @@ export abstract class ClientBase {
         );
     }
 
-    private waitBeforeRetry(policy: NormalizedRetryPolicy, attempt: number) {
-        return sleep(retryDelayMs(policy, attempt));
+    /**
+     * Wait before the next attempt. A caller abort ends the wait at once and rejects the request the
+     * same way an aborted fetch does: a ConnectionError for `req`, not reported, and not retried. The
+     * per-attempt timeout signal is not involved, since there is no attempt in flight to time out.
+     */
+    private async waitBeforeRetry(req: Request, callerSignal: AbortSignal | undefined, delayMs: number) {
+        await sleep(delayMs, callerSignal);
+        if (callerSignal?.aborted) {
+            this.throwError(new ConnectionError(req, abortReason(callerSignal)));
+        }
     }
 
     /**

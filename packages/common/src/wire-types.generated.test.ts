@@ -698,6 +698,23 @@ interface Checks {
         W.McpOAuthDisconnectResponse,
         z.infer<typeof import('./api-schemas/apps.js').McpOAuthDisconnectResponseSchema>
     >;
+    McpStepUpScopeMode: Same<
+        W.McpStepUpScopeMode,
+        z.infer<typeof import('./api-schemas/apps.js').McpStepUpScopeModeSchema>
+    >;
+    AuthorizeRemoteMcpConnectionQuery: Same<
+        W.AuthorizeRemoteMcpConnectionQuery,
+        z.infer<typeof import('./api-schemas/apps.js').AuthorizeRemoteMcpConnectionQuerySchema>
+    >;
+    McpStepUpOutcome: Same<W.McpStepUpOutcome, z.infer<typeof import('./api-schemas/apps.js').McpStepUpOutcomeSchema>>;
+    ReportMcpStepUpOutcomeRequest: Same<
+        W.ReportMcpStepUpOutcomeRequest,
+        z.infer<typeof import('./api-schemas/apps.js').ReportMcpStepUpOutcomeRequestSchema>
+    >;
+    ReportMcpStepUpOutcomeResponse: Same<
+        W.ReportMcpStepUpOutcomeResponse,
+        z.infer<typeof import('./api-schemas/apps.js').ReportMcpStepUpOutcomeResponseSchema>
+    >;
     OAuthMetadataResponse: Same<
         W.OAuthMetadataResponse,
         z.infer<typeof import('./api-schemas/apps.js').OAuthMetadataResponseSchema>
@@ -1872,6 +1889,10 @@ interface Checks {
     ExecutionEnvironmentSettings: Same<
         W.ExecutionEnvironmentSettings,
         z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentSettingsSchema>
+    >;
+    OpenAICompatibleApi: Same<
+        W.OpenAICompatibleApi,
+        z.infer<typeof import('./api-schemas/environment.js').OpenAICompatibleApiSchema>
     >;
     ExecutionEnvironment: Same<
         W.ExecutionEnvironment,
@@ -3243,6 +3264,10 @@ interface Checks {
         W.SharePointOrganizationReader,
         z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationReaderSchema>
     >;
+    SharePointRegion: Same<
+        W.SharePointRegion,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointRegionSchema>
+    >;
     SharePointLibraryContext: Same<
         W.SharePointLibraryContext,
         z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointLibraryContextSchema>
@@ -3520,6 +3545,10 @@ interface Checks {
     PendingMcpConnection: Same<
         W.PendingMcpConnection,
         z.infer<typeof import('./api-schemas/interaction.js').PendingMcpConnectionSchema>
+    >;
+    HeldMcpReconnect: Same<
+        W.HeldMcpReconnect,
+        z.infer<typeof import('./api-schemas/interaction.js').HeldMcpReconnectSchema>
     >;
     UsedSkill: Same<W.UsedSkill, z.infer<typeof import('./api-schemas/interaction.js').UsedSkillSchema>>;
     DocumentPrepOptions: Same<
@@ -5540,6 +5569,14 @@ interface Checks {
         W.ToolPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').ToolPathParamsSchema>
     >;
+    NotificationPathParams: Same<
+        W.NotificationPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').NotificationPathParamsSchema>
+    >;
+    ContentSourceRoundPathParams: Same<
+        W.ContentSourceRoundPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').ContentSourceRoundPathParamsSchema>
+    >;
     'component:CustomRoleDefinition': Same<
         W.ApiComponentTypes['CustomRoleDefinition'],
         z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionSchema>
@@ -5870,6 +5907,10 @@ interface Checks {
     'component:SharePointOrganizations': Same<
         W.ApiComponentTypes['SharePointOrganizations'],
         z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationsSchema>
+    >;
+    'component:SharePointRegion': Same<
+        W.ApiComponentTypes['SharePointRegion'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointRegionSchema>
     >;
     'component:SharePointLibraryContext': Same<
         W.ApiComponentTypes['SharePointLibraryContext'],
@@ -6206,6 +6247,10 @@ interface Checks {
     'component:ExecutionEnvironmentSettings': Same<
         W.ApiComponentTypes['ExecutionEnvironmentSettings'],
         z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentSettingsSchema>
+    >;
+    'component:OpenAICompatibleApi': Same<
+        W.ApiComponentTypes['OpenAICompatibleApi'],
+        z.infer<typeof import('./api-schemas/environment.js').OpenAICompatibleApiSchema>
     >;
     'component:ExecutionEnvironmentCreatePayload': Same<
         W.ApiComponentTypes['ExecutionEnvironmentCreatePayload'],
@@ -6834,6 +6879,10 @@ interface Checks {
     'component:PendingMcpConnection': Same<
         W.ApiComponentTypes['PendingMcpConnection'],
         z.infer<typeof import('./api-schemas/interaction.js').PendingMcpConnectionSchema>
+    >;
+    'component:HeldMcpReconnect': Same<
+        W.ApiComponentTypes['HeldMcpReconnect'],
+        z.infer<typeof import('./api-schemas/interaction.js').HeldMcpReconnectSchema>
     >;
     'component:UsedSkill': Same<
         W.ApiComponentTypes['UsedSkill'],
@@ -9964,6 +10013,26 @@ interface Checks {
         W.ApiComponentTypes['OAuthAuthStatusArray'],
         z.infer<typeof import('./api-schemas/apps.js').OAuthAuthStatusArraySchema>
     >;
+    'component:McpStepUpScopeMode': Same<
+        W.ApiComponentTypes['McpStepUpScopeMode'],
+        z.infer<typeof import('./api-schemas/apps.js').McpStepUpScopeModeSchema>
+    >;
+    'component:AuthorizeRemoteMcpConnectionQuery': Same<
+        W.ApiComponentTypes['AuthorizeRemoteMcpConnectionQuery'],
+        z.infer<typeof import('./api-schemas/apps.js').AuthorizeRemoteMcpConnectionQuerySchema>
+    >;
+    'component:McpStepUpOutcome': Same<
+        W.ApiComponentTypes['McpStepUpOutcome'],
+        z.infer<typeof import('./api-schemas/apps.js').McpStepUpOutcomeSchema>
+    >;
+    'component:ReportMcpStepUpOutcomeRequest': Same<
+        W.ApiComponentTypes['ReportMcpStepUpOutcomeRequest'],
+        z.infer<typeof import('./api-schemas/apps.js').ReportMcpStepUpOutcomeRequestSchema>
+    >;
+    'component:ReportMcpStepUpOutcomeResponse': Same<
+        W.ApiComponentTypes['ReportMcpStepUpOutcomeResponse'],
+        z.infer<typeof import('./api-schemas/apps.js').ReportMcpStepUpOutcomeResponseSchema>
+    >;
     'component:SetMcpApiKeyRequest': Same<
         W.ApiComponentTypes['SetMcpApiKeyRequest'],
         z.infer<typeof import('./api-schemas/apps.js').SetMcpApiKeyRequestSchema>
@@ -11296,6 +11365,14 @@ interface Checks {
         W.ApiComponentTypes['ToolPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').ToolPathParamsSchema>
     >;
+    'component:NotificationPathParams': Same<
+        W.ApiComponentTypes['NotificationPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').NotificationPathParamsSchema>
+    >;
+    'component:ContentSourceRoundPathParams': Same<
+        W.ApiComponentTypes['ContentSourceRoundPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').ContentSourceRoundPathParamsSchema>
+    >;
     'component:WorkflowUsageQuery': Same<
         W.ApiComponentTypes['WorkflowUsageQuery'],
         z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageQuerySchema>
@@ -11510,6 +11587,11 @@ const checks: Checks = {
     McpOAuthConnectResponse: true,
     McpOAuthExchangePayload: true,
     McpOAuthDisconnectResponse: true,
+    McpStepUpScopeMode: true,
+    AuthorizeRemoteMcpConnectionQuery: true,
+    McpStepUpOutcome: true,
+    ReportMcpStepUpOutcomeRequest: true,
+    ReportMcpStepUpOutcomeResponse: true,
     OAuthMetadataResponse: true,
     CompositeAppEntry: true,
     CompositeAppLogoOverrides: true,
@@ -11824,6 +11906,7 @@ const checks: Checks = {
     LoadBalancingEnvEntryConfig: true,
     MediatorEnvConfig: true,
     ExecutionEnvironmentSettings: true,
+    OpenAICompatibleApi: true,
     ExecutionEnvironment: true,
     ExecutionEnvironmentRef: true,
     ExecutionEnvironmentCreatePayload: true,
@@ -12190,6 +12273,7 @@ const checks: Checks = {
     SharePointOrganization: true,
     ConfigureSharePointOrganizationReaderPayload: true,
     SharePointOrganizationReader: true,
+    SharePointRegion: true,
     SharePointLibraryContext: true,
     SharePointLibraryReceipt: true,
     SharePointLibraryRequest: true,
@@ -12264,6 +12348,7 @@ const checks: Checks = {
     ExternalizedToolInputRef: true,
     ExternalizedToolInputRefs: true,
     PendingMcpConnection: true,
+    HeldMcpReconnect: true,
     UsedSkill: true,
     DocumentPrepOptions: true,
     DocumentProcessingPhase: true,
@@ -12828,6 +12913,8 @@ const checks: Checks = {
     ProjectAppCapabilityPathParams: true,
     EmbeddingTypePathParams: true,
     ToolPathParams: true,
+    NotificationPathParams: true,
+    ContentSourceRoundPathParams: true,
     'component:CustomRoleDefinition': true,
     'component:CustomRoleDefinitionArray': true,
     'component:CreateCustomRolePayload': true,
@@ -12911,6 +12998,7 @@ const checks: Checks = {
     'component:ConfigureSharePointOrganizationReaderPayload': true,
     'component:SharePointOrganizationReader': true,
     'component:SharePointOrganizations': true,
+    'component:SharePointRegion': true,
     'component:SharePointLibraryContext': true,
     'component:SharePointLibraryReceipt': true,
     'component:SharePointLibraryRequest': true,
@@ -12995,6 +13083,7 @@ const checks: Checks = {
     'component:ExecutionEnvironment': true,
     'component:ExecutionEnvironmentArray': true,
     'component:ExecutionEnvironmentSettings': true,
+    'component:OpenAICompatibleApi': true,
     'component:ExecutionEnvironmentCreatePayload': true,
     'component:ExecutionEnvironmentUpdatePayload': true,
     'component:ExecutionEnvironmentConfigUpdatePayload': true,
@@ -13152,6 +13241,7 @@ const checks: Checks = {
     'component:AgentResourceType': true,
     'component:AgentResourceReference': true,
     'component:PendingMcpConnection': true,
+    'component:HeldMcpReconnect': true,
     'component:UsedSkill': true,
     'component:PlanTask': true,
     'component:Plan': true,
@@ -13935,6 +14025,11 @@ const checks: Checks = {
     'component:McpOAuthExchangePayload': true,
     'component:OAuthAuthorizeResponse': true,
     'component:OAuthAuthStatusArray': true,
+    'component:McpStepUpScopeMode': true,
+    'component:AuthorizeRemoteMcpConnectionQuery': true,
+    'component:McpStepUpOutcome': true,
+    'component:ReportMcpStepUpOutcomeRequest': true,
+    'component:ReportMcpStepUpOutcomeResponse': true,
     'component:SetMcpApiKeyRequest': true,
     'component:McpApiKeyStatus': true,
     'component:AuditAdoptionActiveDays': true,
@@ -14268,6 +14363,8 @@ const checks: Checks = {
     'component:ProjectAppCapabilityPathParams': true,
     'component:EmbeddingTypePathParams': true,
     'component:ToolPathParams': true,
+    'component:NotificationPathParams': true,
+    'component:ContentSourceRoundPathParams': true,
     'component:WorkflowUsageQuery': true,
     'component:WorkflowUsageClass': true,
     'component:WorkflowUsageStanding': true,

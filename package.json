@@ -7,6 +7,7 @@
     "scripts": {
         "build": "pnpm exec turbo run build build:docs ${TURBO_CACHE_OPTS:---cache=local:rw,remote:r}",
         "check": "pnpm exec biome check .",
+        "check:package-licenses": "node scripts/check-package-licenses.mjs",
         "check:write": "pnpm exec biome check --write .",
         "ci:local": "pnpm run ci:renovate && pnpm run check && pnpm run build && pnpm run ci:test",
         "ci:renovate": "npx --yes --package renovate@44.240.0 -- renovate-config-validator --strict",
@@ -26,13 +27,13 @@
         "typecheck:test": "pnpm exec turbo run typecheck:test ${TURBO_CACHE_OPTS:---cache=local:rw,remote:r}"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.6.6",
+        "@biomejs/biome": "2.6.8",
         "rimraf": "^6.1.4",
-        "turbo": "^2.11.10",
+        "turbo": "^2.11.12",
         "typescript": "catalog:",
         "vite": "catalog:"
     },
-    "packageManager": "pnpm@12.19.0",
+    "packageManager": "pnpm@12.21.0",
     "gitHead": "0b4dcc5c9e17a0fdb8771fee841f98efac7e2a2c",
     "releaseIdentity": {
         "source_sha": "0b4dcc5c9e17a0fdb8771fee841f98efac7e2a2c",
