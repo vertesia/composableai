@@ -226,6 +226,13 @@ export interface ConversationState {
     pending_mcp_connections?: PendingMcpConnection[];
 
     /**
+     * MCP reconnects held for the user's answer. Each is for a tool (`refused_tool`) the server refused again after
+     * the user reconnected to grant `required_scope`: the agent asked the user whether to reconnect, continue without
+     * it, or stop. Until the user answers, that tool does not run again and the reconnect is not offered.
+     */
+    mcp_reconnects_awaiting_answer?: PendingMcpConnection[];
+
+    /**
      * Current activity group ID for internal tool-execution progress messages.
      * All updates emitted during one tool-execution cycle should share this ID.
      */
