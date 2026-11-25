@@ -94,14 +94,6 @@ export const PendingMcpConnectionSchema = z
             })
             .optional(),
         refused_tool: z.string().meta({ description: 'The tool the server refused for `required_scope`.' }).optional(),
-        awaiting_user_answer: z
-            .boolean()
-            .meta({
-                description:
-                    'Set when the server refused `required_scope` again after the user reconnected to grant it: the ' +
-                    'agent asked the user what to do, and the reconnect is not offered until the user answers.',
-            })
-            .optional(),
     })
     .meta({
         id: 'PendingMcpConnection',
@@ -2001,6 +1993,16 @@ export const ConversationStateSchema = z
             .meta({
                 description:
                     'MCP servers that are active (not disabled) and accessible to the user but not yet OAuth-connected. Surfaced to the agent (via discover_tools) so it can offer to connect.',
+            })
+            .optional(),
+        mcp_reconnects_awaiting_answer: z
+            .array(PendingMcpConnectionSchema)
+            .meta({
+                description:
+                    "MCP reconnects held for the user's answer. Each is for a tool (`refused_tool`) the server " +
+                    'refused again after the user reconnected to grant `required_scope`: the agent asked the user ' +
+                    'whether to reconnect, continue without it, or stop. Until the user answers, that tool does not ' +
+                    'run again and the reconnect is not offered.',
             })
             .optional(),
         active_activity_group_id: z

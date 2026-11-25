@@ -8041,7 +8041,6 @@ export type PendingMcpConnection = {
     namespace?: string | undefined;
     required_scope?: string | undefined;
     refused_tool?: string | undefined;
-    awaiting_user_answer?: boolean | undefined;
 };
 /** Skill metadata tracked when a skill is used */
 export type UsedSkill = {
@@ -11271,6 +11270,7 @@ export type ConversationStateWire = {
     initialization_call_ids?: string[] | undefined;
     disabled_mcp_collections?: string[] | undefined;
     pending_mcp_connections?: PendingMcpConnection[] | undefined;
+    mcp_reconnects_awaiting_answer?: PendingMcpConnection[] | undefined;
     active_activity_group_id?: string | undefined;
     finish_reason?: string | undefined;
     llm_attempt?: number | undefined;
