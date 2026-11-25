@@ -14050,6 +14050,14 @@
       "namespace": {
         "type": "string",
         "description": "Tool-name prefix for this collection."
+      },
+      "required_scope": {
+        "type": "string",
+        "description": "The scope the server refused a tool call for (`insufficient_scope`): reconnecting asks for it too."
+      },
+      "refused_tool": {
+        "type": "string",
+        "description": "The tool the server refused for `required_scope`."
       }
     },
     "required": [
@@ -14059,6 +14067,55 @@
     ],
     "additionalProperties": false,
     "description": "An MCP server the user can connect to but hasn't yet (active + accessible, no OAuth token). Built at tool-discovery time and stored on the conversation state so the agent can discover it (by description) and ask the user to connect."
+  },
+  "HeldMcpReconnect": {
+    "type": "object",
+    "properties": {
+      "app_install_id": {
+        "type": "string",
+        "description": "The app installation id owning the collection (used for OAuth operations)."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "The MCP tool-collection id."
+      },
+      "name": {
+        "type": "string",
+        "description": "Human-readable label for the server/collection."
+      },
+      "description": {
+        "type": "string",
+        "description": "Manifest description of what the server provides (used for discovery)."
+      },
+      "namespace": {
+        "type": "string",
+        "description": "Tool-name prefix for this collection."
+      },
+      "required_scope": {
+        "type": "string",
+        "description": "The scope the server refused a tool call for (`insufficient_scope`): reconnecting asks for it too."
+      },
+      "refused_tool": {
+        "type": "string",
+        "description": "The tool the server refused for `required_scope`."
+      },
+      "held_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the hold was made: only an answer from the user after this time releases it."
+      },
+      "answered": {
+        "type": "boolean",
+        "description": "Whether the user has answered since the hold was made, so it can be offered again."
+      }
+    },
+    "required": [
+      "app_install_id",
+      "collection_id",
+      "name"
+    ],
+    "additionalProperties": false,
+    "description": "A reconnect held for the user's answer after an MCP server refused a tool's scope again following a reconnect."
   },
   "UsedSkill": {
     "type": "object",
@@ -14397,6 +14454,13 @@
           "$ref": "#/components/schemas/PendingMcpConnection"
         },
         "description": "MCP servers that are active (not disabled) and accessible to the user but not yet OAuth-connected. Surfaced to the agent (via discover_tools) so it can offer to connect."
+      },
+      "held_mcp_reconnects": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/HeldMcpReconnect"
+        },
+        "description": "MCP reconnects held after a server refused a tool (`refused_tool`) again although the user reconnected to grant `required_scope`; the agent asked the user whether to reconnect, continue without it, or stop. Until the user answers, that tool does not run again and its server is not offered for reconnection; once they answer, the hold is offered as a reconnect."
       },
       "active_activity_group_id": {
         "type": "string",
@@ -18188,6 +18252,22 @@
     "properties": {
       "access_token": {
         "type": "string"
+      },
+      "user_grant": {
+        "type": "boolean",
+        "description": "True when the token is the user's own OAuth grant for this server, which the user can renew with more scope by reconnecting. Absent for project credentials (client credentials, API keys) and from servers older than this field."
+      },
+      "step_up_scope": {
+        "type": "string",
+        "description": "The scope the stored grant was last requested for after the server refused a call with `insufficient_scope`. A second refusal for this scope means the grant did not include it, so the user should not be asked to reconnect again."
+      },
+      "step_up_tool": {
+        "type": "string",
+        "description": "The tool whose refusal led to `step_up_scope`."
+      },
+      "step_up_attempt": {
+        "type": "string",
+        "description": "The id of the reconnect that recorded `step_up_scope`, to send back when reporting its outcome."
       }
     },
     "required": [
@@ -18230,6 +18310,10 @@
       },
       "scope": {
         "type": "string"
+      },
+      "step_up_attempt": {
+        "type": "string",
+        "description": "The `step_up_attempt` of the reconnect that stored the user's grant, when that reconnect asked for a scope the MCP server had refused a call for."
       }
     },
     "required": [
@@ -18287,6 +18371,10 @@
     "properties": {
       "success": {
         "type": "boolean"
+      },
+      "missing_scope": {
+        "type": "string",
+        "description": "After a reconnect that asked for a scope the server had refused a call for: the part of that scope the authorization server did not grant. The account may lack the permission, or an administrator may need to consent to it."
       }
     },
     "required": [
@@ -18326,6 +18414,10 @@
       },
       "connected": {
         "type": "boolean"
+      },
+      "step_up_attempt": {
+        "type": "string",
+        "description": "Set when the request asked for `required_scope`: an id for this reconnect. Once the user completes it, the collection status reports it as `step_up_attempt`, so the caller can confirm that the grant is the one it started, even without a message from the callback page."
       }
     },
     "additionalProperties": false,
@@ -18336,6 +18428,92 @@
     "items": {
       "$ref": "#/components/schemas/OAuthAuthStatus"
     }
+  },
+  "McpStepUpScopeMode": {
+    "type": "string",
+    "enum": [
+      "union",
+      "challenged"
+    ],
+    "description": "`union` asks for the scope already granted, the scopes the server advertises and the challenged scope. `challenged` asks for the challenged scope alone, for an authorization server that refused the union with `invalid_scope`."
+  },
+  "AuthorizeRemoteMcpConnectionQuery": {
+    "type": "object",
+    "properties": {
+      "required_scope": {
+        "type": "string",
+        "maxLength": 512,
+        "description": "A scope the MCP server refused a tool call for (`insufficient_scope`). The authorization request asks for it too, unless the collection uses a shared OAuth provider, whose scope is configured by an administrator. A malformed scope is refused with 400."
+      },
+      "refused_tool": {
+        "type": "string",
+        "maxLength": 256,
+        "description": "The tool the server refused, recorded with the step-up."
+      },
+      "scope_mode": {
+        "$ref": "#/components/schemas/McpStepUpScopeMode"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Optional step-up parameters for authorizing a remote MCP connection again."
+  },
+  "McpStepUpOutcome": {
+    "type": "string",
+    "enum": [
+      "used",
+      "refused_again"
+    ],
+    "description": "`used`: the refused tool has now run, so the step-up is forgotten and a later refusal can ask the user to reconnect again. `refused_again`: the server refused the same scope after the step-up, so the agent stops asking; the step-up is kept."
+  },
+  "ReportMcpStepUpOutcomeRequest": {
+    "type": "object",
+    "properties": {
+      "app_install_id": {
+        "type": "string"
+      },
+      "collection_id": {
+        "type": "string"
+      },
+      "scope": {
+        "type": "string",
+        "maxLength": 512,
+        "description": "The step-up scope, as the token response gave it."
+      },
+      "outcome": {
+        "$ref": "#/components/schemas/McpStepUpOutcome"
+      },
+      "tool_name": {
+        "type": "string",
+        "maxLength": 256,
+        "description": "The tool that was called."
+      },
+      "step_up_attempt": {
+        "type": "string",
+        "maxLength": 64,
+        "description": "The `step_up_attempt` the token response gave with `step_up_scope`. With it, `used` clears only that step-up: one a later reconnect recorded for the same scope stays."
+      }
+    },
+    "required": [
+      "app_install_id",
+      "collection_id",
+      "scope",
+      "outcome"
+    ],
+    "additionalProperties": false,
+    "description": "What became of the step-up recorded on the user's grant for a remote MCP collection."
+  },
+  "ReportMcpStepUpOutcomeResponse": {
+    "type": "object",
+    "properties": {
+      "cleared": {
+        "type": "boolean",
+        "description": "Whether the recorded step-up for this scope is now gone."
+      }
+    },
+    "required": [
+      "cleared"
+    ],
+    "additionalProperties": false
   },
   "SetMcpApiKeyRequest": {
     "type": "object",
