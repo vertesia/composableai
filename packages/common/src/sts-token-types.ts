@@ -32,17 +32,10 @@ export type ServiceAccountTokenRequest = Wire.ServiceAccountTokenRequest;
  */
 export type IssueTokenRequest = Wire.IssueTokenRequest;
 
-/**
- * @deprecated The STS no longer serves `POST /token/refresh`. Renew a credential by requesting a new one through
- * `POST /token/issue`. Kept so code that still names the type keeps compiling.
- */
 export interface RefreshTokenRequest {
     token: string;
 }
 
-/**
- * @deprecated The STS no longer serves `POST /token/revoke`. Kept so code that still names the type keeps compiling.
- */
 export interface RevokeTokenRequest {
     token: string;
 }
