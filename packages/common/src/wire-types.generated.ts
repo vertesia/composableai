@@ -2464,6 +2464,7 @@ export type SharePointContentSourcePermissions = {
 export type ContentSourceSyncSettings = {
     enabled: boolean;
     interval_minutes: number;
+    notifications?: boolean | undefined;
 };
 /** Registers a content source. */
 export type CreateContentSourcePayload =
@@ -2514,11 +2515,19 @@ export type SyncContentSourcePayload = {
 export type ContentSourceStatus = {
     state: 'not_started' | 'running' | 'waiting' | 'stopped';
     permissions?: ContentSourcePermissionStatus | undefined;
+    notifications?: ContentSourceNotificationStatus | undefined;
     current_round?: ContentSourceSyncRound | undefined;
     last_round?: ContentSourceSyncRound | undefined;
     recent_rounds?: ContentSourceSyncRound[] | undefined;
     cursor_taken_at?: string | undefined;
     next_sync_at?: string | undefined;
+    error?: string | undefined;
+};
+/** Whether a source's system notifies Vertesia of changes, between its scheduled syncs. */
+export type ContentSourceNotificationStatus = {
+    state: 'active' | 'unavailable';
+    expires_at?: string | undefined;
+    last_notification_at?: string | undefined;
     error?: string | undefined;
 };
 export type ContentSourceSyncRound = {
@@ -13149,6 +13158,7 @@ export interface ApiComponentTypes {
     EventIngestChannelArray: EventIngestChannelArray;
     ContentSourceSyncSettings: ContentSourceSyncSettings;
     ContentSourcePermissionSettings: ContentSourcePermissionSettings;
+    ContentSourceNotificationStatus: ContentSourceNotificationStatus;
     ContentSourcePermissionStatus: ContentSourcePermissionStatus;
     SharePointContentSource: SharePointContentSource;
     GoogleDriveContentSourcePermissions: GoogleDriveContentSourcePermissions;
