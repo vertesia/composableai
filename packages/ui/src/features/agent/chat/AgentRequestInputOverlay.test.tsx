@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { AgentMessageType, type McpConnectUxConfig } from '@vertesia/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { axe } from '../../../__tests__/axe-helper.js';
 import { renderWithProviders } from '../../../__tests__/test-utils.js';
 import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import type { RequestInputMessageWithUx } from './ModernAgentOutput/requestInputMessages';
@@ -308,5 +309,108 @@ describe('AgentRequestInputOverlay', () => {
 
         expect(screen.getByText('Connect to Jira to continue.')).not.toBeNull();
         expect(screen.queryAllByRole('button')).toHaveLength(0);
+    });
+
+    describe('tool call arguments', () => {
+        function createUpdateTypeMessage(): RequestInputMessageWithUx {
+            const message = createToolApprovalRequestMessage();
+            message.message = 'Approve Content Types: Create or Update Type: Policy Directive?';
+            message.details.tool_approval = {
+                tool_name: 'create_or_update_type',
+                tool_title: 'Content Types: Create or Update Type',
+                target: 'name:Policy Directive',
+                approval_key: 'create_or_update_type:name:Policy Directive',
+                input: {
+                    name: 'Policy Directive',
+                    description: `Rewritten description. ${'More words. '.repeat(30)}`,
+                    api_key: '[REDACTED]',
+                    tags: ['policy', 'directive'],
+                    object_schema: {
+                        type: 'object',
+                        properties: { title: { type: 'string' }, status: { type: 'string', enum: ['draft', 'final'] } },
+                    },
+                    is_chunkable: false,
+                    notes: null,
+                },
+            };
+            return message;
+        }
+
+        it('shows the arguments without opening the editor, the rest behind a toggle', () => {
+            renderWithProviders(
+                <AgentRequestInputOverlay message={createUpdateTypeMessage()} onSendMessage={vi.fn()} />,
+            );
+
+            const section = screen.getByRole('region', { name: 'Arguments of this call' });
+            expect(section.textContent).toContain('Policy Directive');
+            expect(section.textContent).toContain('Rewritten description.');
+            expect(section.textContent).toContain('Redacted');
+            expect(section.textContent).not.toContain('[REDACTED]');
+            expect(screen.queryByText('Schema with 2 properties')).toBeNull();
+
+            const toggle = screen.getByRole('button', { name: 'Show all 7 arguments' });
+            expect(toggle.getAttribute('aria-expanded')).toBe('false');
+            fireEvent.click(toggle);
+
+            expect(screen.getByText('Schema with 2 properties')).not.toBeNull();
+            expect(screen.getByText(/one of draft, final/)).not.toBeNull();
+            expect(screen.getByText('2 items')).not.toBeNull();
+            expect(screen.getByRole('button', { name: 'Show fewer arguments' }).getAttribute('aria-expanded')).toBe(
+                'true',
+            );
+        });
+
+        it('clamps a long text until the reader expands it', () => {
+            renderWithProviders(
+                <AgentRequestInputOverlay message={createUpdateTypeMessage()} onSendMessage={vi.fn()} />,
+            );
+
+            const more = screen.getByRole('button', { name: 'Show more' });
+            const text = document.getElementById(more.getAttribute('aria-controls') ?? '');
+            expect(text?.className).toContain('line-clamp-3');
+            fireEvent.click(more);
+            expect(text?.className).not.toContain('line-clamp-3');
+        });
+
+        it('titles the prompt with the summary the tool declares', () => {
+            const message = createToolApprovalRequestMessage();
+            message.details.tool_approval = {
+                tool_name: 'content_source_set_sample',
+                tool_title: 'Content Source: Set Sample',
+                action_summary: 'Content Source: Set Sample: sync a sample of about 10% of the files',
+                summary: 'sync a sample of about 10% of the files',
+                approval_key: 'content_source_set_sample:abc',
+                input: { content_source_id: 'cs1', sample_percent: 10 },
+            };
+
+            renderWithProviders(<AgentRequestInputOverlay message={message} onSendMessage={vi.fn()} />);
+
+            expect(
+                screen.getByText('Approve Content Source: Set Sample: sync a sample of about 10% of the files?'),
+            ).not.toBeNull();
+            expect(screen.getByText('Content source ID')).not.toBeNull();
+        });
+
+        it('drops the placeholder older prompts carry in their title', () => {
+            const message = createToolApprovalRequestMessage();
+            message.details.tool_approval = {
+                tool_name: 'run_intake',
+                action_summary: 'Run Intake: tool action',
+                approval_key: 'run_intake:abc',
+            };
+
+            renderWithProviders(<AgentRequestInputOverlay message={message} onSendMessage={vi.fn()} />);
+
+            expect(screen.getByText('Approve Run Intake?')).not.toBeNull();
+        });
+
+        it('has no accessibility violations', async () => {
+            const { container } = renderWithProviders(
+                <AgentRequestInputOverlay message={createUpdateTypeMessage()} onSendMessage={vi.fn()} />,
+            );
+            fireEvent.click(screen.getByRole('button', { name: 'Show all 7 arguments' }));
+
+            expect(await axe(container)).toHaveNoViolations();
+        });
     });
 });

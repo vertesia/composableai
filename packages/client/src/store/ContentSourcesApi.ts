@@ -71,6 +71,10 @@ export class ContentSourcesApi extends ApiTopic {
         return this.post(`/${id}/sync`, { payload });
     }
 
+    reconcileDrives(id: string, payload: SyncContentSourcePayload): Promise<{ success: boolean }> {
+        return this.post(`/${encodeURIComponent(id)}/reconcile-drives`, { payload });
+    }
+
     /** The sync's state: the current and last rounds, and when the next one starts. */
     status(id: string): Promise<ContentSourceStatus> {
         return this.get(`/${id}/status`);

@@ -124,6 +124,35 @@ describe('TranscribeMedia', () => {
         expect(JSON.stringify(info.mock.calls)).not.toContain('secret');
     });
 
+    it('does not send a principal-bound download ticket to Gladia', async () => {
+        const { setupActivity } = await import('../../dsl/setup/ActivityContext.js');
+        const { FetchClient } = await import('@vertesia/api-fetch-client');
+        const post = vi.fn();
+        vi.mocked(FetchClient).mockImplementation(function (this: unknown) {
+            return { withHeaders: vi.fn().mockReturnThis(), post } as unknown;
+        });
+        const params = {} satisfies TranscriptMediaParams;
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: {
+                projects: { integrations: { retrieve: vi.fn().mockResolvedValue({ enabled: true, api_key: 'key' }) } },
+                objects: {
+                    retrieve: vi.fn().mockResolvedValue({ content: { source: 'google-drive://source/audio' } }),
+                },
+                files: {
+                    getDownloadUrl: vi
+                        .fn()
+                        .mockResolvedValue({ url: 'https://store.example/ticket', authentication_required: true }),
+                },
+            } as unknown as VertesiaClient,
+            objectId: 'object',
+            inputType: 'objectIds',
+            params,
+        } as unknown as ActivityContext<TranscriptMediaParams>);
+        const result = await testEnv.run(transcribeMedia, createTestPayload(params, 'object'));
+        expect(result).toMatchObject({ objectId: 'object', status: TextExtractionStatus.error });
+        expect(post).not.toHaveBeenCalled();
+    });
+
     it('should send transcription request in object mode', async () => {
         const { setupActivity } = await import('../../dsl/setup/ActivityContext.js');
         const { FetchClient } = await import('@vertesia/api-fetch-client');

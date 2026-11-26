@@ -33,6 +33,7 @@ import { AgentRunFeedback, agentMessageFeedbackId, isAgentMessageRatable } from 
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget, isAskUserOptions } from '../AskUserWidget';
 import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
+import { toolApprovalArgumentsFor } from '../ToolApprovalArguments';
 import { toolApprovalEditActionFor } from '../ToolApprovalEditAction';
 import { ThinkingMessages } from '../WaitingMessages';
 import {
@@ -73,6 +74,7 @@ import {
     getToolApprovalResponseMetadata,
     hasRequestInputUx,
     isRequestInputAnswered,
+    isRequestInputResolvedByToolApprovalEvent,
     isToolApprovalAnswerHidden,
     isToolApprovalRequestInput,
     isToolApprovalRequestInputHidden,
@@ -618,6 +620,7 @@ function SummaryMessage({
                     onSubmit={(value) =>
                         sendRequestInputResponse(onSendMessage, message, value, uxConfig.free_response?.metadata)
                     }
+                    body={toolApprovalArgumentsFor(message)}
                     extraActions={toolApprovalEditActionFor(
                         message,
                         onSendMessage
@@ -1152,7 +1155,13 @@ function buildSyntheticToolApprovalDecisionMessages(
 
         const toolApproval = getToolApprovalRecord(message);
         const approvalKey = getApprovalKeyFromToolApproval(toolApproval);
-        if (!toolApproval || !approvalKey || resolvedToolApprovalKeys.has(approvalKey)) return;
+        if (
+            !toolApproval ||
+            !approvalKey ||
+            isRequestInputResolvedByToolApprovalEvent(message, resolvedToolApprovalKeys)
+        ) {
+            return;
+        }
 
         const workstreamId = getWorkstreamId(message);
         let responseMessage: AgentMessage | undefined;
@@ -2181,6 +2190,7 @@ function SummaryActivityRow({
                                                         uxConfig.free_response?.metadata,
                                                     )
                                                 }
+                                                body={toolApprovalArgumentsFor(message)}
                                                 extraActions={toolApprovalEditActionFor(
                                                     message,
                                                     onSendMessage

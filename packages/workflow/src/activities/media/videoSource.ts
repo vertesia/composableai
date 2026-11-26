@@ -196,13 +196,20 @@ export const PROCESSING_URL_MAX_TTL_SECONDS = 24 * 60 * 60;
  * lifetime otherwise: when no lifetime is asked for, when the caller is not the platform's content processing, or when
  * the server has no such route.
  */
-async function signSource(client: VertesiaClient, source: string, ttlSeconds: number | undefined): Promise<string> {
+async function signSource(
+    client: VertesiaClient,
+    source: string,
+    ttlSeconds: number | undefined,
+): Promise<string | undefined> {
     if (ttlSeconds !== undefined) {
         try {
-            const { url } = await client.files.post<{ url: string }>(PROCESSING_DOWNLOAD_URL_PATH, {
-                payload: { file: source, ttl: ttlSeconds },
-            });
-            return url;
+            const download = await client.files.post<{ url: string; authentication_required?: boolean }>(
+                PROCESSING_DOWNLOAD_URL_PATH,
+                {
+                    payload: { file: source, ttl: ttlSeconds },
+                },
+            );
+            return download.authentication_required ? undefined : download.url;
         } catch (error) {
             rethrowIfActivityStopped(error);
             log.info('Could not sign a longer-lived URL for the video source; using the default lifetime', {
@@ -210,7 +217,8 @@ async function signSource(client: VertesiaClient, source: string, ttlSeconds: nu
             });
         }
     }
-    return (await client.files.getDownloadUrl(source)).url;
+    const download = await client.files.getDownloadUrl(source);
+    return download.authentication_required ? undefined : download.url;
 }
 
 /**
@@ -226,6 +234,7 @@ export async function getSignedVideoUrl(
     try {
         // Same rule as `client.files.downloadFile`: an HTTPS source is already readable as is.
         const url = source.startsWith('https:') ? source : await signSource(client, source, ttlSeconds);
+        if (!url || client.files.isAuthenticatedDownloadUrl?.(url)) return undefined;
         const { protocol } = new URL(url);
         if (protocol === 'https:' || protocol === 'http:') {
             return url;

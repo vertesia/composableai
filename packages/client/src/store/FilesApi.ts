@@ -268,16 +268,13 @@ export class FilesApi extends ApiTopic {
         return { id, path };
     }
 
-    /**
-     *
-     * @param location can be a relative path in the project, a reference to a cloud storage, or a accessible HTTPS URL (typically signed URL)
-     * @returns ReadableStream
-     */
-    async fetchDownloadUrl(url: string): Promise<Response> {
+    /** Whether this URL is a download ticket issued by this Store endpoint. */
+    isAuthenticatedDownloadUrl(url: string): boolean {
+        if (!URL.canParse(url)) return false;
         const endpoint = new URL(this.getUrl('/source-download'));
         const target = new URL(url);
         const ticket = target.pathname.slice(endpoint.pathname.length + 1);
-        if (
+        return (
             target.origin === endpoint.origin &&
             target.pathname.startsWith(`${endpoint.pathname}/`) &&
             /^[A-Za-z0-9_-]{32}$/.test(ticket) &&
@@ -285,8 +282,12 @@ export class FilesApi extends ApiTopic {
             !target.hash &&
             !target.username &&
             !target.password
-        ) {
-            const request = await this.createRequest(target.href, {
+        );
+    }
+
+    async fetchDownloadUrl(url: string): Promise<Response> {
+        if (this.isAuthenticatedDownloadUrl(url)) {
+            const request = await this.createRequest(url, {
                 method: 'GET',
                 headers: { ...this.headers },
                 redirect: 'error',

@@ -87,8 +87,9 @@ async function extractFromObject(
     }
 
     //skip if text already extracted and proper etag
-    if (doc.text && doc.text.length > 0 && doc.text_etag === doc.content.etag) {
-        return createResponse(doc, doc.text, TextExtractionStatus.skipped, 'Text already extracted');
+    const nativeDoc = doc.content.source.startsWith('google-drive://') && doc.content.etag?.startsWith('gd-docx-');
+    if ((nativeDoc ? doc.tokens?.etag === doc.content.etag : doc.text) && doc.text_etag === doc.content.etag) {
+        return createResponse(doc, doc.text ?? '', TextExtractionStatus.skipped, 'Text already extracted');
     }
 
     // Do NOT catch download failures here. Returning a result (rather than throwing) tells
@@ -98,6 +99,12 @@ async function extractFromObject(
     // fetchBlobAsStream already classifies the failure for us: not-found/forbidden become a
     // non-retryable DocumentNotFoundError, and everything else a plain Error the activity's
     // retry policy will retry. Let that classification through.
+    if (nativeDoc) {
+        const { text } = await client.objects.importDriveText(doc.id);
+        const markdown = text ?? '';
+        await client.objects.update(doc.id, { tokens: { ...countTokens(markdown), etag: doc.content.etag } });
+        return createResponse(doc, markdown, TextExtractionStatus.success);
+    }
     const { text: extractedText, skipped } = await extractTextFromSource(client, doc.content.source, doc.content.type);
     if (skipped) {
         return createResponse(doc, doc.text ?? '', TextExtractionStatus.skipped, skipped);

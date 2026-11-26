@@ -16,6 +16,9 @@ export function getRequestInputDisplayText(message: AgentMessage): string {
     if (!toolApproval) return getAgentMessageText(message);
 
     const title = getString(toolApproval.tool_title) ?? getString(toolApproval.tool_name);
+    // What the tool itself says the call will do, when it declares a summary.
+    const summary = getString(toolApproval.summary);
+    if (title && summary) return `Approve ${title}: ${summary}?`;
     const target = formatToolApprovalTargetForDisplay(getString(toolApproval.target));
     if (title && target) return `Approve ${title}: ${target}?`;
 
@@ -34,7 +37,8 @@ function getString(value: unknown): string | undefined {
 }
 
 function formatToolApprovalActionSummaryForDisplay(actionSummary: string): string {
-    return actionSummary.replace(/:\s*name(?::|\s+)/i, ': ');
+    // Prompts posted before the workflow stopped writing it end with a placeholder that says nothing.
+    return actionSummary.replace(/:\s*name(?::|\s+)/i, ': ').replace(/:\s*tool action$/i, '');
 }
 
 function formatToolApprovalTargetForDisplay(target: string | undefined): string | undefined {
@@ -247,11 +251,46 @@ export function getRequestInputResponseIdFromMetadata(metadata?: Record<string, 
  * approval key. Approval keys are `tool_name:target`, so the same action repeats across turns.
  */
 const RESOLVED_REQUEST_ID_PREFIX = 'request:';
+/** Same, for a prompt posted without a request id (older workers): it is named by its message key. */
+const RESOLVED_MESSAGE_KEY_PREFIX = 'message:';
 
+const TOOL_APPROVAL_DENIAL_DECISIONS = new Set([
+    'denied',
+    'denied_with_feedback',
+    'timeout',
+    'reviewer_denied',
+    'cancelled_after_denial',
+]);
+
+function getToolApprovalResolutionToken(message: AgentMessage): string {
+    const requestId = getRequestInputId(message);
+    return requestId
+        ? `${RESOLVED_REQUEST_ID_PREFIX}${requestId}`
+        : `${RESOLVED_MESSAGE_KEY_PREFIX}${getRequestInputMessageKey(message)}`;
+}
+
+/**
+ * The tool-approval prompts the workflow closed without waiting for an answer in the conversation, as
+ * resolution tokens (see {@link isRequestInputResolvedByToolApprovalEvent}).
+ *
+ * Every resolution is scoped to prompts posted before it. A denial names its prompt's tool use id, and
+ * also closes the earlier prompts for the same approval key, but never a later one: after a denial
+ * (with feedback in particular) the agent often retries the same action, and that new prompt must still
+ * be shown, or the run waits for an answer with nothing on screen.
+ */
 export function getResolvedToolApprovalKeys(messages: AgentMessage[]): Set<string> {
     const resolved = new Set<string>();
+    const promptTokensByApprovalKey = new Map<string, string[]>();
 
     for (const message of messages) {
+        const promptApprovalKey = getToolApprovalKey(message);
+        if (message.type === AgentMessageType.REQUEST_INPUT && promptApprovalKey !== undefined) {
+            const tokens = promptTokensByApprovalKey.get(promptApprovalKey) ?? [];
+            tokens.push(getToolApprovalResolutionToken(message));
+            promptTokensByApprovalKey.set(promptApprovalKey, tokens);
+            continue;
+        }
+
         const details = getRecord(message.details);
         const approvalRequest = getRecord(details?.approval_request);
         const approvalKey = approvalRequest?.approval_key;
@@ -270,13 +309,17 @@ export function getResolvedToolApprovalKeys(messages: AgentMessage[]): Set<strin
 
         if (
             typeof approvalKey === 'string' &&
-            (decision === 'denied' ||
-                decision === 'denied_with_feedback' ||
-                decision === 'timeout' ||
-                decision === 'reviewer_denied' ||
-                decision === 'cancelled_after_denial')
+            typeof decision === 'string' &&
+            TOOL_APPROVAL_DENIAL_DECISIONS.has(decision)
         ) {
-            resolved.add(approvalKey);
+            // The denial's tool lifecycle event carries the denied call's id, which is the prompt's request id.
+            const toolUseId = details?.tool_use_id ?? details?.request_id;
+            if (typeof toolUseId === 'string' && toolUseId) {
+                resolved.add(`${RESOLVED_REQUEST_ID_PREFIX}${toolUseId}`);
+            }
+            for (const token of promptTokensByApprovalKey.get(approvalKey) ?? []) {
+                resolved.add(token);
+            }
         }
     }
 
@@ -596,10 +639,7 @@ export function isRequestInputResolvedByToolApprovalEvent(
     resolvedToolApprovalKeys: Set<string>,
 ): boolean {
     if (message.type !== AgentMessageType.REQUEST_INPUT) return false;
-    const requestId = getRequestInputId(message);
-    if (requestId && resolvedToolApprovalKeys.has(`${RESOLVED_REQUEST_ID_PREFIX}${requestId}`)) return true;
-    const approvalKey = getToolApprovalKey(message);
-    return approvalKey ? resolvedToolApprovalKeys.has(approvalKey) : false;
+    return resolvedToolApprovalKeys.has(getToolApprovalResolutionToken(message));
 }
 
 export function getAnsweredToolApprovalRequestInputKeys(messages: AgentMessage[]): Set<string> {

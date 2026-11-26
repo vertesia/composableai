@@ -1,8 +1,14 @@
 import type { VertesiaClient, ZenoClient } from '@vertesia/client';
-import type { ContentObject, MarkdownRenditionFormat, RenderMarkdownPayload } from '@vertesia/common';
+import type {
+    ContentObject,
+    GetFileUrlResponse,
+    MarkdownRenditionFormat,
+    RenderMarkdownPayload,
+} from '@vertesia/common';
 import type { ToastFn } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useCallback, useState } from 'react';
+import { fetchBrowserFile } from '../../../document-viewer/useBrowserFileUrl.js';
 
 export interface UseDownloadFileOptions {
     client: VertesiaClient | ZenoClient;
@@ -64,7 +70,7 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
                 });
 
                 // Trigger download
-                triggerDownload(result.url, filename);
+                await downloadResult(client, result, filename);
             } catch (err) {
                 toast({
                     status: 'error',
@@ -82,10 +88,19 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
     /**
      * Download a file from a direct URL (already signed or public).
      */
-    const downloadFromUrl = useCallback((url: string, filename?: string) => {
-        if (!url) return;
-        triggerDownload(url, filename);
-    }, []);
+    const downloadFromUrl = useCallback(
+        (url: string, filename?: string) => {
+            if (!url) return;
+            void downloadResult(client, { url }, filename).catch((err: unknown) => {
+                toast({
+                    status: 'error',
+                    title: t('store.downloadFailed'),
+                    description: err instanceof Error ? err.message : t('store.failedToGetDownloadUrl'),
+                });
+            });
+        },
+        [client, t, toast],
+    );
 
     /**
      * Internal helper to handle the render result and trigger download.
@@ -99,13 +114,13 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
 
             // Use download_url if available (direct signed URL), otherwise fall back to file_uri
             if (rendition.download_url) {
-                triggerDownload(rendition.download_url, filename);
+                await downloadResult(client, { url: rendition.download_url }, filename);
             } else if (rendition.file_uri) {
                 const result = await client.files.getDownloadUrlWithOptions({
                     file: rendition.file_uri,
                     name: filename,
                 });
-                triggerDownload(result.url, filename);
+                await downloadResult(client, result, filename);
             } else {
                 throw new Error('No download URL or file URI in response');
             }
@@ -203,6 +218,33 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
     };
 }
 
+async function downloadResult(
+    client: ZenoClient | VertesiaClient,
+    result: Pick<GetFileUrlResponse, 'url' | 'authentication_required' | 'mime_type'>,
+    filename?: string,
+) {
+    if (!result.authentication_required && !client.files.isAuthenticatedDownloadUrl?.(result.url)) {
+        triggerDownload(result.url, filename);
+        return;
+    }
+    const blob = await fetchBrowserFile(client.files, result);
+    downloadBlob(blob, filename || 'download');
+}
+
+function downloadBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+        link.remove();
+        URL.revokeObjectURL(url);
+    }, 100);
+}
+
 /**
  * Trigger a file download in the browser.
  * Attempts to fetch and create a blob for proper filename control.
@@ -215,19 +257,7 @@ function triggerDownload(url: string, filename?: string): void {
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             return response.blob();
         })
-        .then((blob) => {
-            const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = filename || getFilenameFromUrl(url);
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(blobUrl);
-            }, 100);
-        })
+        .then((blob) => downloadBlob(blob, filename || getFilenameFromUrl(url)))
         .catch(() => {
             // CORS or fetch failed - fall back to direct link download
             const a = document.createElement('a');

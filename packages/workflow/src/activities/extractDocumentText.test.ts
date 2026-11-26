@@ -42,6 +42,7 @@ beforeAll(() => {
 });
 
 const retrieve = vi.fn();
+const importDriveText = vi.fn();
 const setObjectText = vi.fn();
 const update = vi.fn();
 
@@ -53,6 +54,7 @@ beforeEach(async () => {
     const client = {
         objects: {
             retrieve,
+            importDriveText,
             setObjectText,
             update,
         },
@@ -107,6 +109,22 @@ function createPayload(): DSLActivityExecutionPayload<ExtractDocumentTextParams>
 }
 
 describe('extractDocumentText', () => {
+    it.each(['# Heading', ''])('persists native Drive Markdown, including an empty edit', async (text) => {
+        const content = {
+            source: 'google-drive://source/doc',
+            etag: 'gd-docx-doc-2',
+            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        };
+        retrieve.mockResolvedValue(createDoc({ content, text: 'old contents', text_etag: 'gd-docx-doc-1' }));
+        importDriveText.mockResolvedValue({ text });
+        const result = await testEnv.run(extractDocumentText, createPayload());
+        expect(result.status).toBe(TextExtractionStatus.success);
+        expect(result.len).toBe(text.length);
+        expect(importDriveText).toHaveBeenCalledExactlyOnceWith('object-1');
+        expect(update).toHaveBeenCalledWith('object-1', { tokens: expect.objectContaining({ etag: content.etag }) });
+        expect(withBlobTempFile).not.toHaveBeenCalled();
+    });
+
     it('stores extracted text through setObjectText and keeps tokens on the object', async () => {
         retrieve.mockResolvedValue(createDoc());
         setObjectText.mockResolvedValue({ text: 'hello world' });

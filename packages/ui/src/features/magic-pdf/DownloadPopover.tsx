@@ -1,8 +1,8 @@
-import { Button } from '@vertesia/ui/core';
+import { Button, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { Download } from 'lucide-react';
-import { getResourceUrl } from './MagicPdfProvider';
+import { useDownloadFile } from '../store/objects/components/useDownloadFile.js';
 
 interface DownloadPopoverProps {
     object: { id: string };
@@ -10,9 +10,8 @@ interface DownloadPopoverProps {
 export function DownloadPopover({ object }: DownloadPopoverProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
-    const onDownload = (name: string) => {
-        void getResourceUrl(client, object.id, name).then((url) => window.open(url, '_blank'));
-    };
+    const { downloadFromContentSource } = useDownloadFile({ client, toast: useToast() });
+    const onDownload = (name: string) => void downloadFromContentSource(`magic-pdf/${object.id}/${name}`, name);
 
     return (
         <Button variant="ghost" size="xs" onClick={() => onDownload('document.md')} title={t('pdf.download')}>

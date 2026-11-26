@@ -9,6 +9,7 @@ import { Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { useEffect, useState } from 'react';
+import { useBrowserFileUrl } from '../document-viewer/useBrowserFileUrl.js';
 import { formatDuration, WEB_SUPPORTED_AUDIO_FORMATS } from './formats.js';
 
 interface AudioPanelProps {
@@ -80,6 +81,7 @@ export function pcm16LeToWav(pcm: ArrayBuffer, format: PcmFormat): Blob {
 export function AudioPanel({ url, source, object, audio, className }: AudioPanelProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
+    const browserFileUrl = useBrowserFileUrl(client.files, source ?? object?.content?.source ?? url);
     const [audioUrl, setAudioUrl] = useState<string | undefined>(url);
     const [isLoading, setIsLoading] = useState<boolean>(!url && (!!source || !!object));
 
@@ -115,13 +117,15 @@ export function AudioPanel({ url, source, object, audio, className }: AudioPanel
         const load = async () => {
             try {
                 if (url) {
-                    await setPlayableUrl(url);
+                    await setPlayableUrl(
+                        client.files.isAuthenticatedDownloadUrl?.(url) ? await browserFileUrl({ url }) : url,
+                    );
                     return;
                 }
 
                 if (source) {
                     const downloadUrl = await client.files.getDownloadUrl(source);
-                    await setPlayableUrl(downloadUrl.url);
+                    await setPlayableUrl(await browserFileUrl(downloadUrl));
                     return;
                 }
 
@@ -135,7 +139,7 @@ export function AudioPanel({ url, source, object, audio, className }: AudioPanel
                     downloadUrl = await client.files.getDownloadUrl(object.content.source);
                 }
                 if (downloadUrl) {
-                    await setPlayableUrl(downloadUrl.url);
+                    await setPlayableUrl(await browserFileUrl(downloadUrl));
                 }
             } catch (error) {
                 if (!signal.aborted) console.error('Failed to get audio URL', error);
@@ -158,7 +162,7 @@ export function AudioPanel({ url, source, object, audio, className }: AudioPanel
                 URL.revokeObjectURL(generatedUrl);
             }
         };
-    }, [url, source, object, audio, audioRendition, isOriginalWebSupported, client]);
+    }, [url, source, object, audio, audioRendition, isOriginalWebSupported, client, browserFileUrl]);
 
     if (showsObjectFallbackEmpty) {
         return (

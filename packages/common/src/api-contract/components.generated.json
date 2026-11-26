@@ -2493,6 +2493,10 @@
         "type": "string",
         "format": "uuid",
         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+      },
+      "scim_google_drive_reader_id": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{24}$"
       }
     },
     "required": [
@@ -6493,6 +6497,383 @@
     ],
     "additionalProperties": false
   },
+  "ManagedSharePointLibrary": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "tenant_id": {
+        "type": "string"
+      },
+      "site_id": {
+        "type": "string"
+      },
+      "site_url": {
+        "type": "string"
+      },
+      "drive_id": {
+        "type": "string"
+      },
+      "audience": {
+        "type": "string",
+        "enum": [
+          "uniform",
+          "mirrored"
+        ]
+      },
+      "reader_mode": {
+        "type": "string",
+        "const": "organization"
+      },
+      "lifecycle": {
+        "type": "string",
+        "enum": [
+          "disconnecting",
+          "disconnected"
+        ]
+      }
+    },
+    "required": [
+      "id",
+      "tenant_id",
+      "site_id",
+      "site_url",
+      "drive_id",
+      "audience"
+    ],
+    "additionalProperties": false,
+    "readOnly": true
+  },
+  "SharePointLibraryPathParams": {
+    "type": "object",
+    "properties": {
+      "bindingId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      }
+    },
+    "required": [
+      "bindingId"
+    ]
+  },
+  "BeginSharePointOrganizationLinkPayload": {
+    "type": "object",
+    "properties": {
+      "tenant_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      }
+    },
+    "required": [
+      "tenant_id"
+    ],
+    "additionalProperties": false
+  },
+  "CompleteSharePointOrganizationLinkPayload": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{43}$"
+      }
+    },
+    "required": [
+      "state"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointOrganizationLinkAttempt": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{43}$"
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      }
+    },
+    "required": [
+      "state",
+      "expires_at"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointOrganizationReader": {
+    "type": "object",
+    "properties": {
+      "client_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "issuer": {
+        "type": "string",
+        "format": "uri"
+      },
+      "subject": {
+        "type": "string",
+        "minLength": 1
+      },
+      "audience": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "client_id",
+      "issuer",
+      "subject",
+      "audience"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointOrganization": {
+    "type": "object",
+    "properties": {
+      "tenant_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "linked_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      },
+      "reader": {
+        "$ref": "#/components/schemas/SharePointOrganizationReader"
+      }
+    },
+    "required": [
+      "tenant_id",
+      "linked_at"
+    ],
+    "additionalProperties": false
+  },
+  "ConfigureSharePointOrganizationReaderPayload": {
+    "type": "object",
+    "properties": {
+      "client_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      }
+    },
+    "required": [
+      "client_id"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointOrganizations": {
+    "type": "object",
+    "properties": {
+      "organizations": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SharePointOrganization"
+        }
+      }
+    },
+    "required": [
+      "organizations"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointRegion": {
+    "type": "object",
+    "properties": {
+      "region": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Assigned Vertesia region identifier."
+      }
+    },
+    "required": [
+      "region"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointLibraryContext": {
+    "type": "object",
+    "properties": {
+      "site_hostname": {
+        "type": "string",
+        "maxLength": 253,
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9-]*\\.sharepoint\\.com$"
+      },
+      "site_collection_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "web_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "list_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      }
+    },
+    "required": [
+      "site_hostname",
+      "site_collection_id",
+      "web_id",
+      "list_id"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointLibraryReceipt": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "pending_resolution",
+          "awaiting_site_grant",
+          "library_unavailable",
+          "awaiting_approval",
+          "approved",
+          "connected",
+          "disconnected"
+        ]
+      }
+    },
+    "required": [
+      "id",
+      "status"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointLibraryRequest": {
+    "type": "object",
+    "properties": {
+      "site_hostname": {
+        "type": "string",
+        "maxLength": 253,
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9-]*\\.sharepoint\\.com$"
+      },
+      "site_collection_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "web_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "list_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      },
+      "tenant_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "binding_id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      },
+      "site_url": {
+        "type": "string",
+        "format": "uri"
+      },
+      "library_url": {
+        "type": "string",
+        "format": "uri"
+      },
+      "library_name": {
+        "type": "string",
+        "minLength": 1
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "pending_resolution",
+          "awaiting_site_grant",
+          "library_unavailable",
+          "awaiting_approval",
+          "approved",
+          "connected",
+          "disconnected"
+        ]
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      }
+    },
+    "required": [
+      "site_hostname",
+      "site_collection_id",
+      "web_id",
+      "list_id",
+      "id",
+      "tenant_id",
+      "status",
+      "created_at"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointLibraryRequests": {
+    "type": "object",
+    "properties": {
+      "requests": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SharePointLibraryRequest"
+        }
+      },
+      "next_cursor": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      }
+    },
+    "required": [
+      "requests"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointLibraryRequestsQuery": {
+    "type": "object",
+    "properties": {
+      "cursor": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      }
+    },
+    "additionalProperties": false
+  },
+  "SharePointRequestProject": {
+    "type": "object",
+    "properties": {
+      "project_id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      },
+      "binding_id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      },
+      "source_id": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "project_id"
+    ],
+    "additionalProperties": false
+  },
   "Project": {
     "type": "object",
     "properties": {
@@ -6510,6 +6891,16 @@
       },
       "account": {
         "type": "string"
+      },
+      "sharepoint_library_binding": {
+        "$ref": "#/components/schemas/ManagedSharePointLibrary"
+      },
+      "sharepoint_library_attachments": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ManagedSharePointLibrary"
+        },
+        "readOnly": true
       },
       "configuration": {
         "$ref": "#/components/schemas/ProjectConfiguration"
@@ -6564,6 +6955,412 @@
       "updated_at"
     ],
     "additionalProperties": false
+  },
+  "ApproveSharePointLibraryPayload": {
+    "anyOf": [
+      {
+        "type": "object",
+        "properties": {
+          "manager_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$"
+          },
+          "reader_group_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "uniform",
+              "mirrored"
+            ]
+          },
+          "project_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "manager_id",
+          "reader_group_id",
+          "audience"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "uniform",
+              "mirrored"
+            ]
+          }
+        },
+        "required": [
+          "project_id",
+          "audience"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "SharePointContentSourcePermissions": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "const": "source"
+      },
+      "entra_tenant_id": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+      },
+      "scim_connection_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "Optional verified Entra SCIM connection. Required for tenant_group_id."
+      },
+      "tenant_group_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "refresh_minutes": {
+        "type": "integer",
+        "minimum": 15,
+        "maximum": 1440
+      },
+      "max_stale_hours": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 168
+      }
+    },
+    "required": [
+      "mode",
+      "entra_tenant_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConfigureSharePointLibraryReaderPayload": {
+    "type": "object",
+    "properties": {
+      "permissions": {
+        "$ref": "#/components/schemas/SharePointContentSourcePermissions"
+      },
+      "site_policy_confirmed": {
+        "type": "boolean",
+        "description": "Required for mirrored permissions. The account administrator confirms that RestrictedAccessControl and BlockDownloadPolicy are both off on the exact bound site."
+      }
+    },
+    "additionalProperties": false
+  },
+  "SharePointLibraryApproval": {
+    "type": "object",
+    "properties": {
+      "manager_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "reader_group_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "audience": {
+        "type": "string",
+        "enum": [
+          "uniform",
+          "mirrored"
+        ]
+      },
+      "project_name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "approved_by": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "approved_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      }
+    },
+    "required": [
+      "manager_id",
+      "reader_group_id",
+      "audience",
+      "project_name",
+      "approved_by",
+      "approved_at"
+    ]
+  },
+  "ContentSourceSummary": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "type": {
+        "type": "string",
+        "enum": [
+          "sharepoint",
+          "box",
+          "google-drive"
+        ]
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` under which the source folder's tree is reproduced, e.g. `/sharepoint/legal`."
+      },
+      "site_url": {
+        "type": "string",
+        "description": "SharePoint only: the site URL."
+      },
+      "library_name": {
+        "type": "string",
+        "description": "SharePoint only: the document library name."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The folder synced: relative to the library root for SharePoint (empty for the whole library), the folder path below All Files for Box."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "not_started",
+          "running",
+          "waiting",
+          "stopped"
+        ],
+        "description": "`waiting` between syncs, `running` during one, `stopped` when its credentials were refused or the source is being deleted."
+      },
+      "next_sync_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "last_success_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the last round that finished without an error ended. Absent when none has."
+      },
+      "last_round": {
+        "$ref": "#/components/schemas/ContentSourceRoundSummary"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "type",
+      "location_root",
+      "folder_path",
+      "sync",
+      "state"
+    ],
+    "additionalProperties": false,
+    "description": "What a content source syncs into the project and how its sync stands, readable by every member who can read content. Holds no connection, credential or permission settings."
+  },
+  "ContentSourceSyncSettings": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the source syncs on its own every `interval_minutes`."
+      },
+      "interval_minutes": {
+        "type": "integer",
+        "minimum": 15,
+        "maximum": 10080,
+        "description": "Minutes between two scheduled syncs, from one scheduled time to the next."
+      }
+    },
+    "required": [
+      "enabled",
+      "interval_minutes"
+    ],
+    "additionalProperties": false,
+    "description": "When the source syncs. A source with scheduled sync disabled still syncs on `POST /content-sources/{id}/sync`."
+  },
+  "ContentSourceRoundSummary": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "import",
+          "update"
+        ],
+        "description": "`import` lists the whole folder; `update` reads the changes since the previous sync."
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "finished_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "outcome": {
+        "type": "string",
+        "enum": [
+          "succeeded",
+          "failed"
+        ],
+        "description": "Whether the round finished without an error."
+      }
+    },
+    "required": [
+      "kind",
+      "started_at",
+      "outcome"
+    ],
+    "additionalProperties": false,
+    "description": "When a finished sync round ran, and how it ended."
+  },
+  "SharePointLibraryConnection": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "tenant_id": {
+        "type": "string"
+      },
+      "site_id": {
+        "type": "string"
+      },
+      "list_id": {
+        "type": "string"
+      },
+      "drive_id": {
+        "type": "string"
+      },
+      "site_url": {
+        "type": "string"
+      },
+      "library_url": {
+        "type": "string"
+      },
+      "library_name": {
+        "type": "string"
+      },
+      "project_name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "audience": {
+        "type": "string",
+        "enum": [
+          "uniform",
+          "mirrored"
+        ]
+      },
+      "can_manage": {
+        "type": "boolean"
+      },
+      "stage": {
+        "type": "string",
+        "enum": [
+          "pending_approval",
+          "provisioning_project",
+          "configure_reader",
+          "ready",
+          "disconnecting",
+          "disconnected"
+        ]
+      },
+      "project_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "project_mode": {
+        "type": "string",
+        "enum": [
+          "dedicated",
+          "existing"
+        ]
+      },
+      "reader_mode": {
+        "type": "string",
+        "const": "organization"
+      },
+      "organization_reader_available": {
+        "type": "boolean"
+      },
+      "source_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "approval": {
+        "$ref": "#/components/schemas/SharePointLibraryApproval"
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSummary"
+      }
+    },
+    "required": [
+      "id",
+      "tenant_id",
+      "site_id",
+      "list_id",
+      "drive_id",
+      "site_url",
+      "library_url",
+      "library_name",
+      "can_manage",
+      "stage"
+    ]
+  },
+  "SharePointLibraryConnectionArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/SharePointLibraryConnection"
+    }
+  },
+  "ProjectSharePointLibraryResponse": {
+    "type": "object",
+    "properties": {
+      "library": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/SharePointLibraryConnection"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "libraries": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SharePointLibraryConnection"
+        }
+      }
+    },
+    "required": [
+      "library"
+    ]
   },
   "UpdateProjectPayload": {
     "type": "object",
@@ -7301,10 +8098,6 @@
         },
         "description": "Scopes a token request may ask for instead of default_scopes (POST /oauth-providers/{id}/token with a scope), in addition to default_scopes, which are always allowed. Only used for the client_credentials grant. Set by the provider admin: a caller cannot request a scope outside this list and default_scopes. On update, an empty array clears it."
       },
-      "sharepoint_permission_site": {
-        "type": "string",
-        "format": "uri"
-      },
       "use_pkce": {
         "type": "boolean",
         "description": "Whether to use PKCE (Proof Key for Code Exchange) in the authorization flow. Only applies to authorization_code flow. Defaults to true."
@@ -7432,11 +8225,6 @@
           "type": "string"
         },
         "description": "Extra parameters added to the URL-encoded body of every client_credentials token request for this provider, after the standard ones (e.g. Box's box_subject_type and box_subject_id). Only used for the client_credentials grant. At most 10 entries; keys match ^[A-Za-z][A-Za-z0-9_.-]{0,63}$; values are at most 512 characters; grant_type, client_id, client_secret, scope, client_assertion and client_assertion_type are reserved. Not secret: returned as stored. On update, an empty object clears them."
-      },
-      "sharepoint_permission_site": {
-        "type": "string",
-        "format": "uri",
-        "description": "Immutable SharePoint site URL for a dedicated permission reader. Create a replacement provider to change its site or credential."
       }
     },
     "required": [
@@ -9447,7 +10235,7 @@
       "responses",
       "chat_completions"
     ],
-    "description": "The OpenAI API an OpenAI-compatible environment calls: `responses` (the default when omitted) or `chat_completions`, for services that implement only Chat Completions."
+    "description": "The OpenAI API the environment calls: `responses` or `chat_completions`. Supported by OpenAI-compatible, OpenRouter, Groq, Together AI and xAI environments. When omitted, OpenAI-compatible and xAI environments call `responses`, and OpenRouter, Groq and Together AI environments call `chat_completions`."
   },
   "ExecutionEnvironmentSettings": {
     "type": "object",
@@ -33762,6 +34550,10 @@
         "type": "string",
         "description": "The extracted text to store for the object."
       },
+      "expected_content_etag": {
+        "type": "string",
+        "description": "Reject stale text when the current content etag differs."
+      },
       "etag": {
         "type": "string",
         "description": "The etag of the content the text was extracted from. When provided, the server records it as the object text_etag so extraction can be skipped while the content is unchanged."
@@ -34112,7 +34904,7 @@
                 "minLength": 1
               },
               "source": {
-                "pattern": "^(?:gs|s3|az|sharepoint|box)://[^/]+/.+"
+                "pattern": "^(?:gs|s3|az|sharepoint|box|google-drive)://[^/]+/.+"
               }
             }
           }
@@ -34148,7 +34940,7 @@
                 "minLength": 1
               },
               "source": {
-                "pattern": "^(?:gs|s3|az|sharepoint|box)://[^/]+/.+"
+                "pattern": "^(?:gs|s3|az|sharepoint|box|google-drive)://[^/]+/.+"
               }
             }
           }
@@ -34335,7 +35127,7 @@
               "minLength": 1
             },
             "source": {
-              "pattern": "^(?:gs|s3|az|sharepoint|box)://[^/]+/.+"
+              "pattern": "^(?:gs|s3|az|sharepoint|box|google-drive)://[^/]+/.+"
             }
           }
         }
@@ -39163,27 +39955,6 @@
       "$ref": "#/components/schemas/EventIngestChannel"
     }
   },
-  "ContentSourceSyncSettings": {
-    "type": "object",
-    "properties": {
-      "enabled": {
-        "type": "boolean",
-        "description": "Whether the source syncs on its own every `interval_minutes`."
-      },
-      "interval_minutes": {
-        "type": "integer",
-        "minimum": 15,
-        "maximum": 10080,
-        "description": "Minutes between two scheduled syncs, from one scheduled time to the next."
-      }
-    },
-    "required": [
-      "enabled",
-      "interval_minutes"
-    ],
-    "additionalProperties": false,
-    "description": "When the source syncs. A source with scheduled sync disabled still syncs on `POST /content-sources/{id}/sync`."
-  },
   "ProjectContentSourcePermissions": {
     "type": "object",
     "properties": {
@@ -39197,27 +39968,18 @@
     ],
     "additionalProperties": false
   },
-  "SharePointContentSourcePermissions": {
+  "GoogleDriveContentSourcePermissions": {
     "type": "object",
     "properties": {
       "mode": {
         "type": "string",
         "const": "source"
       },
-      "entra_tenant_id": {
+      "provider": {
         "type": "string",
-        "format": "uuid",
-        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        "const": "google-drive"
       },
       "scim_connection_id": {
-        "type": "string",
-        "pattern": "^[0-9a-fA-F]{24}$"
-      },
-      "permission_reader_provider_id": {
-        "type": "string",
-        "pattern": "^[0-9a-fA-F]{24}$"
-      },
-      "tenant_group_id": {
         "type": "string",
         "pattern": "^[0-9a-fA-F]{24}$"
       },
@@ -39234,31 +39996,22 @@
     },
     "required": [
       "mode",
-      "entra_tenant_id",
-      "scim_connection_id",
-      "permission_reader_provider_id"
+      "provider",
+      "scim_connection_id"
     ],
     "additionalProperties": false
   },
   "ContentSourcePermissionSettings": {
-    "discriminator": {
-      "propertyName": "mode",
-      "mapping": {
-        "project": "#/components/schemas/ProjectContentSourcePermissions",
-        "source": "#/components/schemas/SharePointContentSourcePermissions"
-      }
-    },
-    "oneOf": [
+    "anyOf": [
       {
         "$ref": "#/components/schemas/ProjectContentSourcePermissions"
       },
       {
         "$ref": "#/components/schemas/SharePointContentSourcePermissions"
+      },
+      {
+        "$ref": "#/components/schemas/GoogleDriveContentSourcePermissions"
       }
-    ],
-    "type": "object",
-    "required": [
-      "mode"
     ]
   },
   "ContentSourcePermissionStatus": {
@@ -39294,6 +40047,27 @@
       "unresolved"
     ],
     "additionalProperties": false
+  },
+  "SharePointPermissionOptions": {
+    "discriminator": {
+      "propertyName": "mode",
+      "mapping": {
+        "project": "#/components/schemas/ProjectContentSourcePermissions",
+        "source": "#/components/schemas/SharePointContentSourcePermissions"
+      }
+    },
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ProjectContentSourcePermissions"
+      },
+      {
+        "$ref": "#/components/schemas/SharePointContentSourcePermissions"
+      }
+    ],
+    "type": "object",
+    "required": [
+      "mode"
+    ]
   },
   "SharePointContentSource": {
     "type": "object",
@@ -39356,8 +40130,13 @@
         "type": "string",
         "const": "sharepoint"
       },
+      "reader_mode": {
+        "type": "string",
+        "const": "organization",
+        "description": "The managed library uses its organization reader, without a project OAuth provider."
+      },
       "permissions": {
-        "$ref": "#/components/schemas/ContentSourcePermissionSettings"
+        "$ref": "#/components/schemas/SharePointPermissionOptions"
       },
       "site_url": {
         "type": "string",
@@ -39387,7 +40166,6 @@
     "required": [
       "id",
       "name",
-      "oauth_provider_id",
       "location_root",
       "sync",
       "type",
@@ -39400,6 +40178,272 @@
     ],
     "additionalProperties": false,
     "description": "A SharePoint Online document library, or a folder in one. Synced documents reference their file in SharePoint (`sharepoint://<source_id>/<item_id>`) instead of a copy."
+  },
+  "SingleGoogleDriveSelection": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "const": "single"
+      },
+      "drive_id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,256}$"
+      }
+    },
+    "required": [
+      "mode",
+      "drive_id"
+    ],
+    "additionalProperties": false
+  },
+  "AllGoogleDrivesSelection": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "const": "all"
+      }
+    },
+    "required": [
+      "mode"
+    ],
+    "additionalProperties": false
+  },
+  "GoogleDrivePermissionOptions": {
+    "discriminator": {
+      "propertyName": "mode",
+      "mapping": {
+        "project": "#/components/schemas/ProjectContentSourcePermissions",
+        "source": "#/components/schemas/GoogleDriveContentSourcePermissions"
+      }
+    },
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ProjectContentSourcePermissions"
+      },
+      {
+        "$ref": "#/components/schemas/GoogleDriveContentSourcePermissions"
+      }
+    ],
+    "type": "object",
+    "required": [
+      "mode"
+    ]
+  },
+  "GoogleDriveSelection": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/SingleGoogleDriveSelection"
+      },
+      {
+        "$ref": "#/components/schemas/AllGoogleDrivesSelection"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "mode",
+      "mapping": {
+        "single": "#/components/schemas/SingleGoogleDriveSelection",
+        "all": "#/components/schemas/AllGoogleDrivesSelection"
+      }
+    },
+    "type": "object",
+    "required": [
+      "mode"
+    ]
+  },
+  "GoogleDriveReaderConfig": {
+    "type": "object",
+    "properties": {
+      "audience": {
+        "type": "string",
+        "pattern": "^\\/\\/iam\\.googleapis\\.com\\/projects\\/[0-9]+\\/locations\\/global\\/workloadIdentityPools\\/[a-z0-9-]+\\/providers\\/[a-z0-9-]+$"
+      },
+      "service_account": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]+@[a-z0-9-]+\\.iam\\.gserviceaccount\\.com$"
+      }
+    },
+    "required": [
+      "audience",
+      "service_account"
+    ],
+    "additionalProperties": false
+  },
+  "GoogleDriveReader": {
+    "type": "object",
+    "properties": {
+      "audience": {
+        "type": "string",
+        "pattern": "^\\/\\/iam\\.googleapis\\.com\\/projects\\/[0-9]+\\/locations\\/global\\/workloadIdentityPools\\/[a-z0-9-]+\\/providers\\/[a-z0-9-]+$"
+      },
+      "service_account": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]+@[a-z0-9-]+\\.iam\\.gserviceaccount\\.com$"
+      },
+      "id": {
+        "type": "string"
+      },
+      "issuer": {
+        "type": "string"
+      },
+      "subject": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "audience",
+      "service_account",
+      "id",
+      "issuer",
+      "subject"
+    ],
+    "additionalProperties": false
+  },
+  "GoogleDriveContentSource": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` under which the source folder's tree is reproduced, e.g. `/sharepoint/legal`."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "Collection that synced documents are added to, if any."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      },
+      "sample_percent": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 99,
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Absent when the source syncs every file. 1 beside `sample_item_ids`, for clients that predate the list: the list decides."
+      },
+      "sample_item_ids": {
+        "minItems": 1,
+        "maxItems": 200,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Sample mode with chosen files: syncs only the files with these IDs, as a sample or a file listing returned them, at most 200. A file outside the list is not imported, and its document is deleted if it has one. Absent unless the sample is of chosen files."
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "type": {
+        "type": "string",
+        "const": "google-drive"
+      },
+      "reader_binding_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "selection": {
+        "$ref": "#/components/schemas/GoogleDriveSelection"
+      },
+      "permissions": {
+        "$ref": "#/components/schemas/GoogleDrivePermissionOptions"
+      },
+      "parent_source_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "location_root",
+      "sync",
+      "type",
+      "reader_binding_id",
+      "selection"
+    ],
+    "additionalProperties": false
+  },
+  "CreateGoogleDriveContentSourcePayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128,
+        "description": "Unique within the project."
+      },
+      "description": {
+        "type": "string"
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` root for synced documents. Defaults to `/<type>/<name>`."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "A collection to add synced documents to."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings",
+        "description": "Defaults to scheduled sync disabled, every 60 minutes once enabled."
+      },
+      "sample_percent": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 99,
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Leave out to sync every file. Not with `sample_item_ids`."
+      },
+      "sample_item_ids": {
+        "minItems": 1,
+        "maxItems": 200,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Sample mode with chosen files: syncs only the files with these IDs, as a sample or a file listing returned them, at most 200. A file outside the list is not imported, and its document is deleted if it has one. Leave out to sync every file. Not with `sample_percent`."
+      },
+      "type": {
+        "type": "string",
+        "const": "google-drive"
+      },
+      "reader_binding_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "selection": {
+        "$ref": "#/components/schemas/GoogleDriveSelection"
+      },
+      "permissions": {
+        "$ref": "#/components/schemas/GoogleDrivePermissionOptions"
+      }
+    },
+    "required": [
+      "name",
+      "type",
+      "reader_binding_id",
+      "selection"
+    ],
+    "additionalProperties": false
   },
   "BoxContentSource": {
     "type": "object",
@@ -39496,13 +40540,17 @@
       },
       {
         "$ref": "#/components/schemas/BoxContentSource"
+      },
+      {
+        "$ref": "#/components/schemas/GoogleDriveContentSource"
       }
     ],
     "discriminator": {
       "propertyName": "type",
       "mapping": {
         "sharepoint": "#/components/schemas/SharePointContentSource",
-        "box": "#/components/schemas/BoxContentSource"
+        "box": "#/components/schemas/BoxContentSource",
+        "google-drive": "#/components/schemas/GoogleDriveContentSource"
       }
     },
     "type": "object",
@@ -39532,7 +40580,7 @@
       "oauth_provider_id": {
         "type": "string",
         "pattern": "^[0-9a-fA-F]{24}$",
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system, as 24 hexadecimal characters."
+        "description": "Required for a project OAuth source. Omitted for trusted registration of an organization-managed library."
       },
       "location_root": {
         "type": "string",
@@ -39566,8 +40614,13 @@
         "type": "string",
         "const": "sharepoint"
       },
+      "sharepoint_library_binding_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The approved SharePoint library binding this source is registered for."
+      },
       "permissions": {
-        "$ref": "#/components/schemas/ContentSourcePermissionSettings"
+        "$ref": "#/components/schemas/SharePointPermissionOptions"
       },
       "site_url": {
         "type": "string",
@@ -39586,7 +40639,6 @@
     },
     "required": [
       "name",
-      "oauth_provider_id",
       "type",
       "site_url"
     ],
@@ -39663,13 +40715,17 @@
       },
       {
         "$ref": "#/components/schemas/CreateBoxContentSourcePayload"
+      },
+      {
+        "$ref": "#/components/schemas/CreateGoogleDriveContentSourcePayload"
       }
     ],
     "discriminator": {
       "propertyName": "type",
       "mapping": {
         "sharepoint": "#/components/schemas/CreateSharePointContentSourcePayload",
-        "box": "#/components/schemas/CreateBoxContentSourcePayload"
+        "box": "#/components/schemas/CreateBoxContentSourcePayload",
+        "google-drive": "#/components/schemas/CreateGoogleDriveContentSourcePayload"
       }
     },
     "type": "object",
@@ -39681,6 +40737,9 @@
   "UpdateContentSourcePayload": {
     "type": "object",
     "properties": {
+      "selection": {
+        "$ref": "#/components/schemas/GoogleDriveSelection"
+      },
       "name": {
         "type": "string",
         "minLength": 1,
@@ -39896,115 +40955,6 @@
     ],
     "additionalProperties": false,
     "description": "A content source's sync state."
-  },
-  "ContentSourceRoundSummary": {
-    "type": "object",
-    "properties": {
-      "kind": {
-        "type": "string",
-        "enum": [
-          "import",
-          "update"
-        ],
-        "description": "`import` lists the whole folder; `update` reads the changes since the previous sync."
-      },
-      "started_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "finished_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "outcome": {
-        "type": "string",
-        "enum": [
-          "succeeded",
-          "failed"
-        ],
-        "description": "Whether the round finished without an error."
-      }
-    },
-    "required": [
-      "kind",
-      "started_at",
-      "outcome"
-    ],
-    "additionalProperties": false,
-    "description": "When a finished sync round ran, and how it ended."
-  },
-  "ContentSourceSummary": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "string"
-      },
-      "name": {
-        "type": "string"
-      },
-      "description": {
-        "type": "string"
-      },
-      "type": {
-        "type": "string",
-        "enum": [
-          "sharepoint",
-          "box"
-        ]
-      },
-      "location_root": {
-        "type": "string",
-        "description": "The `location` under which the source folder's tree is reproduced, e.g. `/sharepoint/legal`."
-      },
-      "site_url": {
-        "type": "string",
-        "description": "SharePoint only: the site URL."
-      },
-      "library_name": {
-        "type": "string",
-        "description": "SharePoint only: the document library name."
-      },
-      "folder_path": {
-        "type": "string",
-        "description": "The folder synced: relative to the library root for SharePoint (empty for the whole library), the folder path below All Files for Box."
-      },
-      "sync": {
-        "$ref": "#/components/schemas/ContentSourceSyncSettings"
-      },
-      "state": {
-        "type": "string",
-        "enum": [
-          "not_started",
-          "running",
-          "waiting",
-          "stopped"
-        ],
-        "description": "`waiting` between syncs, `running` during one, `stopped` when its credentials were refused or the source is being deleted."
-      },
-      "next_sync_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "last_success_at": {
-        "type": "string",
-        "format": "date-time",
-        "description": "When the last round that finished without an error ended. Absent when none has."
-      },
-      "last_round": {
-        "$ref": "#/components/schemas/ContentSourceRoundSummary"
-      }
-    },
-    "required": [
-      "id",
-      "name",
-      "type",
-      "location_root",
-      "folder_path",
-      "sync",
-      "state"
-    ],
-    "additionalProperties": false,
-    "description": "What a content source syncs into the project and how its sync stands, readable by every member who can read content. Holds no connection, credential or permission settings."
   },
   "ContentSourceSummaryArray": {
     "type": "array",
