@@ -2053,6 +2053,7 @@ const EVENT_INGEST_SCHEMAS = {
 const CONTENT_SOURCE_SCHEMAS = {
     ContentSourceSyncSettings: ContentSourceSchemas.ContentSourceSyncSettingsSchema,
     ContentSourcePermissionSettings: ContentSourceSchemas.ContentSourcePermissionSettingsSchema,
+    ContentSourceNotificationStatus: ContentSourceSchemas.ContentSourceNotificationStatusSchema,
     ContentSourcePermissionStatus: ContentSourceSchemas.ContentSourcePermissionStatusSchema,
     SharePointContentSource: ContentSourceSchemas.SharePointContentSourceSchema,
     GoogleDriveContentSourcePermissions: ContentSourceSchemas.GoogleDriveContentSourcePermissionsSchema,
@@ -2837,6 +2838,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ContentSourceSyncSettings',
     'ProjectContentSourcePermissions',
     'SharePointContentSourcePermissions',
+    'ContentSourceNotificationStatus',
     'ContentSourcePermissionStatus',
     'SharePointContentSource',
     'SingleGoogleDriveSelection',
