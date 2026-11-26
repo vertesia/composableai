@@ -4,6 +4,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { Maximize2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useBrowserFileUrl } from '../document-viewer/useBrowserFileUrl.js';
 import { PdfPageSlider } from './PdfPageSlider';
 
 interface SimplePdfViewerProps {
@@ -25,6 +26,7 @@ interface SimplePdfViewerProps {
 export function SimplePdfViewer({ object, url, source, className }: SimplePdfViewerProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
+    const browserFileUrl = useBrowserFileUrl(client.files, url ?? source ?? object?.content?.source);
     const [currentPage, setCurrentPage] = useState(1);
     const [pdfUrl, setPdfUrl] = useState<string>(url || '');
     const [pdfUrlLoading, setPdfUrlLoading] = useState(!url);
@@ -34,7 +36,7 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
     // Fetch the PDF URL - priority: url > source > object.content.source
     useEffect(() => {
         // If url prop is provided, use it directly (already signed)
-        if (url) {
+        if (url && !client.files.isAuthenticatedDownloadUrl?.(url)) {
             setPdfUrl(url);
             setPdfUrlLoading(false);
             return;
@@ -42,24 +44,29 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
 
         // Determine the source to resolve
         const sourceToResolve = source || object?.content?.source;
-        if (!sourceToResolve) {
+        if (!sourceToResolve && !url) {
             setPdfUrlLoading(false);
             return;
         }
 
         setPdfUrlLoading(true);
-        client.files
-            .getDownloadUrl(sourceToResolve)
-            .then((result) => {
-                setPdfUrl(result.url);
+        const download = url ? Promise.resolve({ url }) : client.files.getDownloadUrl(sourceToResolve ?? '');
+        let active = true;
+        download
+            .then(browserFileUrl)
+            .then((resolved) => {
+                if (active) setPdfUrl(resolved);
             })
             .catch((err) => {
                 console.error('Failed to get PDF URL:', err);
             })
             .finally(() => {
-                setPdfUrlLoading(false);
+                if (active) setPdfUrlLoading(false);
             });
-    }, [url, source, object?.content?.source, client]);
+        return () => {
+            active = false;
+        };
+    }, [url, source, object?.content?.source, client, browserFileUrl]);
 
     // Get initial page count from metadata, but actual count will be updated when PDF loads
     useEffect(() => {

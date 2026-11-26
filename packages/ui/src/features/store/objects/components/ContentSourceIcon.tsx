@@ -3,11 +3,12 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import type { SVGProps } from 'react';
 
 /** The external systems whose files a content source syncs, by the scheme of `content.source`. */
-export type ExternalSourceSystem = 'sharepoint' | 'box';
+export type ExternalSourceSystem = 'sharepoint' | 'box' | 'google-drive';
 
 /** The system a document's `content.source` points to, or undefined for content stored in Vertesia. */
 export function externalSourceSystem(source: string | undefined): ExternalSourceSystem | undefined {
     if (!source) return undefined;
+    if (source.startsWith('google-drive://')) return 'google-drive';
     if (source.startsWith('sharepoint://')) return 'sharepoint';
     if (source.startsWith('box://')) return 'box';
     return undefined;
@@ -42,7 +43,17 @@ function BoxMark(props: SVGProps<SVGSVGElement>) {
     );
 }
 
-const MARKS = { sharepoint: SharePointMark, box: BoxMark } as const;
+function GoogleDriveMark(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+            <path d="M8 3h8l-9 16H1z" fill="#34A853" />
+            <path d="M8 3h8l7 13h-8z" fill="#FBBC04" />
+            <path d="M8.5 14.5H23l-4 7H4.5z" fill="#4285F4" />
+        </svg>
+    );
+}
+
+const MARKS = { sharepoint: SharePointMark, box: BoxMark, 'google-drive': GoogleDriveMark } as const;
 
 interface ContentSourceIconProps {
     /** The document's `content.source`. */
@@ -59,7 +70,12 @@ export function ContentSourceIcon({ source, className = 'size-4 shrink-0' }: Con
     const system = externalSourceSystem(source);
     if (!system) return null;
     const Mark = MARKS[system];
-    const label = system === 'sharepoint' ? t('store.syncedFromSharePoint') : t('store.syncedFromBox');
+    const label =
+        system === 'sharepoint'
+            ? t('store.syncedFromSharePoint')
+            : system === 'box'
+              ? t('store.syncedFromBox')
+              : t('store.syncedFromGoogleDrive');
     return (
         <VTooltip description={label} asChild>
             <span role="img" aria-label={label} className="inline-flex">

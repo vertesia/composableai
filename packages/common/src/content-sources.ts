@@ -20,6 +20,16 @@ export const CONTENT_SOURCE_MAX_SAMPLE_PERCENT = 99;
 /** A folder of an external content system whose files are synced into the project without copies. */
 export type ExternalContentSource = Wire.ExternalContentSource;
 export type SharePointContentSource = Wire.SharePointContentSource;
+export type GoogleDriveContentSourcePermissions = Wire.GoogleDriveContentSourcePermissions;
+export type SingleGoogleDriveSelection = Wire.SingleGoogleDriveSelection;
+export type AllGoogleDrivesSelection = Wire.AllGoogleDrivesSelection;
+export type GoogleDrivePermissionOptions = Wire.GoogleDrivePermissionOptions;
+export type SharePointPermissionOptions = Wire.SharePointPermissionOptions;
+export type GoogleDriveSelection = Wire.GoogleDriveSelection;
+export type GoogleDriveReaderConfig = Wire.GoogleDriveReaderConfig;
+export type GoogleDriveReader = Wire.GoogleDriveReader;
+export type GoogleDriveContentSource = Wire.GoogleDriveContentSource;
+export type CreateGoogleDriveContentSourcePayload = Wire.CreateGoogleDriveContentSourcePayload;
 export type BoxContentSource = Wire.BoxContentSource;
 export type ExternalContentSourceType = ExternalContentSource['type'];
 export type ContentSourcePermissionSettings = Wire.ContentSourcePermissionSettings;
