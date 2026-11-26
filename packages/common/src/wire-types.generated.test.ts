@@ -3162,6 +3162,96 @@ interface Checks {
         W.DeleteSecretResponse,
         z.infer<typeof import('./api-schemas/secrets.js').DeleteSecretResponseSchema>
     >;
+    ManagedSharePointLibrary: Same<
+        W.ManagedSharePointLibrary,
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').ManagedSharePointLibrarySchema>
+    >;
+    SharePointLibraryPathParams: Same<
+        W.SharePointLibraryPathParams,
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').SharePointLibraryPathParamsSchema>
+    >;
+    ApproveSharePointLibraryPayload: Same<
+        W.ApproveSharePointLibraryPayload,
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').ApproveSharePointLibraryPayloadSchema>
+    >;
+    ConfigureSharePointLibraryReaderPayload: Same<
+        W.ConfigureSharePointLibraryReaderPayload,
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').ConfigureSharePointLibraryReaderPayloadSchema>
+    >;
+    SharePointLibraryApproval: Same<
+        W.SharePointLibraryApproval,
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').SharePointLibraryApprovalSchema>
+    >;
+    SharePointLibraryConnection: Same<
+        W.SharePointLibraryConnection,
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').SharePointLibraryConnectionSchema>
+    >;
+    SharePointLibraryConnectionArray: Same<
+        W.SharePointLibraryConnectionArray,
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').SharePointLibraryConnectionArraySchema>
+    >;
+    ProjectSharePointLibraryResponse: Same<
+        W.ProjectSharePointLibraryResponse,
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').ProjectSharePointLibraryResponseSchema>
+    >;
+    BeginSharePointOrganizationLinkPayload: Same<
+        W.BeginSharePointOrganizationLinkPayload,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').BeginSharePointOrganizationLinkPayloadSchema>
+    >;
+    CompleteSharePointOrganizationLinkPayload: Same<
+        W.CompleteSharePointOrganizationLinkPayload,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').CompleteSharePointOrganizationLinkPayloadSchema>
+    >;
+    SharePointOrganizationLinkAttempt: Same<
+        W.SharePointOrganizationLinkAttempt,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationLinkAttemptSchema>
+    >;
+    SharePointOrganizations: Same<
+        W.SharePointOrganizations,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationsSchema>
+    >;
+    SharePointOrganization: Same<
+        W.SharePointOrganization,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationSchema>
+    >;
+    ConfigureSharePointOrganizationReaderPayload: Same<
+        W.ConfigureSharePointOrganizationReaderPayload,
+        z.infer<
+            typeof import('./api-schemas/sharepoint-onboarding.js').ConfigureSharePointOrganizationReaderPayloadSchema
+        >
+    >;
+    SharePointOrganizationReader: Same<
+        W.SharePointOrganizationReader,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationReaderSchema>
+    >;
+    SharePointRegion: Same<
+        W.SharePointRegion,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointRegionSchema>
+    >;
+    SharePointLibraryContext: Same<
+        W.SharePointLibraryContext,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointLibraryContextSchema>
+    >;
+    SharePointLibraryReceipt: Same<
+        W.SharePointLibraryReceipt,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointLibraryReceiptSchema>
+    >;
+    SharePointLibraryRequest: Same<
+        W.SharePointLibraryRequest,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointLibraryRequestSchema>
+    >;
+    SharePointLibraryRequests: Same<
+        W.SharePointLibraryRequests,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointLibraryRequestsSchema>
+    >;
+    SharePointLibraryRequestsQuery: Same<
+        W.SharePointLibraryRequestsQuery,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointLibraryRequestsQuerySchema>
+    >;
+    SharePointRequestProject: Same<
+        W.SharePointRequestProject,
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointRequestProjectSchema>
+    >;
     SubscriptionWorkflowDefinition: Same<
         W.SubscriptionWorkflowDefinition,
         z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowDefinitionSchema>
@@ -5740,9 +5830,99 @@ interface Checks {
         W.ApiComponentTypes['ProjectConfiguration'],
         z.infer<typeof import('./api-schemas/project-configuration.js').ProjectConfigurationSchema>
     >;
+    'component:ManagedSharePointLibrary': Same<
+        W.ApiComponentTypes['ManagedSharePointLibrary'],
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').ManagedSharePointLibrarySchema>
+    >;
+    'component:SharePointLibraryPathParams': Same<
+        W.ApiComponentTypes['SharePointLibraryPathParams'],
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').SharePointLibraryPathParamsSchema>
+    >;
+    'component:BeginSharePointOrganizationLinkPayload': Same<
+        W.ApiComponentTypes['BeginSharePointOrganizationLinkPayload'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').BeginSharePointOrganizationLinkPayloadSchema>
+    >;
+    'component:CompleteSharePointOrganizationLinkPayload': Same<
+        W.ApiComponentTypes['CompleteSharePointOrganizationLinkPayload'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').CompleteSharePointOrganizationLinkPayloadSchema>
+    >;
+    'component:SharePointOrganizationLinkAttempt': Same<
+        W.ApiComponentTypes['SharePointOrganizationLinkAttempt'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationLinkAttemptSchema>
+    >;
+    'component:SharePointOrganization': Same<
+        W.ApiComponentTypes['SharePointOrganization'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationSchema>
+    >;
+    'component:ConfigureSharePointOrganizationReaderPayload': Same<
+        W.ApiComponentTypes['ConfigureSharePointOrganizationReaderPayload'],
+        z.infer<
+            typeof import('./api-schemas/sharepoint-onboarding.js').ConfigureSharePointOrganizationReaderPayloadSchema
+        >
+    >;
+    'component:SharePointOrganizationReader': Same<
+        W.ApiComponentTypes['SharePointOrganizationReader'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationReaderSchema>
+    >;
+    'component:SharePointOrganizations': Same<
+        W.ApiComponentTypes['SharePointOrganizations'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointOrganizationsSchema>
+    >;
+    'component:SharePointRegion': Same<
+        W.ApiComponentTypes['SharePointRegion'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointRegionSchema>
+    >;
+    'component:SharePointLibraryContext': Same<
+        W.ApiComponentTypes['SharePointLibraryContext'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointLibraryContextSchema>
+    >;
+    'component:SharePointLibraryReceipt': Same<
+        W.ApiComponentTypes['SharePointLibraryReceipt'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointLibraryReceiptSchema>
+    >;
+    'component:SharePointLibraryRequest': Same<
+        W.ApiComponentTypes['SharePointLibraryRequest'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointLibraryRequestSchema>
+    >;
+    'component:SharePointLibraryRequests': Same<
+        W.ApiComponentTypes['SharePointLibraryRequests'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointLibraryRequestsSchema>
+    >;
+    'component:SharePointLibraryRequestsQuery': Same<
+        W.ApiComponentTypes['SharePointLibraryRequestsQuery'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointLibraryRequestsQuerySchema>
+    >;
+    'component:SharePointRequestProject': Same<
+        W.ApiComponentTypes['SharePointRequestProject'],
+        z.infer<typeof import('./api-schemas/sharepoint-onboarding.js').SharePointRequestProjectSchema>
+    >;
     'component:Project': Same<
         W.ApiComponentTypes['Project'],
         z.infer<typeof import('./api-schemas/project.js').ProjectSchema>
+    >;
+    'component:ApproveSharePointLibraryPayload': Same<
+        W.ApiComponentTypes['ApproveSharePointLibraryPayload'],
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').ApproveSharePointLibraryPayloadSchema>
+    >;
+    'component:ConfigureSharePointLibraryReaderPayload': Same<
+        W.ApiComponentTypes['ConfigureSharePointLibraryReaderPayload'],
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').ConfigureSharePointLibraryReaderPayloadSchema>
+    >;
+    'component:SharePointLibraryApproval': Same<
+        W.ApiComponentTypes['SharePointLibraryApproval'],
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').SharePointLibraryApprovalSchema>
+    >;
+    'component:SharePointLibraryConnection': Same<
+        W.ApiComponentTypes['SharePointLibraryConnection'],
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').SharePointLibraryConnectionSchema>
+    >;
+    'component:SharePointLibraryConnectionArray': Same<
+        W.ApiComponentTypes['SharePointLibraryConnectionArray'],
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').SharePointLibraryConnectionArraySchema>
+    >;
+    'component:ProjectSharePointLibraryResponse': Same<
+        W.ApiComponentTypes['ProjectSharePointLibraryResponse'],
+        z.infer<typeof import('./api-schemas/sharepoint-libraries.js').ProjectSharePointLibraryResponseSchema>
     >;
     'component:UpdateProjectPayload': Same<
         W.ApiComponentTypes['UpdateProjectPayload'],
@@ -11988,6 +12168,28 @@ const checks: Checks = {
     CreateSecretRequest: true,
     UpdateSecretRequest: true,
     DeleteSecretResponse: true,
+    ManagedSharePointLibrary: true,
+    SharePointLibraryPathParams: true,
+    ApproveSharePointLibraryPayload: true,
+    ConfigureSharePointLibraryReaderPayload: true,
+    SharePointLibraryApproval: true,
+    SharePointLibraryConnection: true,
+    SharePointLibraryConnectionArray: true,
+    ProjectSharePointLibraryResponse: true,
+    BeginSharePointOrganizationLinkPayload: true,
+    CompleteSharePointOrganizationLinkPayload: true,
+    SharePointOrganizationLinkAttempt: true,
+    SharePointOrganizations: true,
+    SharePointOrganization: true,
+    ConfigureSharePointOrganizationReaderPayload: true,
+    SharePointOrganizationReader: true,
+    SharePointRegion: true,
+    SharePointLibraryContext: true,
+    SharePointLibraryReceipt: true,
+    SharePointLibraryRequest: true,
+    SharePointLibraryRequests: true,
+    SharePointLibraryRequestsQuery: true,
+    SharePointRequestProject: true,
     SubscriptionWorkflowDefinition: true,
     SubscriptionWorkflowCatalog: true,
     AgentToolApprovalMode: true,
@@ -12697,7 +12899,29 @@ const checks: Checks = {
     'component:ContentTypeIntakePolicy': true,
     'component:ProjectIntakeConfiguration': true,
     'component:ProjectConfiguration': true,
+    'component:ManagedSharePointLibrary': true,
+    'component:SharePointLibraryPathParams': true,
+    'component:BeginSharePointOrganizationLinkPayload': true,
+    'component:CompleteSharePointOrganizationLinkPayload': true,
+    'component:SharePointOrganizationLinkAttempt': true,
+    'component:SharePointOrganization': true,
+    'component:ConfigureSharePointOrganizationReaderPayload': true,
+    'component:SharePointOrganizationReader': true,
+    'component:SharePointOrganizations': true,
+    'component:SharePointRegion': true,
+    'component:SharePointLibraryContext': true,
+    'component:SharePointLibraryReceipt': true,
+    'component:SharePointLibraryRequest': true,
+    'component:SharePointLibraryRequests': true,
+    'component:SharePointLibraryRequestsQuery': true,
+    'component:SharePointRequestProject': true,
     'component:Project': true,
+    'component:ApproveSharePointLibraryPayload': true,
+    'component:ConfigureSharePointLibraryReaderPayload': true,
+    'component:SharePointLibraryApproval': true,
+    'component:SharePointLibraryConnection': true,
+    'component:SharePointLibraryConnectionArray': true,
+    'component:ProjectSharePointLibraryResponse': true,
     'component:UpdateProjectPayload': true,
     'component:UpdateProjectConfigurationPayload': true,
     'component:ToolCollectionObject': true,
@@ -14049,6 +14273,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2915);
+        expect(Object.keys(checks)).toHaveLength(2959);
     });
 });

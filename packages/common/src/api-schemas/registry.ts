@@ -809,6 +809,8 @@ import {
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
 import * as RunBudgetSchemas from './run-budget.js';
 import * as SecretSchemas from './secrets.js';
+import * as SharePointLibrarySchemas from './sharepoint-libraries.js';
+import * as SharePointEntry from './sharepoint-onboarding.js';
 import {
     ColumnLayoutSchema,
     ContentObjectTypeCatalogEntryArraySchema,
@@ -1026,7 +1028,29 @@ const PROJECT_AND_APP_SCHEMAS = {
     // The roots of the Project closure, registered last because every leaf above is a `$ref` target
     // of one of them.
     ProjectConfiguration: ProjectConfigurationSchema,
+    ManagedSharePointLibrary: SharePointLibrarySchemas.ManagedSharePointLibrarySchema,
+    SharePointLibraryPathParams: SharePointLibrarySchemas.SharePointLibraryPathParamsSchema,
+    BeginSharePointOrganizationLinkPayload: SharePointEntry.BeginSharePointOrganizationLinkPayloadSchema,
+    CompleteSharePointOrganizationLinkPayload: SharePointEntry.CompleteSharePointOrganizationLinkPayloadSchema,
+    SharePointOrganizationLinkAttempt: SharePointEntry.SharePointOrganizationLinkAttemptSchema,
+    SharePointOrganization: SharePointEntry.SharePointOrganizationSchema,
+    ConfigureSharePointOrganizationReaderPayload: SharePointEntry.ConfigureSharePointOrganizationReaderPayloadSchema,
+    SharePointOrganizationReader: SharePointEntry.SharePointOrganizationReaderSchema,
+    SharePointOrganizations: SharePointEntry.SharePointOrganizationsSchema,
+    SharePointRegion: SharePointEntry.SharePointRegionSchema,
+    SharePointLibraryContext: SharePointEntry.SharePointLibraryContextSchema,
+    SharePointLibraryReceipt: SharePointEntry.SharePointLibraryReceiptSchema,
+    SharePointLibraryRequest: SharePointEntry.SharePointLibraryRequestSchema,
+    SharePointLibraryRequests: SharePointEntry.SharePointLibraryRequestsSchema,
+    SharePointLibraryRequestsQuery: SharePointEntry.SharePointLibraryRequestsQuerySchema,
+    SharePointRequestProject: SharePointEntry.SharePointRequestProjectSchema,
     Project: ProjectSchema,
+    ApproveSharePointLibraryPayload: SharePointLibrarySchemas.ApproveSharePointLibraryPayloadSchema,
+    ConfigureSharePointLibraryReaderPayload: SharePointLibrarySchemas.ConfigureSharePointLibraryReaderPayloadSchema,
+    SharePointLibraryApproval: SharePointLibrarySchemas.SharePointLibraryApprovalSchema,
+    SharePointLibraryConnection: SharePointLibrarySchemas.SharePointLibraryConnectionSchema,
+    SharePointLibraryConnectionArray: SharePointLibrarySchemas.SharePointLibraryConnectionArraySchema,
+    ProjectSharePointLibraryResponse: SharePointLibrarySchemas.ProjectSharePointLibraryResponseSchema,
     // The two explicitly named update payloads derived from the corresponding response schemas.
     UpdateProjectPayload: UpdateProjectPayloadSchema,
     UpdateProjectConfigurationPayload: UpdateProjectConfigurationPayloadSchema,
@@ -2779,6 +2803,22 @@ const API_SCHEMAS: Readonly<Record<string, z.ZodType>> = mergeComponentGroups(AP
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'BeginSharePointOrganizationLinkPayload',
+    'CompleteSharePointOrganizationLinkPayload',
+    'SharePointOrganizationLinkAttempt',
+    'SharePointOrganization',
+    'ConfigureSharePointOrganizationReaderPayload',
+    'SharePointOrganizationReader',
+    'SharePointOrganizations',
+    'SharePointRegion',
+    'SharePointLibraryContext',
+    'SharePointLibraryReceipt',
+    'SharePointLibraryRequest',
+    'SharePointLibraryRequests',
+    'SharePointLibraryRequestsQuery',
+    'SharePointRequestProject',
+    'ConfigureSharePointLibraryReaderPayload',
+    'ManagedSharePointLibrary',
     'InferenceBudgetSettings',
     'UpdateInferenceBudget',
     'ContentSourceSyncSettings',
