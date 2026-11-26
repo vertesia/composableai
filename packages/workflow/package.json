@@ -36,9 +36,9 @@
         "vitest": "catalog:"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.1167.0",
-        "@aws-sdk/client-textract": "^3.1167.0",
-        "@aws-sdk/credential-providers": "^3.1167.0",
+        "@aws-sdk/client-s3": "^3.1172.0",
+        "@aws-sdk/client-textract": "^3.1172.0",
+        "@aws-sdk/credential-providers": "^3.1172.0",
         "@azure/storage-blob": "^12.34.0",
         "@google-cloud/storage": "^9.0.0",
         "@llumiverse/common": "workspace:*",
