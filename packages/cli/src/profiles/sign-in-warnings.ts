@@ -17,8 +17,8 @@ export function signInWarnings(result: ConfigResult): string[] {
     const warnings: string[] = [];
     if (!result.refresh_token) {
         warnings.push(
-            `This sign-in cannot renew itself, so profile "${result.profile}" signs out when its access token expires. ` +
-                'To stay signed in, sign in again and tick "Renew access" on the approval page.',
+            `This sign-in cannot renew itself, so profile "${result.profile}" signs out when its access token ` +
+                'expires. To stay signed in, sign in again and tick "Renew access" on the approval page.',
         );
     }
     const decoded = jwt.decode(result.token, { json: true });

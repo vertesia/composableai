@@ -45,7 +45,8 @@ describe('createRefreshOnForbiddenFetch', () => {
         const { fetch, refresh, baseFetch } = setup([403, 403, 403]);
 
         const first = await fetch(new Request('http://studio.test/a', auth));
-        const second = await fetch(new Request('http://studio.test/b', auth));
+        // Requests after the refresh carry the fresh token, which the server still refuses.
+        const second = await fetch(new Request('http://studio.test/b', { headers: { authorization: 'Bearer fresh' } }));
 
         expect(first.status).toBe(403);
         expect(second.status).toBe(403);
@@ -86,7 +87,13 @@ describe('createRefreshOnForbiddenFetch', () => {
             async () => ({}),
         );
 
-        const res = await fetch(new Request('http://studio.test/a', { ...auth, method: 'POST', body: '{"x":1}' }));
+        const res = await fetch(
+            new Request('http://studio.test/a', {
+                method: 'POST',
+                headers: { ...auth.headers, 'content-type': 'application/json' },
+                body: '{"x":1}',
+            }),
+        );
 
         expect(res.status).toBe(200);
         expect(bodies).toEqual(['{"x":1}', '{"x":1}']);
@@ -109,5 +116,47 @@ describe('createRefreshOnForbiddenFetch', () => {
 
         expect(refresh).not.toHaveBeenCalled();
         expect(seen).toEqual(['']);
+    });
+
+    it('never resends a streamed upload, so it is not held in memory', async () => {
+        const { fetch, refresh, baseFetch } = setup([403]);
+
+        const res = await fetch(
+            new Request('http://store.test/upload', {
+                method: 'PUT',
+                headers: { ...auth.headers, 'content-type': 'application/octet-stream' },
+                body: new Blob(['bytes']),
+            }),
+        );
+
+        expect(res.status).toBe(403);
+        expect(refresh).not.toHaveBeenCalled();
+        expect(baseFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('shares one refresh between requests refused at the same time', async () => {
+        const baseFetch = vi.fn(async (input: RequestInfo, init?: RequestInit) => {
+            const request = new Request(input, init);
+            return response(request.headers.get('authorization') === 'Bearer fresh' ? 200 : 403);
+        });
+        const refresh = vi.fn(async () => ({}));
+        const fetch = createRefreshOnForbiddenFetch(profile, async () => 'Bearer fresh', baseFetch, refresh);
+
+        const results = await Promise.all([
+            fetch(new Request('http://studio.test/a', auth)),
+            fetch(new Request('http://studio.test/b', auth)),
+        ]);
+
+        expect(results.map((res) => res.status)).toEqual([200, 200]);
+        expect(refresh).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not resend a request that already carried the fresh token', async () => {
+        const { fetch, baseFetch } = setup([403, 403]);
+
+        await fetch(new Request('http://studio.test/a', auth));
+        await fetch(new Request('http://studio.test/b', { headers: { authorization: 'Bearer fresh' } }));
+
+        expect(baseFetch).toHaveBeenCalledTimes(3);
     });
 });
