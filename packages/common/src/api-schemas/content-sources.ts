@@ -35,8 +35,9 @@ export const SharePointContentSourcePermissionsSchema = z
     .strictObject({
         mode: z.literal('source'),
         entra_tenant_id: z.uuid(),
-        scim_connection_id: z.string().regex(OBJECT_ID_PATTERN),
-        permission_reader_provider_id: z.string().regex(OBJECT_ID_PATTERN),
+        scim_connection_id: z.string().regex(OBJECT_ID_PATTERN).optional().meta({
+            description: 'Optional verified Entra SCIM connection. Required for tenant_group_id.',
+        }),
         tenant_group_id: z.string().regex(OBJECT_ID_PATTERN).optional(),
         refresh_minutes: z.number().int().min(15).max(1440).optional(),
         max_stale_hours: z.number().int().min(1).max(168).optional(),
@@ -99,6 +100,10 @@ export const SharePointContentSourceSchema = z
     .strictObject({
         ...commonSourceFields,
         type: z.literal('sharepoint'),
+        oauth_provider_id: commonSourceFields.oauth_provider_id.optional(),
+        reader_mode: z.literal('organization').optional().meta({
+            description: 'The managed library uses its organization reader, without a project OAuth provider.',
+        }),
         permissions: ContentSourcePermissionSettingsSchema.optional(),
         site_url: z.string().meta({ description: 'The SharePoint site URL the source was created from.' }),
         site_id: z.string().meta({ description: 'The Microsoft Graph site ID.' }),
@@ -171,6 +176,13 @@ export const CreateSharePointContentSourcePayloadSchema = z
     .strictObject({
         ...commonCreateFields,
         type: z.literal('sharepoint'),
+        oauth_provider_id: commonCreateFields.oauth_provider_id.optional().meta({
+            description:
+                'Required for a project OAuth source. Omitted for trusted registration of an organization-managed library.',
+        }),
+        sharepoint_library_binding_id: z.string().regex(OBJECT_ID_PATTERN).optional().meta({
+            description: 'The approved SharePoint library binding this source is registered for.',
+        }),
         permissions: ContentSourcePermissionSettingsSchema.optional(),
         site_url: z.string().min(1).meta({
             description: 'The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`.',

@@ -18,6 +18,9 @@ export type { ComputePromptFacetsResponse, ListInteractionsResponse } from './Pr
 export { default as RemoteMcpConnectionsApi } from './RemoteMcpConnectionsApi.js';
 export type { ComputeRunFacetsResponse, FilterOption } from './RunsApi.js';
 export { default as SecretsApi } from './SecretsApi.js';
+export { default as SharePointEntryApi } from './SharePointEntryApi.js';
+export { SharePointLibrariesApi } from './SharePointLibrariesApi.js';
+export { default as SharePointOnboardingApi } from './SharePointOnboardingApi.js';
 export * from './StreamSource.js';
 export * from './store/index.js';
 export { default as ViewsApi } from './ViewsApi.js';

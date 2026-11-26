@@ -6493,6 +6493,383 @@
     ],
     "additionalProperties": false
   },
+  "ManagedSharePointLibrary": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "tenant_id": {
+        "type": "string"
+      },
+      "site_id": {
+        "type": "string"
+      },
+      "site_url": {
+        "type": "string"
+      },
+      "drive_id": {
+        "type": "string"
+      },
+      "audience": {
+        "type": "string",
+        "enum": [
+          "uniform",
+          "mirrored"
+        ]
+      },
+      "reader_mode": {
+        "type": "string",
+        "const": "organization"
+      },
+      "lifecycle": {
+        "type": "string",
+        "enum": [
+          "disconnecting",
+          "disconnected"
+        ]
+      }
+    },
+    "required": [
+      "id",
+      "tenant_id",
+      "site_id",
+      "site_url",
+      "drive_id",
+      "audience"
+    ],
+    "additionalProperties": false,
+    "readOnly": true
+  },
+  "SharePointLibraryPathParams": {
+    "type": "object",
+    "properties": {
+      "bindingId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      }
+    },
+    "required": [
+      "bindingId"
+    ]
+  },
+  "BeginSharePointOrganizationLinkPayload": {
+    "type": "object",
+    "properties": {
+      "tenant_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      }
+    },
+    "required": [
+      "tenant_id"
+    ],
+    "additionalProperties": false
+  },
+  "CompleteSharePointOrganizationLinkPayload": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{43}$"
+      }
+    },
+    "required": [
+      "state"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointOrganizationLinkAttempt": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{43}$"
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      }
+    },
+    "required": [
+      "state",
+      "expires_at"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointOrganizationReader": {
+    "type": "object",
+    "properties": {
+      "client_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "issuer": {
+        "type": "string",
+        "format": "uri"
+      },
+      "subject": {
+        "type": "string",
+        "minLength": 1
+      },
+      "audience": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "client_id",
+      "issuer",
+      "subject",
+      "audience"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointOrganization": {
+    "type": "object",
+    "properties": {
+      "tenant_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "linked_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      },
+      "reader": {
+        "$ref": "#/components/schemas/SharePointOrganizationReader"
+      }
+    },
+    "required": [
+      "tenant_id",
+      "linked_at"
+    ],
+    "additionalProperties": false
+  },
+  "ConfigureSharePointOrganizationReaderPayload": {
+    "type": "object",
+    "properties": {
+      "client_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      }
+    },
+    "required": [
+      "client_id"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointOrganizations": {
+    "type": "object",
+    "properties": {
+      "organizations": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SharePointOrganization"
+        }
+      }
+    },
+    "required": [
+      "organizations"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointRegion": {
+    "type": "object",
+    "properties": {
+      "region": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Assigned Vertesia region identifier."
+      }
+    },
+    "required": [
+      "region"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointLibraryContext": {
+    "type": "object",
+    "properties": {
+      "site_hostname": {
+        "type": "string",
+        "maxLength": 253,
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9-]*\\.sharepoint\\.com$"
+      },
+      "site_collection_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "web_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "list_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      }
+    },
+    "required": [
+      "site_hostname",
+      "site_collection_id",
+      "web_id",
+      "list_id"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointLibraryReceipt": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "pending_resolution",
+          "awaiting_site_grant",
+          "library_unavailable",
+          "awaiting_approval",
+          "approved",
+          "connected",
+          "disconnected"
+        ]
+      }
+    },
+    "required": [
+      "id",
+      "status"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointLibraryRequest": {
+    "type": "object",
+    "properties": {
+      "site_hostname": {
+        "type": "string",
+        "maxLength": 253,
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9-]*\\.sharepoint\\.com$"
+      },
+      "site_collection_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "web_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "list_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      },
+      "tenant_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "binding_id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      },
+      "site_url": {
+        "type": "string",
+        "format": "uri"
+      },
+      "library_url": {
+        "type": "string",
+        "format": "uri"
+      },
+      "library_name": {
+        "type": "string",
+        "minLength": 1
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "pending_resolution",
+          "awaiting_site_grant",
+          "library_unavailable",
+          "awaiting_approval",
+          "approved",
+          "connected",
+          "disconnected"
+        ]
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      }
+    },
+    "required": [
+      "site_hostname",
+      "site_collection_id",
+      "web_id",
+      "list_id",
+      "id",
+      "tenant_id",
+      "status",
+      "created_at"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointLibraryRequests": {
+    "type": "object",
+    "properties": {
+      "requests": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SharePointLibraryRequest"
+        }
+      },
+      "next_cursor": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      }
+    },
+    "required": [
+      "requests"
+    ],
+    "additionalProperties": false
+  },
+  "SharePointLibraryRequestsQuery": {
+    "type": "object",
+    "properties": {
+      "cursor": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      }
+    },
+    "additionalProperties": false
+  },
+  "SharePointRequestProject": {
+    "type": "object",
+    "properties": {
+      "project_id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      },
+      "binding_id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$"
+      },
+      "source_id": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "project_id"
+    ],
+    "additionalProperties": false
+  },
   "Project": {
     "type": "object",
     "properties": {
@@ -6510,6 +6887,16 @@
       },
       "account": {
         "type": "string"
+      },
+      "sharepoint_library_binding": {
+        "$ref": "#/components/schemas/ManagedSharePointLibrary"
+      },
+      "sharepoint_library_attachments": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ManagedSharePointLibrary"
+        },
+        "readOnly": true
       },
       "configuration": {
         "$ref": "#/components/schemas/ProjectConfiguration"
@@ -6564,6 +6951,411 @@
       "updated_at"
     ],
     "additionalProperties": false
+  },
+  "ApproveSharePointLibraryPayload": {
+    "anyOf": [
+      {
+        "type": "object",
+        "properties": {
+          "manager_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$"
+          },
+          "reader_group_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "uniform",
+              "mirrored"
+            ]
+          },
+          "project_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "manager_id",
+          "reader_group_id",
+          "audience"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "uniform",
+              "mirrored"
+            ]
+          }
+        },
+        "required": [
+          "project_id",
+          "audience"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "SharePointContentSourcePermissions": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "const": "source"
+      },
+      "entra_tenant_id": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+      },
+      "scim_connection_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "Optional verified Entra SCIM connection. Required for tenant_group_id."
+      },
+      "tenant_group_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "refresh_minutes": {
+        "type": "integer",
+        "minimum": 15,
+        "maximum": 1440
+      },
+      "max_stale_hours": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 168
+      }
+    },
+    "required": [
+      "mode",
+      "entra_tenant_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConfigureSharePointLibraryReaderPayload": {
+    "type": "object",
+    "properties": {
+      "permissions": {
+        "$ref": "#/components/schemas/SharePointContentSourcePermissions"
+      },
+      "site_policy_confirmed": {
+        "type": "boolean",
+        "description": "Required for mirrored permissions. The account administrator confirms that RestrictedAccessControl and BlockDownloadPolicy are both off on the exact bound site."
+      }
+    },
+    "additionalProperties": false
+  },
+  "SharePointLibraryApproval": {
+    "type": "object",
+    "properties": {
+      "manager_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "reader_group_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "audience": {
+        "type": "string",
+        "enum": [
+          "uniform",
+          "mirrored"
+        ]
+      },
+      "project_name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "approved_by": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "approved_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      }
+    },
+    "required": [
+      "manager_id",
+      "reader_group_id",
+      "audience",
+      "project_name",
+      "approved_by",
+      "approved_at"
+    ]
+  },
+  "ContentSourceSummary": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "type": {
+        "type": "string",
+        "enum": [
+          "sharepoint",
+          "box"
+        ]
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` under which the source folder's tree is reproduced, e.g. `/sharepoint/legal`."
+      },
+      "site_url": {
+        "type": "string",
+        "description": "SharePoint only: the site URL."
+      },
+      "library_name": {
+        "type": "string",
+        "description": "SharePoint only: the document library name."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The folder synced: relative to the library root for SharePoint (empty for the whole library), the folder path below All Files for Box."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "not_started",
+          "running",
+          "waiting",
+          "stopped"
+        ],
+        "description": "`waiting` between syncs, `running` during one, `stopped` when its credentials were refused or the source is being deleted."
+      },
+      "next_sync_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "last_success_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the last round that finished without an error ended. Absent when none has."
+      },
+      "last_round": {
+        "$ref": "#/components/schemas/ContentSourceRoundSummary"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "type",
+      "location_root",
+      "folder_path",
+      "sync",
+      "state"
+    ],
+    "additionalProperties": false,
+    "description": "What a content source syncs into the project and how its sync stands, readable by every member who can read content. Holds no connection, credential or permission settings."
+  },
+  "ContentSourceSyncSettings": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the source syncs on its own every `interval_minutes`."
+      },
+      "interval_minutes": {
+        "type": "integer",
+        "minimum": 15,
+        "maximum": 10080,
+        "description": "Minutes between two scheduled syncs, from one scheduled time to the next."
+      }
+    },
+    "required": [
+      "enabled",
+      "interval_minutes"
+    ],
+    "additionalProperties": false,
+    "description": "When the source syncs. A source with scheduled sync disabled still syncs on `POST /content-sources/{id}/sync`."
+  },
+  "ContentSourceRoundSummary": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "import",
+          "update"
+        ],
+        "description": "`import` lists the whole folder; `update` reads the changes since the previous sync."
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "finished_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "outcome": {
+        "type": "string",
+        "enum": [
+          "succeeded",
+          "failed"
+        ],
+        "description": "Whether the round finished without an error."
+      }
+    },
+    "required": [
+      "kind",
+      "started_at",
+      "outcome"
+    ],
+    "additionalProperties": false,
+    "description": "When a finished sync round ran, and how it ended."
+  },
+  "SharePointLibraryConnection": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "tenant_id": {
+        "type": "string"
+      },
+      "site_id": {
+        "type": "string"
+      },
+      "list_id": {
+        "type": "string"
+      },
+      "drive_id": {
+        "type": "string"
+      },
+      "site_url": {
+        "type": "string"
+      },
+      "library_url": {
+        "type": "string"
+      },
+      "library_name": {
+        "type": "string"
+      },
+      "project_name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "audience": {
+        "type": "string",
+        "enum": [
+          "uniform",
+          "mirrored"
+        ]
+      },
+      "can_manage": {
+        "type": "boolean"
+      },
+      "stage": {
+        "type": "string",
+        "enum": [
+          "pending_approval",
+          "provisioning_project",
+          "configure_reader",
+          "ready",
+          "disconnecting",
+          "disconnected"
+        ]
+      },
+      "project_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "project_mode": {
+        "type": "string",
+        "enum": [
+          "dedicated",
+          "existing"
+        ]
+      },
+      "reader_mode": {
+        "type": "string",
+        "const": "organization"
+      },
+      "organization_reader_available": {
+        "type": "boolean"
+      },
+      "source_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "approval": {
+        "$ref": "#/components/schemas/SharePointLibraryApproval"
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSummary"
+      }
+    },
+    "required": [
+      "id",
+      "tenant_id",
+      "site_id",
+      "list_id",
+      "drive_id",
+      "site_url",
+      "library_url",
+      "library_name",
+      "can_manage",
+      "stage"
+    ]
+  },
+  "SharePointLibraryConnectionArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/SharePointLibraryConnection"
+    }
+  },
+  "ProjectSharePointLibraryResponse": {
+    "type": "object",
+    "properties": {
+      "library": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/SharePointLibraryConnection"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "libraries": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SharePointLibraryConnection"
+        }
+      }
+    },
+    "required": [
+      "library"
+    ]
   },
   "UpdateProjectPayload": {
     "type": "object",
@@ -7301,10 +8093,6 @@
         },
         "description": "Scopes a token request may ask for instead of default_scopes (POST /oauth-providers/{id}/token with a scope), in addition to default_scopes, which are always allowed. Only used for the client_credentials grant. Set by the provider admin: a caller cannot request a scope outside this list and default_scopes. On update, an empty array clears it."
       },
-      "sharepoint_permission_site": {
-        "type": "string",
-        "format": "uri"
-      },
       "use_pkce": {
         "type": "boolean",
         "description": "Whether to use PKCE (Proof Key for Code Exchange) in the authorization flow. Only applies to authorization_code flow. Defaults to true."
@@ -7432,11 +8220,6 @@
           "type": "string"
         },
         "description": "Extra parameters added to the URL-encoded body of every client_credentials token request for this provider, after the standard ones (e.g. Box's box_subject_type and box_subject_id). Only used for the client_credentials grant. At most 10 entries; keys match ^[A-Za-z][A-Za-z0-9_.-]{0,63}$; values are at most 512 characters; grant_type, client_id, client_secret, scope, client_assertion and client_assertion_type are reserved. Not secret: returned as stored. On update, an empty object clears them."
-      },
-      "sharepoint_permission_site": {
-        "type": "string",
-        "format": "uri",
-        "description": "Immutable SharePoint site URL for a dedicated permission reader. Create a replacement provider to change its site or credential."
       }
     },
     "required": [
@@ -39163,27 +39946,6 @@
       "$ref": "#/components/schemas/EventIngestChannel"
     }
   },
-  "ContentSourceSyncSettings": {
-    "type": "object",
-    "properties": {
-      "enabled": {
-        "type": "boolean",
-        "description": "Whether the source syncs on its own every `interval_minutes`."
-      },
-      "interval_minutes": {
-        "type": "integer",
-        "minimum": 15,
-        "maximum": 10080,
-        "description": "Minutes between two scheduled syncs, from one scheduled time to the next."
-      }
-    },
-    "required": [
-      "enabled",
-      "interval_minutes"
-    ],
-    "additionalProperties": false,
-    "description": "When the source syncs. A source with scheduled sync disabled still syncs on `POST /content-sources/{id}/sync`."
-  },
   "ProjectContentSourcePermissions": {
     "type": "object",
     "properties": {
@@ -39194,49 +39956,6 @@
     },
     "required": [
       "mode"
-    ],
-    "additionalProperties": false
-  },
-  "SharePointContentSourcePermissions": {
-    "type": "object",
-    "properties": {
-      "mode": {
-        "type": "string",
-        "const": "source"
-      },
-      "entra_tenant_id": {
-        "type": "string",
-        "format": "uuid",
-        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-      },
-      "scim_connection_id": {
-        "type": "string",
-        "pattern": "^[0-9a-fA-F]{24}$"
-      },
-      "permission_reader_provider_id": {
-        "type": "string",
-        "pattern": "^[0-9a-fA-F]{24}$"
-      },
-      "tenant_group_id": {
-        "type": "string",
-        "pattern": "^[0-9a-fA-F]{24}$"
-      },
-      "refresh_minutes": {
-        "type": "integer",
-        "minimum": 15,
-        "maximum": 1440
-      },
-      "max_stale_hours": {
-        "type": "integer",
-        "minimum": 1,
-        "maximum": 168
-      }
-    },
-    "required": [
-      "mode",
-      "entra_tenant_id",
-      "scim_connection_id",
-      "permission_reader_provider_id"
     ],
     "additionalProperties": false
   },
@@ -39346,6 +40065,11 @@
         "type": "string",
         "const": "sharepoint"
       },
+      "reader_mode": {
+        "type": "string",
+        "const": "organization",
+        "description": "The managed library uses its organization reader, without a project OAuth provider."
+      },
       "permissions": {
         "$ref": "#/components/schemas/ContentSourcePermissionSettings"
       },
@@ -39377,7 +40101,6 @@
     "required": [
       "id",
       "name",
-      "oauth_provider_id",
       "location_root",
       "sync",
       "type",
@@ -39512,7 +40235,7 @@
       "oauth_provider_id": {
         "type": "string",
         "pattern": "^[0-9a-fA-F]{24}$",
-        "description": "An OAuth provider of this project with grant type `client_credentials` for the system, as 24 hexadecimal characters."
+        "description": "Required for a project OAuth source. Omitted for trusted registration of an organization-managed library."
       },
       "location_root": {
         "type": "string",
@@ -39536,6 +40259,11 @@
         "type": "string",
         "const": "sharepoint"
       },
+      "sharepoint_library_binding_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The approved SharePoint library binding this source is registered for."
+      },
       "permissions": {
         "$ref": "#/components/schemas/ContentSourcePermissionSettings"
       },
@@ -39556,7 +40284,6 @@
     },
     "required": [
       "name",
-      "oauth_provider_id",
       "type",
       "site_url"
     ],
@@ -39846,115 +40573,6 @@
     ],
     "additionalProperties": false,
     "description": "A content source's sync state."
-  },
-  "ContentSourceRoundSummary": {
-    "type": "object",
-    "properties": {
-      "kind": {
-        "type": "string",
-        "enum": [
-          "import",
-          "update"
-        ],
-        "description": "`import` lists the whole folder; `update` reads the changes since the previous sync."
-      },
-      "started_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "finished_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "outcome": {
-        "type": "string",
-        "enum": [
-          "succeeded",
-          "failed"
-        ],
-        "description": "Whether the round finished without an error."
-      }
-    },
-    "required": [
-      "kind",
-      "started_at",
-      "outcome"
-    ],
-    "additionalProperties": false,
-    "description": "When a finished sync round ran, and how it ended."
-  },
-  "ContentSourceSummary": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "string"
-      },
-      "name": {
-        "type": "string"
-      },
-      "description": {
-        "type": "string"
-      },
-      "type": {
-        "type": "string",
-        "enum": [
-          "sharepoint",
-          "box"
-        ]
-      },
-      "location_root": {
-        "type": "string",
-        "description": "The `location` under which the source folder's tree is reproduced, e.g. `/sharepoint/legal`."
-      },
-      "site_url": {
-        "type": "string",
-        "description": "SharePoint only: the site URL."
-      },
-      "library_name": {
-        "type": "string",
-        "description": "SharePoint only: the document library name."
-      },
-      "folder_path": {
-        "type": "string",
-        "description": "The folder synced: relative to the library root for SharePoint (empty for the whole library), the folder path below All Files for Box."
-      },
-      "sync": {
-        "$ref": "#/components/schemas/ContentSourceSyncSettings"
-      },
-      "state": {
-        "type": "string",
-        "enum": [
-          "not_started",
-          "running",
-          "waiting",
-          "stopped"
-        ],
-        "description": "`waiting` between syncs, `running` during one, `stopped` when its credentials were refused or the source is being deleted."
-      },
-      "next_sync_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "last_success_at": {
-        "type": "string",
-        "format": "date-time",
-        "description": "When the last round that finished without an error ended. Absent when none has."
-      },
-      "last_round": {
-        "$ref": "#/components/schemas/ContentSourceRoundSummary"
-      }
-    },
-    "required": [
-      "id",
-      "name",
-      "type",
-      "location_root",
-      "folder_path",
-      "sync",
-      "state"
-    ],
-    "additionalProperties": false,
-    "description": "What a content source syncs into the project and how its sync stands, readable by every member who can read content. Holds no connection, credential or permission settings."
   },
   "ContentSourceSummaryArray": {
     "type": "array",
