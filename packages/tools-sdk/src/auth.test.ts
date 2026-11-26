@@ -1,5 +1,5 @@
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 async function signedBy(issuer: string, claims: Record<string, unknown> = {}) {
     const { privateKey, publicKey } = await generateKeyPair('ES256');
@@ -20,6 +20,12 @@ async function loadVerifyToken() {
 }
 
 describe('verifyToken issuer allowlist', () => {
+    // Every test re-imports the module after `vi.resetModules()`. The first import also transforms the
+    // module graph, which alone can approach the default 5 s timeout on a busy CI runner: do it once here.
+    beforeAll(async () => {
+        await import('./auth.js');
+    }, 60_000);
+
     it('rejects malformed permission claims from a trusted issuer', async () => {
         vi.stubEnv('VERTESIA_TRUSTED_ISSUERS', 'http://localhost:8202');
         const { token } = await signedBy('http://localhost:8202', {
