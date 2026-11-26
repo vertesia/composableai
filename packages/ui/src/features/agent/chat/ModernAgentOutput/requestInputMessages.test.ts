@@ -8,10 +8,12 @@ import {
     getRequestInputMessageKey,
     getRequestInputResponseIdFromMetadata,
     getRequestInputResponseMetadata,
+    getResolvedToolApprovalKeys,
     getToolApprovalEditConfig,
     getToolApprovalEditResponseMetadata,
     getToolApprovalResponseMetadata,
     isRequestInputAnsweredForSession,
+    isRequestInputResolvedByToolApprovalEvent,
     markRequestInputIdAnsweredForSession,
     TOOL_APPROVAL_REDACTED_PLACEHOLDER,
     validateToolApprovalEdit,
@@ -50,6 +52,22 @@ function makeApprovalReleasedMessage(toolUseId: string, timestamp: number): Agen
             request_id: toolUseId,
             approval_decision: 'auto_approved',
             approval_release_reason: 'reviewer_allowed',
+            approval_request: { tool_name: 'create_interaction', approval_key: APPROVAL_KEY },
+        },
+    } as unknown as AgentMessage;
+}
+
+function makeApprovalDeniedMessage(toolUseId: string, decision: string, timestamp: number): AgentMessage {
+    return {
+        timestamp,
+        type: AgentMessageType.THOUGHT,
+        message: 'User declined to use Create a new draft interaction.',
+        workstream_id: 'main',
+        details: {
+            tool_use_id: toolUseId,
+            tool_status: 'error',
+            tool_event: 'failed',
+            approval_decision: decision,
             approval_request: { tool_name: 'create_interaction', approval_key: APPROVAL_KEY },
         },
     } as unknown as AgentMessage;
@@ -207,6 +225,35 @@ describe('request input correlation', () => {
         const laterRequest = { ...makeApprovalRequestForToolUse('write-2'), timestamp: 4 };
 
         expect(getPendingRequestInputMessage([firstRequest, released, laterRequest])).toBe(laterRequest);
+    });
+
+    it('keeps asking for the retried call after a decline with feedback', () => {
+        // The denial resolves the prompt it answered; the agent then retries the same tool on the same
+        // target, which posts a new prompt with the same approval key that must still be shown.
+        const firstRequest = makeApprovalRequestForToolUse('write-1');
+        const feedback = makeUserAnswer('Use a different name', {
+            request_input_response: { request_id: 'write-1' },
+            tool_approval_response: {
+                decision: 'deny_with_feedback',
+                approval_key: APPROVAL_KEY,
+                request_id: 'write-1',
+            },
+        });
+        const denied = makeApprovalDeniedMessage('write-1', 'denied_with_feedback', 3);
+        const retriedRequest = { ...makeApprovalRequestForToolUse('write-2'), timestamp: 4 };
+
+        expect(getPendingRequestInputMessage([firstRequest, feedback, denied])).toBeUndefined();
+        expect(getPendingRequestInputMessage([firstRequest, feedback, denied, retriedRequest])).toBe(retriedRequest);
+    });
+
+    it('closes earlier prompts for a denied approval key that carry no request id', () => {
+        const legacyRequest = makeApprovalRequest();
+        const denied = makeApprovalDeniedMessage('write-1', 'denied', 3);
+        const laterLegacyRequest = { ...makeApprovalRequest(), timestamp: 4 };
+
+        const resolved = getResolvedToolApprovalKeys([legacyRequest, denied, laterLegacyRequest]);
+        expect(isRequestInputResolvedByToolApprovalEvent(legacyRequest, resolved)).toBe(true);
+        expect(isRequestInputResolvedByToolApprovalEvent(laterLegacyRequest, resolved)).toBe(false);
     });
 
     it('reads a request id from response metadata', () => {
