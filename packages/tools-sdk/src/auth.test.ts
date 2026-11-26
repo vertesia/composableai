@@ -35,6 +35,34 @@ describe('verifyToken issuer allowlist', () => {
         vi.unstubAllEnvs();
     });
 
+    it('gives tool handlers the claims an agent token inherits from its onBehalfOf snapshot', async () => {
+        vi.stubEnv('VERTESIA_TRUSTED_ISSUERS', 'http://localhost:8202');
+        const installations = { version: 1, project_id: 'p', ids: ['installation-1'] };
+        const { token } = await signedBy('http://localhost:8202', {
+            type: 'agent',
+            apps: [],
+            inherited_claims: ['apps', 'app_installations'],
+            service_caller: { onBehalfOf: { type: 'user', apps: ['crm'], app_installations: installations } },
+        });
+        const verifyToken = await loadVerifyToken();
+        const { payload } = await verifyToken(token);
+        expect(payload.apps).toEqual(['crm']);
+        expect(payload.app_installations).toEqual(installations);
+        expect(payload).not.toHaveProperty('inherited_claims');
+    });
+
+    it('rejects an inherited claim its snapshot does not hold', async () => {
+        vi.stubEnv('VERTESIA_TRUSTED_ISSUERS', 'http://localhost:8202');
+        const { token } = await signedBy('http://localhost:8202', {
+            type: 'agent',
+            apps: [],
+            inherited_claims: ['app_installations'],
+            service_caller: { onBehalfOf: { type: 'user', apps: ['crm'] } },
+        });
+        const verifyToken = await loadVerifyToken();
+        await expect(verifyToken(token)).rejects.toThrow('Inherited claim is missing from its snapshot');
+    });
+
     it('rejects an issuer outside the built-in domains without fetching its keys', async () => {
         const { token, jwksFetch } = await signedBy('http://localhost:8202');
         const verifyToken = await loadVerifyToken();

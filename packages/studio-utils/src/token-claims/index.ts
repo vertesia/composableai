@@ -1,4 +1,4 @@
-import type { ContentSecurity } from '@vertesia/common';
+import { type AuthTokenPayload, type ContentSecurity, PrincipalType } from '@vertesia/common';
 
 export { assertTokenPermissionClaims, InvalidTokenPermissionClaimsError } from './permission-validation.js';
 export { readTokenPermissionClaims, type TokenPermissionClaims } from './permissions.js';
@@ -64,4 +64,67 @@ export async function resolveAbacClaim(
         throw new TokenClaimReferenceError('Referenced token claims do not contain ABAC');
     }
     return abac;
+}
+
+/**
+ * Claims an agent token copies verbatim from the principal it acts for. The issuer may sign an agent
+ * level without its copy and name the claim in `inherited_claims`: the value is then read back from
+ * that level's own `service_caller.onBehalfOf` snapshot, which stays inline in the same signed token.
+ *
+ * The inline value left behind is the most restrictive one (`apps: []`, no `app_installations`), so a
+ * reader that does not resolve the marker denies app access rather than granting it.
+ */
+export const INHERITED_AGENT_CLAIMS = ['apps', 'app_installations'] as const;
+export type InheritedAgentClaim = (typeof INHERITED_AGENT_CLAIMS)[number];
+
+/** Signed shape of a token whose agent levels may name inherited claims. Resolution removes the marker. */
+export type AuthTokenWithInheritedClaims = AuthTokenPayload & { inherited_claims?: InheritedAgentClaim[] };
+
+function isInheritedAgentClaim(claim: unknown): claim is InheritedAgentClaim {
+    return (INHERITED_AGENT_CLAIMS as readonly unknown[]).includes(claim);
+}
+
+/**
+ * Read the claims one token level names in `inherited_claims` from its already-resolved snapshot.
+ *
+ * Anything the marker cannot honour throws: the inline placeholders are restrictive, so skipping one
+ * would silently drop app access, and an unknown name means a newer issuer whose placeholder this
+ * version cannot know.
+ */
+export function readInheritedClaims(
+    marker: unknown,
+    token: AuthTokenPayload,
+    onBehalfOf: AuthTokenPayload | undefined,
+): Partial<Pick<AuthTokenPayload, InheritedAgentClaim>> {
+    if (marker === undefined) return {};
+    if (!Array.isArray(marker) || !marker.every(isInheritedAgentClaim)) {
+        throw new TokenClaimReferenceError('Token names an unsupported inherited claim');
+    }
+    if (token.type !== PrincipalType.Agent || !onBehalfOf) {
+        throw new TokenClaimReferenceError('Only an agent token with an onBehalfOf snapshot can inherit claims');
+    }
+    const inherited: Partial<Pick<AuthTokenPayload, InheritedAgentClaim>> = {};
+    for (const claim of marker) {
+        const value = onBehalfOf[claim];
+        if (value === undefined) throw new TokenClaimReferenceError('Inherited claim is missing from its snapshot');
+        Object.assign(inherited, { [claim]: value });
+    }
+    return inherited;
+}
+
+/**
+ * Restore the inherited claims of every agent level of a verified token, from the origin outwards.
+ * Needs no I/O: every value comes from the same signed token. Other claim references (such as ABAC)
+ * are left as they are.
+ */
+export function resolveInheritedAgentClaims<T extends AuthTokenWithInheritedClaims>(token: T): T {
+    const { inherited_claims: marker, ...inline } = token;
+    const serviceCaller = inline.service_caller;
+    const onBehalfOf = serviceCaller?.onBehalfOf ? resolveInheritedAgentClaims(serviceCaller.onBehalfOf) : undefined;
+    // `inherited_claims` is optional in T, so the resolved token, without it, is still a T.
+    return {
+        ...inline,
+        ...readInheritedClaims(marker, inline, onBehalfOf),
+        ...(serviceCaller && onBehalfOf ? { service_caller: { ...serviceCaller, onBehalfOf } } : {}),
+    } as T;
 }
