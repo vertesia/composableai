@@ -37,7 +37,7 @@ import { AVAILABLE_REGIONS, config, DEFAULT_REGION, getConfigFile } from './prof
 import { listProjects, projectInferenceBudget, useProject } from './projects/index.js';
 import { registerQuotaCommand } from './quota/index.js';
 import runInteraction from './run/index.js';
-import { runHistory } from './runs/index.js';
+import { registerRunsCommand } from './runs/index.js';
 import { registerSharePointLibrariesCommand } from './sharepoint-libraries/index.js';
 import { registerSharePointOnboardingCommand } from './sharepoint-onboarding/index.js';
 import { errorMessage, getBooleanOption, hasStatus } from './utils/options.js';
@@ -206,24 +206,7 @@ program
     )
     .option('--by-id', 'When used, the interaction is selected by ID instead of by name')
     .action((interaction: string, options: Record<string, unknown>) => runInteraction(program, interaction, options));
-program
-    .command('runs [interactionId]')
-    .description('Search the run history for specific execution runs')
-    .option('-t, --tags [tags]', 'A comma separated list of tags to filter the run history')
-    .option('--status [status]', 'A status to filter on')
-    .option('-e, --env [environmentId]', 'Filter by environment')
-    .option('--inference-profile <id>', 'Use this inference profile for this run only')
-    .option('-m, --model [model]', 'Filter by model')
-    .option('-q, --query [query]', 'A lucene query')
-    .option('-l, --limit [limit]', 'The maximum number of runs to return in a page', '100')
-    .option('-P, --page [page]', 'The page number to return (starting from 0)', '0')
-    .option('-f, --format [format]', 'The output format: json, jsonl or csv.', 'json')
-    .option('-o, --output [file]', 'The output file if any. If not specified it will print to stdout')
-    .option('--before [date]', 'Filter runs before the given date. The date must be in ISO format')
-    .option('--after [date]', 'Filter runs after the given date. The date must be in ISO format')
-    .action((interactionId: string | undefined, options: Record<string, unknown>) =>
-        runHistory(program, interactionId, options),
-    );
+registerRunsCommand(program);
 
 registerAppsCommand(program);
 registerAgentsCommand(program);
