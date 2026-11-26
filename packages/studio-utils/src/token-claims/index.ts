@@ -67,15 +67,25 @@ export async function resolveAbacClaim(
 }
 
 /**
- * Claims an agent token copies verbatim from the principal it acts for. The issuer may sign an agent
- * level without its copy and name the claim in `inherited_claims`: the value is then read back from
+ * Claims an agent token holds with the same value as the principal it acts for. The issuer may sign an
+ * agent level without its copy and name the claim in `inherited_claims`: the value is then read back from
  * that level's own `service_caller.onBehalfOf` snapshot, which stays inline in the same signed token.
- *
- * The inline value left behind is the most restrictive one (`apps: []`, no `app_installations`), so a
- * reader that does not resolve the marker denies app access rather than granting it.
  */
-export const INHERITED_AGENT_CLAIMS = ['apps', 'app_installations'] as const;
+export const INHERITED_AGENT_CLAIMS = ['apps', 'app_installations', 'permissions', 'account_permissions'] as const;
 export type InheritedAgentClaim = (typeof INHERITED_AGENT_CLAIMS)[number];
+
+/**
+ * The inline value an issuer leaves for each inherited claim, `undefined` meaning the claim is omitted.
+ * Each is the most restrictive value its readers accept, so a reader that does not resolve the marker
+ * grants nothing it would not grant from an empty claim. The permission lists stay present but empty:
+ * a missing `account_permissions` marks a legacy token, which readers interpret differently.
+ */
+export const INHERITED_AGENT_CLAIM_PLACEHOLDERS: { readonly [C in InheritedAgentClaim]: AuthTokenPayload[C] } = {
+    apps: [],
+    app_installations: undefined,
+    permissions: [],
+    account_permissions: [],
+};
 
 /** Signed shape of a token whose agent levels may name inherited claims. Resolution removes the marker. */
 export type AuthTokenWithInheritedClaims = AuthTokenPayload & { inherited_claims?: InheritedAgentClaim[] };

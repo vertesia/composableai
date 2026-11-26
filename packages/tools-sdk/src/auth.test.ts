@@ -51,6 +51,30 @@ describe('verifyToken issuer allowlist', () => {
         expect(payload).not.toHaveProperty('inherited_claims');
     });
 
+    it('gives tool handlers the permission lists an agent token inherits', async () => {
+        vi.stubEnv('VERTESIA_TRUSTED_ISSUERS', 'http://localhost:8202');
+        const { token } = await signedBy('http://localhost:8202', {
+            type: 'agent',
+            apps: [],
+            permissions: [],
+            account_permissions: [],
+            inherited_claims: ['apps', 'permissions', 'account_permissions'],
+            service_caller: {
+                onBehalfOf: {
+                    type: 'user',
+                    apps: ['crm'],
+                    permissions: ['content:read'],
+                    account_permissions: [],
+                },
+            },
+        });
+        const verifyToken = await loadVerifyToken();
+        const { payload } = await verifyToken(token);
+        expect(payload.permissions).toEqual(['content:read']);
+        expect(payload.account_permissions).toEqual([]);
+        expect(payload.apps).toEqual(['crm']);
+    });
+
     it('rejects an inherited claim its snapshot does not hold', async () => {
         vi.stubEnv('VERTESIA_TRUSTED_ISSUERS', 'http://localhost:8202');
         const { token } = await signedBy('http://localhost:8202', {
