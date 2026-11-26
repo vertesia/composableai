@@ -2,6 +2,8 @@ import { type AuthTokenPayload, type ContentSecurity, PrincipalType } from '@ver
 import { describe, expect, it, vi } from 'vitest';
 import {
     type AuthTokenWithInheritedClaims,
+    assertTokenPermissionClaims,
+    INHERITED_AGENT_CLAIM_PLACEHOLDERS,
     resolveAbacClaim,
     resolveInheritedAgentClaims,
     TokenClaimReferenceError,
@@ -81,6 +83,28 @@ describe('resolveInheritedAgentClaims', () => {
         expect(resolved).not.toHaveProperty('inherited_claims');
     });
 
+    it('reads inherited permission lists back from the snapshot', () => {
+        const origin = principal({ permissions: ['content:read', 'content:write'], account_permissions: [] });
+        const agent = {
+            ...agentOf(origin, ['apps', 'permissions', 'account_permissions']),
+            ...INHERITED_AGENT_CLAIM_PLACEHOLDERS,
+        };
+        const resolved = resolveInheritedAgentClaims(agent);
+
+        expect(resolved.permissions).toEqual(['content:read', 'content:write']);
+        expect(resolved.account_permissions).toEqual([]);
+    });
+
+    it('leaves placeholders that grant nothing and pass the permission claim validator', () => {
+        expect(INHERITED_AGENT_CLAIM_PLACEHOLDERS).toEqual({
+            apps: [],
+            app_installations: undefined,
+            permissions: [],
+            account_permissions: [],
+        });
+        expect(() => assertTokenPermissionClaims({ ...INHERITED_AGENT_CLAIM_PLACEHOLDERS })).not.toThrow();
+    });
+
     it('resolves a nested chain from the origin outwards', () => {
         const inner = agentOf(principal(), ['apps', 'app_installations']);
         const resolved = resolveInheritedAgentClaims(agentOf(inner, ['apps', 'app_installations']));
@@ -92,7 +116,7 @@ describe('resolveInheritedAgentClaims', () => {
     });
 
     it.each([
-        ['an unknown claim name', agentOf(principal(), ['permissions'])],
+        ['an unknown claim name', agentOf(principal(), ['groups'])],
         ['a marker that is not a list', agentOf(principal(), 'apps')],
         [
             'a claim missing from the snapshot',
