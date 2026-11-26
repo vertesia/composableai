@@ -2493,6 +2493,10 @@
         "type": "string",
         "format": "uuid",
         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+      },
+      "scim_google_drive_reader_id": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{24}$"
       }
     },
     "required": [
@@ -7117,7 +7121,8 @@
         "type": "string",
         "enum": [
           "sharepoint",
-          "box"
+          "box",
+          "google-drive"
         ]
       },
       "location_root": {
@@ -34549,6 +34554,10 @@
         "type": "string",
         "description": "The extracted text to store for the object."
       },
+      "expected_content_etag": {
+        "type": "string",
+        "description": "Reject stale text when the current content etag differs."
+      },
       "etag": {
         "type": "string",
         "description": "The etag of the content the text was extracted from. When provided, the server records it as the object text_etag so extraction can be skipped while the content is unchanged."
@@ -34899,7 +34908,7 @@
                 "minLength": 1
               },
               "source": {
-                "pattern": "^(?:gs|s3|az|sharepoint|box)://[^/]+/.+"
+                "pattern": "^(?:gs|s3|az|sharepoint|box|google-drive)://[^/]+/.+"
               }
             }
           }
@@ -34935,7 +34944,7 @@
                 "minLength": 1
               },
               "source": {
-                "pattern": "^(?:gs|s3|az|sharepoint|box)://[^/]+/.+"
+                "pattern": "^(?:gs|s3|az|sharepoint|box|google-drive)://[^/]+/.+"
               }
             }
           }
@@ -35122,7 +35131,7 @@
               "minLength": 1
             },
             "source": {
-              "pattern": "^(?:gs|s3|az|sharepoint|box)://[^/]+/.+"
+              "pattern": "^(?:gs|s3|az|sharepoint|box|google-drive)://[^/]+/.+"
             }
           }
         }
@@ -39963,25 +39972,50 @@
     ],
     "additionalProperties": false
   },
-  "ContentSourcePermissionSettings": {
-    "discriminator": {
-      "propertyName": "mode",
-      "mapping": {
-        "project": "#/components/schemas/ProjectContentSourcePermissions",
-        "source": "#/components/schemas/SharePointContentSourcePermissions"
+  "GoogleDriveContentSourcePermissions": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "const": "source"
+      },
+      "provider": {
+        "type": "string",
+        "const": "google-drive"
+      },
+      "scim_connection_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "refresh_minutes": {
+        "type": "integer",
+        "minimum": 15,
+        "maximum": 1440
+      },
+      "max_stale_hours": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 168
       }
     },
-    "oneOf": [
+    "required": [
+      "mode",
+      "provider",
+      "scim_connection_id"
+    ],
+    "additionalProperties": false
+  },
+  "ContentSourcePermissionSettings": {
+    "anyOf": [
       {
         "$ref": "#/components/schemas/ProjectContentSourcePermissions"
       },
       {
         "$ref": "#/components/schemas/SharePointContentSourcePermissions"
+      },
+      {
+        "$ref": "#/components/schemas/GoogleDriveContentSourcePermissions"
       }
-    ],
-    "type": "object",
-    "required": [
-      "mode"
     ]
   },
   "ContentSourceNotificationStatus": {
@@ -40050,6 +40084,27 @@
     ],
     "additionalProperties": false
   },
+  "SharePointPermissionOptions": {
+    "discriminator": {
+      "propertyName": "mode",
+      "mapping": {
+        "project": "#/components/schemas/ProjectContentSourcePermissions",
+        "source": "#/components/schemas/SharePointContentSourcePermissions"
+      }
+    },
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ProjectContentSourcePermissions"
+      },
+      {
+        "$ref": "#/components/schemas/SharePointContentSourcePermissions"
+      }
+    ],
+    "type": "object",
+    "required": [
+      "mode"
+    ]
+  },
   "SharePointContentSource": {
     "type": "object",
     "properties": {
@@ -40107,7 +40162,7 @@
         "description": "The managed library uses its organization reader, without a project OAuth provider."
       },
       "permissions": {
-        "$ref": "#/components/schemas/ContentSourcePermissionSettings"
+        "$ref": "#/components/schemas/SharePointPermissionOptions"
       },
       "site_url": {
         "type": "string",
@@ -40149,6 +40204,252 @@
     ],
     "additionalProperties": false,
     "description": "A SharePoint Online document library, or a folder in one. Synced documents reference their file in SharePoint (`sharepoint://<source_id>/<item_id>`) instead of a copy."
+  },
+  "SingleGoogleDriveSelection": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "const": "single"
+      },
+      "drive_id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,256}$"
+      }
+    },
+    "required": [
+      "mode",
+      "drive_id"
+    ],
+    "additionalProperties": false
+  },
+  "AllGoogleDrivesSelection": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "const": "all"
+      }
+    },
+    "required": [
+      "mode"
+    ],
+    "additionalProperties": false
+  },
+  "GoogleDrivePermissionOptions": {
+    "discriminator": {
+      "propertyName": "mode",
+      "mapping": {
+        "project": "#/components/schemas/ProjectContentSourcePermissions",
+        "source": "#/components/schemas/GoogleDriveContentSourcePermissions"
+      }
+    },
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ProjectContentSourcePermissions"
+      },
+      {
+        "$ref": "#/components/schemas/GoogleDriveContentSourcePermissions"
+      }
+    ],
+    "type": "object",
+    "required": [
+      "mode"
+    ]
+  },
+  "GoogleDriveSelection": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/SingleGoogleDriveSelection"
+      },
+      {
+        "$ref": "#/components/schemas/AllGoogleDrivesSelection"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "mode",
+      "mapping": {
+        "single": "#/components/schemas/SingleGoogleDriveSelection",
+        "all": "#/components/schemas/AllGoogleDrivesSelection"
+      }
+    },
+    "type": "object",
+    "required": [
+      "mode"
+    ]
+  },
+  "GoogleDriveReaderConfig": {
+    "type": "object",
+    "properties": {
+      "audience": {
+        "type": "string",
+        "pattern": "^\\/\\/iam\\.googleapis\\.com\\/projects\\/[0-9]+\\/locations\\/global\\/workloadIdentityPools\\/[a-z0-9-]+\\/providers\\/[a-z0-9-]+$"
+      },
+      "service_account": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]+@[a-z0-9-]+\\.iam\\.gserviceaccount\\.com$"
+      }
+    },
+    "required": [
+      "audience",
+      "service_account"
+    ],
+    "additionalProperties": false
+  },
+  "GoogleDriveReader": {
+    "type": "object",
+    "properties": {
+      "audience": {
+        "type": "string",
+        "pattern": "^\\/\\/iam\\.googleapis\\.com\\/projects\\/[0-9]+\\/locations\\/global\\/workloadIdentityPools\\/[a-z0-9-]+\\/providers\\/[a-z0-9-]+$"
+      },
+      "service_account": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]+@[a-z0-9-]+\\.iam\\.gserviceaccount\\.com$"
+      },
+      "id": {
+        "type": "string"
+      },
+      "issuer": {
+        "type": "string"
+      },
+      "subject": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "audience",
+      "service_account",
+      "id",
+      "issuer",
+      "subject"
+    ],
+    "additionalProperties": false
+  },
+  "GoogleDriveContentSource": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` under which the source folder's tree is reproduced, e.g. `/sharepoint/legal`."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "Collection that synced documents are added to, if any."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      },
+      "sample_percent": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 99,
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Absent when the source syncs every file."
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "type": {
+        "type": "string",
+        "const": "google-drive"
+      },
+      "reader_binding_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "selection": {
+        "$ref": "#/components/schemas/GoogleDriveSelection"
+      },
+      "permissions": {
+        "$ref": "#/components/schemas/GoogleDrivePermissionOptions"
+      },
+      "parent_source_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "location_root",
+      "sync",
+      "type",
+      "reader_binding_id",
+      "selection"
+    ],
+    "additionalProperties": false
+  },
+  "CreateGoogleDriveContentSourcePayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128,
+        "description": "Unique within the project."
+      },
+      "description": {
+        "type": "string"
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` root for synced documents. Defaults to `/<type>/<name>`."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "A collection to add synced documents to."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings",
+        "description": "Defaults to scheduled sync disabled, every 60 minutes once enabled."
+      },
+      "sample_percent": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 99,
+        "description": "Sample mode: syncs only about this percentage of the files, to look at real documents before importing them all. A file is in the sample by a hash of its ID, so the same files stay in it from one sync to the next, spread over every folder. A file outside the sample is not imported, and its document is deleted if it has one. Leave out to sync every file."
+      },
+      "type": {
+        "type": "string",
+        "const": "google-drive"
+      },
+      "reader_binding_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$"
+      },
+      "selection": {
+        "$ref": "#/components/schemas/GoogleDriveSelection"
+      },
+      "permissions": {
+        "$ref": "#/components/schemas/GoogleDrivePermissionOptions"
+      }
+    },
+    "required": [
+      "name",
+      "type",
+      "reader_binding_id",
+      "selection"
+    ],
+    "additionalProperties": false
   },
   "BoxContentSource": {
     "type": "object",
@@ -40235,13 +40536,17 @@
       },
       {
         "$ref": "#/components/schemas/BoxContentSource"
+      },
+      {
+        "$ref": "#/components/schemas/GoogleDriveContentSource"
       }
     ],
     "discriminator": {
       "propertyName": "type",
       "mapping": {
         "sharepoint": "#/components/schemas/SharePointContentSource",
-        "box": "#/components/schemas/BoxContentSource"
+        "box": "#/components/schemas/BoxContentSource",
+        "google-drive": "#/components/schemas/GoogleDriveContentSource"
       }
     },
     "type": "object",
@@ -40301,7 +40606,7 @@
         "description": "The approved SharePoint library binding this source is registered for."
       },
       "permissions": {
-        "$ref": "#/components/schemas/ContentSourcePermissionSettings"
+        "$ref": "#/components/schemas/SharePointPermissionOptions"
       },
       "site_url": {
         "type": "string",
@@ -40386,13 +40691,17 @@
       },
       {
         "$ref": "#/components/schemas/CreateBoxContentSourcePayload"
+      },
+      {
+        "$ref": "#/components/schemas/CreateGoogleDriveContentSourcePayload"
       }
     ],
     "discriminator": {
       "propertyName": "type",
       "mapping": {
         "sharepoint": "#/components/schemas/CreateSharePointContentSourcePayload",
-        "box": "#/components/schemas/CreateBoxContentSourcePayload"
+        "box": "#/components/schemas/CreateBoxContentSourcePayload",
+        "google-drive": "#/components/schemas/CreateGoogleDriveContentSourcePayload"
       }
     },
     "type": "object",
@@ -40404,6 +40713,9 @@
   "UpdateContentSourcePayload": {
     "type": "object",
     "properties": {
+      "selection": {
+        "$ref": "#/components/schemas/GoogleDriveSelection"
+      },
       "name": {
         "type": "string",
         "minLength": 1,

@@ -11,7 +11,7 @@ import type {
 import type { Command } from 'commander';
 import { getClient } from '../client.js';
 
-const SOURCE_TYPES = ['sharepoint', 'box'] as const;
+const SOURCE_TYPES = ['sharepoint', 'box', 'google-drive'] as const;
 type SourceType = (typeof SOURCE_TYPES)[number];
 const REPORT_ACTIONS: readonly ContentSourceReportAction[] = ['created', 'updated', 'deleted', 'skipped', 'failed'];
 /** The largest page the report endpoint returns. */
@@ -20,7 +20,11 @@ const REPORT_PAGE_SIZE = 1000;
 interface CreateOptions {
     type: string;
     name: string;
-    oauthProvider: string;
+    oauthProvider?: string;
+    reader?: string;
+    drive?: string;
+    allDrives?: boolean;
+    mirrorPermissions?: string;
     siteUrl?: string;
     library?: string;
     folder?: string;
@@ -52,6 +56,8 @@ function describeFolder(source: ExternalContentSource): string {
         const folder = source.folder_path ? `/${source.folder_path}` : '';
         return `${source.site_url} → ${source.library_name}${folder}`;
     }
+    if (source.type === 'google-drive')
+        return source.selection.mode === 'all' ? 'All shared drives' : source.selection.drive_id;
     return `Box folder ${source.folder_id} (${source.folder_path || source.folder_name})`;
 }
 
@@ -211,12 +217,31 @@ function createPayload(options: CreateOptions): CreateContentSourcePayload {
     const sync = syncSettings(options);
     const common = {
         name: options.name,
-        oauth_provider_id: options.oauthProvider,
+
         ...(options.description ? { description: options.description } : {}),
         ...(options.locationRoot ? { location_root: options.locationRoot } : {}),
         ...(options.collection ? { collection_id: options.collection } : {}),
         ...(sync ? { sync } : {}),
     };
+    if (type === 'google-drive') {
+        if (!options.reader || Boolean(options.drive) === Boolean(options.allDrives)) {
+            throw new Error('Supply --reader and exactly one of --drive or --all-drives');
+        }
+        return {
+            ...common,
+            type,
+            ...(options.mirrorPermissions && {
+                permissions: {
+                    mode: 'source',
+                    provider: 'google-drive',
+                    scim_connection_id: options.mirrorPermissions,
+                },
+            }),
+            reader_binding_id: options.reader,
+            selection: options.drive ? { mode: 'single', drive_id: options.drive } : { mode: 'all' },
+        };
+    }
+    if (!options.oauthProvider) throw new Error('--oauth-provider is required for this source');
     if (type === 'sharepoint') {
         if (!options.siteUrl) {
             throw new Error('--site-url is required for a SharePoint source');
@@ -224,6 +249,7 @@ function createPayload(options: CreateOptions): CreateContentSourcePayload {
         return {
             ...common,
             type,
+            oauth_provider_id: options.oauthProvider,
             site_url: options.siteUrl,
             ...(options.library ? { library_name: options.library } : {}),
             ...(options.folder ? { folder_path: options.folder } : {}),
@@ -232,13 +258,29 @@ function createPayload(options: CreateOptions): CreateContentSourcePayload {
     if (!options.folderId) {
         throw new Error('--folder-id is required for a Box source');
     }
-    return { ...common, type, folder_id: options.folderId };
+    return { ...common, type, oauth_provider_id: options.oauthProvider, folder_id: options.folderId };
 }
 
 export function registerContentSourcesCommand(program: Command) {
     const command = program
         .command('content-sources')
         .description('Sync folders of SharePoint or Box into the project without copying their files.');
+
+    command
+        .command('configure-drive-reader <audience> <service-account>')
+        .action(async (audience: string, service: string) =>
+            print(
+                await (await getClient(program)).googleDriveReaders.configure({ audience, service_account: service }),
+            ),
+        );
+    command
+        .command('shared-drives <reader>')
+        .action(async (reader: string) => print(await (await getClient(program)).googleDriveReaders.drives(reader)));
+    command
+        .command('disconnect-drive-reader <reader>')
+        .action(async (reader: string) =>
+            print(await (await getClient(program)).googleDriveReaders.disconnect(reader)),
+        );
 
     command
         .command('list')
@@ -263,9 +305,13 @@ export function registerContentSourcesCommand(program: Command) {
     command
         .command('create')
         .description('Register a folder after checking it with the system, then start its first sync.')
-        .requiredOption('--type <type>', 'sharepoint or box')
+        .requiredOption('--type <type>', 'sharepoint, box or google-drive')
         .requiredOption('--name <name>', 'Unique name in the project')
-        .requiredOption(
+        .option('--reader <id>', 'Google Drive federated reader')
+        .option('--drive <id>', 'One shared drive')
+        .option('--mirror-permissions <scim-key-id>', 'Mirror read permissions through the reader’s SCIM connection')
+        .option('--all-drives', 'All current and future shared drives of the reader')
+        .option(
             '--oauth-provider <id>',
             'OAuth provider of the project (grant type client_credentials) that issues the tokens of the system',
         )

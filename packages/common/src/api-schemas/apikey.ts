@@ -269,6 +269,10 @@ export const CreateAccountApiKeyPayloadSchema = AccountApiKeySchema.pick({ name:
     .extend({
         scim_entra_tenant_id: z.uuid().optional(),
         scim_entra_members_group_id: z.uuid().optional(),
+        scim_google_drive_reader_id: z
+            .string()
+            .regex(/^[a-f0-9]{24}$/)
+            .optional(),
     })
     .extend({ name: z.string().trim().min(1).regex(/\S/) })
     .meta({ id: 'CreateAccountApiKeyPayload' });

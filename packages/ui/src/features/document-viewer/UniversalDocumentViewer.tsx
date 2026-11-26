@@ -4,6 +4,7 @@ import { MarkdownRenderer, type MarkdownRendererProps, XMLViewer } from '@vertes
 import { AlertCircleIcon, FileIcon, ImageIcon, Loader2Icon } from 'lucide-react';
 import { type ComponentType, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { SimplePdfViewer } from '../pdf-viewer/SimplePdfViewer.js';
+import { useBrowserFileUrl } from './useBrowserFileUrl.js';
 
 export type UniversalDocumentRenditionTarget = 'pdf' | 'markdown' | 'text' | 'image';
 
@@ -350,16 +351,17 @@ function TsxSandboxRenderPreview({ context }: { context: UniversalDocumentViewer
     const code = context.content || '';
     const [state, setState] = useState<TsxSandboxPreviewState>({ isLoading: false });
 
+    const browserFileUrl = useBrowserFileUrl(client.files, sourcePath);
     const getRelatedUrl = useCallback(
         async (path: string, disposition: 'inline' | 'attachment') => {
             if (artifact) {
                 const result = await client.files.getArtifactDownloadUrl(artifact.runId, path, disposition);
-                return result.url;
+                return browserFileUrl(result);
             }
             const result = await client.files.getDownloadUrl(path, fileNameFromPath(path), disposition);
-            return result.url;
+            return browserFileUrl(result);
         },
-        [artifact, client],
+        [artifact, browserFileUrl, client],
     );
 
     useEffect(() => {
@@ -510,16 +512,17 @@ export function UniversalDocumentViewer({
         source.artifact?.path,
     ].join('\0');
 
+    const browserFileUrl = useBrowserFileUrl(client.files, sourceKey);
     const defaultResolveUrl = useCallback(
         async (currentSource: UniversalDocumentSource, disposition: 'inline' | 'attachment') => {
-            if (currentSource.url) return currentSource.url;
+            if (currentSource.url) return browserFileUrl({ url: currentSource.url });
             if (currentSource.artifact) {
                 const result = await client.files.getArtifactDownloadUrl(
                     currentSource.artifact.runId,
                     currentSource.artifact.path,
                     disposition,
                 );
-                return result.url;
+                return browserFileUrl(result);
             }
             if (currentSource.sourcePath) {
                 const result = await client.files.getDownloadUrl(
@@ -527,11 +530,11 @@ export function UniversalDocumentViewer({
                     currentSource.fileName,
                     disposition,
                 );
-                return result.url;
+                return browserFileUrl(result);
             }
             return '';
         },
-        [client],
+        [browserFileUrl, client],
     );
 
     const resolveDocumentUrl = resolveUrl || defaultResolveUrl;
@@ -611,7 +614,10 @@ export function UniversalDocumentViewer({
                               target: 'pdf',
                           })
                         : await createRendition?.(currentSource, 'pdf');
-                    if (!cancelled) setRendition(result ?? null);
+                    const resolved = result?.url
+                        ? { ...result, url: await browserFileUrl({ url: result.url }) }
+                        : result;
+                    if (!cancelled) setRendition(resolved ?? null);
                     return;
                 }
 
@@ -637,6 +643,7 @@ export function UniversalDocumentViewer({
             cancelled = true;
         };
     }, [
+        browserFileUrl,
         createRendition,
         extension,
         fileName,

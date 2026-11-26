@@ -53,8 +53,30 @@ export const SharePointContentSourcePermissionsSchema = z
         max_stale_hours: z.number().int().min(1).max(168).optional(),
     })
     .meta({ id: 'SharePointContentSourcePermissions' });
-export const ContentSourcePermissionSettingsSchema = z
+export const GoogleDriveContentSourcePermissionsSchema = z
+    .strictObject({
+        mode: z.literal('source'),
+        provider: z.literal('google-drive'),
+        scim_connection_id: z.string().regex(OBJECT_ID_PATTERN),
+        refresh_minutes: z.number().int().min(15).max(1440).optional(),
+        max_stale_hours: z.number().int().min(1).max(168).optional(),
+    })
+    .meta({ id: 'GoogleDriveContentSourcePermissions' });
+
+export const SharePointPermissionOptionsSchema = z
     .union([ProjectContentSourcePermissionsSchema, SharePointContentSourcePermissionsSchema])
+    .meta({ id: 'SharePointPermissionOptions' });
+
+export const GoogleDrivePermissionOptionsSchema = z
+    .union([ProjectContentSourcePermissionsSchema, GoogleDriveContentSourcePermissionsSchema])
+    .meta({ id: 'GoogleDrivePermissionOptions' });
+
+export const ContentSourcePermissionSettingsSchema = z
+    .union([
+        ProjectContentSourcePermissionsSchema,
+        SharePointContentSourcePermissionsSchema,
+        GoogleDriveContentSourcePermissionsSchema,
+    ])
     .meta({ id: 'ContentSourcePermissionSettings' });
 
 export const ContentSourcePermissionStatusSchema = z
@@ -114,7 +136,7 @@ export const SharePointContentSourceSchema = z
         reader_mode: z.literal('organization').optional().meta({
             description: 'The managed library uses its organization reader, without a project OAuth provider.',
         }),
-        permissions: ContentSourcePermissionSettingsSchema.optional(),
+        permissions: SharePointPermissionOptionsSchema.optional(),
         site_url: z.string().meta({ description: 'The SharePoint site URL the source was created from.' }),
         site_id: z.string().meta({ description: 'The Microsoft Graph site ID.' }),
         drive_id: z.string().meta({ description: 'The Microsoft Graph drive ID of the document library.' }),
@@ -146,8 +168,52 @@ export const BoxContentSourceSchema = z
             'copy.',
     });
 
+export const SingleGoogleDriveSelectionSchema = z
+    .strictObject({
+        mode: z.literal('single'),
+        drive_id: z.string().regex(/^[A-Za-z0-9_-]{1,256}$/),
+    })
+    .meta({ id: 'SingleGoogleDriveSelection' });
+
+export const AllGoogleDrivesSelectionSchema = z
+    .strictObject({ mode: z.literal('all') })
+    .meta({ id: 'AllGoogleDrivesSelection' });
+
+export const GoogleDriveSelectionSchema = z
+    .discriminatedUnion('mode', [SingleGoogleDriveSelectionSchema, AllGoogleDrivesSelectionSchema])
+    .meta({ id: 'GoogleDriveSelection' });
+
+export const GoogleDriveReaderConfigSchema = z
+    .strictObject({
+        audience: z
+            .string()
+            .regex(
+                /^\/\/iam\.googleapis\.com\/projects\/[0-9]+\/locations\/global\/workloadIdentityPools\/[a-z0-9-]+\/providers\/[a-z0-9-]+$/,
+            ),
+        service_account: z.string().regex(/^[a-z0-9-]+@[a-z0-9-]+\.iam\.gserviceaccount\.com$/),
+    })
+    .meta({ id: 'GoogleDriveReaderConfig' });
+
+export const GoogleDriveReaderSchema = GoogleDriveReaderConfigSchema.extend({
+    id: z.string(),
+    issuer: z.string(),
+    subject: z.string(),
+}).meta({ id: 'GoogleDriveReader' });
+
+export const GoogleDriveContentSourceSchema = z
+    .strictObject({
+        ...commonSourceFields,
+        type: z.literal('google-drive'),
+        reader_binding_id: z.string().regex(OBJECT_ID_PATTERN),
+        selection: GoogleDriveSelectionSchema,
+        permissions: GoogleDrivePermissionOptionsSchema.optional(),
+        parent_source_id: z.string().optional(),
+    })
+    .omit({ oauth_provider_id: true })
+    .meta({ id: 'GoogleDriveContentSource' });
+
 export const ExternalContentSourceSchema = z
-    .discriminatedUnion('type', [SharePointContentSourceSchema, BoxContentSourceSchema])
+    .discriminatedUnion('type', [SharePointContentSourceSchema, BoxContentSourceSchema, GoogleDriveContentSourceSchema])
     .meta({
         id: 'ExternalContentSource',
         description: 'A folder of an external content system whose files are synced into the project without copies.',
@@ -193,7 +259,7 @@ export const CreateSharePointContentSourcePayloadSchema = z
         sharepoint_library_binding_id: z.string().regex(OBJECT_ID_PATTERN).optional().meta({
             description: 'The approved SharePoint library binding this source is registered for.',
         }),
-        permissions: ContentSourcePermissionSettingsSchema.optional(),
+        permissions: SharePointPermissionOptionsSchema.optional(),
         site_url: z.string().min(1).meta({
             description: 'The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`.',
         }),
@@ -235,8 +301,23 @@ export const CreateBoxContentSourcePayloadSchema = z
             '`box_subject_type` and `box_subject_id`.',
     });
 
+export const CreateGoogleDriveContentSourcePayloadSchema = z
+    .strictObject({
+        ...commonCreateFields,
+        type: z.literal('google-drive'),
+        reader_binding_id: z.string().regex(OBJECT_ID_PATTERN),
+        selection: GoogleDriveSelectionSchema,
+        permissions: GoogleDrivePermissionOptionsSchema.optional(),
+    })
+    .omit({ oauth_provider_id: true })
+    .meta({ id: 'CreateGoogleDriveContentSourcePayload' });
+
 export const CreateContentSourcePayloadSchema = z
-    .discriminatedUnion('type', [CreateSharePointContentSourcePayloadSchema, CreateBoxContentSourcePayloadSchema])
+    .discriminatedUnion('type', [
+        CreateSharePointContentSourcePayloadSchema,
+        CreateBoxContentSourcePayloadSchema,
+        CreateGoogleDriveContentSourcePayloadSchema,
+    ])
     .meta({
         id: 'CreateContentSourcePayload',
         description:
@@ -246,6 +327,7 @@ export const CreateContentSourcePayloadSchema = z
 
 export const UpdateContentSourcePayloadSchema = z
     .strictObject({
+        selection: GoogleDriveSelectionSchema.optional(),
         name: z.string().min(1).max(CONTENT_SOURCE_NAME_MAX_LENGTH).optional(),
         description: z.string().optional(),
         sync: ContentSourceSyncSettingsSchema.optional(),
@@ -431,7 +513,7 @@ export const ContentSourceSummarySchema = z
         id: z.string(),
         name: z.string(),
         description: z.string().optional(),
-        type: z.enum(['sharepoint', 'box']),
+        type: z.enum(['sharepoint', 'box', 'google-drive']),
         location_root: commonSourceFields.location_root,
         site_url: z.string().meta({ description: 'SharePoint only: the site URL.' }).optional(),
         library_name: z.string().meta({ description: 'SharePoint only: the document library name.' }).optional(),
