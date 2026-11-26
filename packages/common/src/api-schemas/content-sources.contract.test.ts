@@ -6,7 +6,6 @@ const source = {
     mode: 'source',
     entra_tenant_id: '14e7a391-efbe-4dca-b73a-4c386e272a82',
     scim_connection_id: OBJECT_ID,
-    permission_reader_provider_id: OBJECT_ID,
 };
 
 describe('content source permission settings', () => {
@@ -18,8 +17,13 @@ describe('content source permission settings', () => {
         ).toBe(false);
     });
 
-    it('requires a site-bound provider and SCIM connection in source mode', () => {
+    it('requires tenant identity and accepts an omitted SCIM connection in source mode', () => {
         expect(validateApiRequest('UpdateContentSourcePayload', { permissions: { mode: 'source' } }).valid).toBe(false);
+        expect(
+            validateApiRequest('UpdateContentSourcePayload', {
+                permissions: { mode: 'source', entra_tenant_id: source.entra_tenant_id },
+            }).valid,
+        ).toBe(true);
         expect(
             validateApiRequest('UpdateContentSourcePayload', { permissions: { ...source, mode: 'project' } }).valid,
         ).toBe(false);
@@ -32,5 +36,23 @@ describe('content source permission settings', () => {
                 permissions: { state: 'awaiting_review', reason: 'new_reason', version: 1, unresolved: 0 },
             }).valid,
         ).toBe(true);
+    });
+});
+
+describe('managed SharePoint reader setup', () => {
+    it('accepts explicit site policy confirmation and leaves uniform registration unchanged', () => {
+        expect(validateApiRequest('ConfigureSharePointLibraryReaderPayload', {}).valid).toBe(true);
+        expect(
+            validateApiRequest('ConfigureSharePointLibraryReaderPayload', {
+                permissions: source,
+                site_policy_confirmed: true,
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiRequest('ConfigureSharePointLibraryReaderPayload', {
+                permissions: source,
+                site_policy_confirmed: 'true',
+            }).valid,
+        ).toBe(false);
     });
 });

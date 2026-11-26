@@ -1,5 +1,4 @@
 import type {
-    ContentSourcePermissionSettings,
     ContentSourceReportAction,
     ContentSourceReportEntry,
     ContentSourceStatus,
@@ -18,17 +17,7 @@ const REPORT_ACTIONS: readonly ContentSourceReportAction[] = ['created', 'update
 /** The largest page the report endpoint returns. */
 const REPORT_PAGE_SIZE = 1000;
 
-interface PermissionOptions {
-    permissionMode?: string;
-    permissionReader?: string;
-    entraTenant?: string;
-    scimConnection?: string;
-    tenantGroup?: string;
-    permissionRefresh?: string;
-    permissionMaxStale?: string;
-}
-
-interface CreateOptions extends PermissionOptions {
+interface CreateOptions {
     type: string;
     name: string;
     oauthProvider: string;
@@ -45,7 +34,7 @@ interface CreateOptions extends PermissionOptions {
     json?: boolean;
 }
 
-interface UpdateOptions extends PermissionOptions {
+interface UpdateOptions {
     name?: string;
     description?: string;
     interval?: string;
@@ -217,57 +206,9 @@ function syncSettings(
     };
 }
 
-function permissionSettings(options: PermissionOptions): ContentSourcePermissionSettings | undefined {
-    if (options.permissionMode === 'project') return { mode: 'project' };
-    const { permissionReader, entraTenant, scimConnection, tenantGroup, permissionRefresh, permissionMaxStale } =
-        options;
-    const supplied = [
-        permissionReader,
-        entraTenant,
-        scimConnection,
-        tenantGroup,
-        permissionRefresh,
-        permissionMaxStale,
-    ];
-    if (!options.permissionMode && supplied.every((value) => value === undefined)) return undefined;
-    if (options.permissionMode !== 'source' || !permissionReader || !entraTenant || !scimConnection) {
-        throw new Error(
-            'Source permissions require --permission-mode source, --permission-reader, --entra-tenant and --scim-connection',
-        );
-    }
-    const integer = (value: string | undefined, min: number, max: number) => {
-        if (value === undefined) return undefined;
-        const number = Number(value);
-        if (!Number.isInteger(number) || number < min || number > max)
-            throw new Error(`Expected an integer from ${min} to ${max}`);
-        return number;
-    };
-    return {
-        mode: 'source',
-        entra_tenant_id: entraTenant,
-        scim_connection_id: scimConnection,
-        permission_reader_provider_id: permissionReader,
-        tenant_group_id: tenantGroup,
-        refresh_minutes: integer(permissionRefresh, 15, 1440),
-        max_stale_hours: integer(permissionMaxStale, 1, 168),
-    };
-}
-
-function permissionOptions(command: Command): Command {
-    return command
-        .option('--permission-mode <mode>', 'Read access from the source or the project')
-        .option('--permission-reader <id>', 'Site-bound SharePoint certificate OAuth provider ID')
-        .option('--entra-tenant <id>', 'Microsoft Entra tenant ID')
-        .option('--scim-connection <id>', 'Designated SCIM provisioning API key ID')
-        .option('--tenant-group <id>', 'Verified tenant-member Vertesia group ID')
-        .option('--permission-refresh <minutes>', 'Minutes between permission refreshes')
-        .option('--permission-max-stale <hours>', 'Hours before an unverified policy stops granting access');
-}
-
 function createPayload(options: CreateOptions): CreateContentSourcePayload {
     const type = parseType(options.type);
     const sync = syncSettings(options);
-    const permissions = permissionSettings(options);
     const common = {
         name: options.name,
         oauth_provider_id: options.oauthProvider,
@@ -284,12 +225,10 @@ function createPayload(options: CreateOptions): CreateContentSourcePayload {
             ...common,
             type,
             site_url: options.siteUrl,
-            ...(permissions ? { permissions } : {}),
             ...(options.library ? { library_name: options.library } : {}),
             ...(options.folder ? { folder_path: options.folder } : {}),
         };
     }
-    if (permissions) throw new Error('Permission settings require a SharePoint source');
     if (!options.folderId) {
         throw new Error('--folder-id is required for a Box source');
     }
@@ -321,73 +260,67 @@ export function registerContentSourcesCommand(program: Command) {
         .description('Show a content source.')
         .action(async (id: string) => print(await (await getClient(program)).contentSources.retrieve(id)));
 
-    permissionOptions(
-        command
-            .command('create')
-            .description('Register a folder after checking it with the system, then start its first sync.')
-            .requiredOption('--type <type>', 'sharepoint or box')
-            .requiredOption('--name <name>', 'Unique name in the project')
-            .requiredOption(
-                '--oauth-provider <id>',
-                'OAuth provider of the project (grant type client_credentials) that issues the tokens of the system',
-            )
-            .option('--site-url <url>', 'SharePoint: site URL, e.g. https://contoso.sharepoint.com/sites/legal')
-            .option('--library <name>', "SharePoint: document library name (defaults to the site's default library)")
-            .option('--folder <path>', 'SharePoint: folder inside the library, e.g. Contracts/2026')
-            .option('--folder-id <id>', "Box: folder ID, shared with the Box app's service account")
-            .option('--location-root <location>', 'Location root for synced documents (defaults to /<type>/<name>)')
-            .option('--collection <id>', 'Collection to add synced documents to')
-            .option('--description <text>', 'Description')
-            .option('--interval <minutes>', 'Minutes between scheduled syncs (enables the schedule)')
-            .option('--schedule', 'Enable the schedule, every 60 minutes unless --interval is given')
-            .option(
-                '--notifications',
-                'SharePoint: also sync as soon as the library notifies a change (enables the schedule)',
-            )
-            .option('--json', 'Print the created source as JSON'),
-    ).action(async (options: CreateOptions) => {
-        const source = await (await getClient(program)).contentSources.create(createPayload(options));
-        if (options.json) {
-            print(source);
-        } else {
-            console.log(`Created ${describeSource(source)}`);
-        }
-    });
+    command
+        .command('create')
+        .description('Register a folder after checking it with the system, then start its first sync.')
+        .requiredOption('--type <type>', 'sharepoint or box')
+        .requiredOption('--name <name>', 'Unique name in the project')
+        .requiredOption(
+            '--oauth-provider <id>',
+            'OAuth provider of the project (grant type client_credentials) that issues the tokens of the system',
+        )
+        .option('--site-url <url>', 'SharePoint: site URL, e.g. https://contoso.sharepoint.com/sites/legal')
+        .option('--library <name>', "SharePoint: document library name (defaults to the site's default library)")
+        .option('--folder <path>', 'SharePoint: folder inside the library, e.g. Contracts/2026')
+        .option('--folder-id <id>', "Box: folder ID, shared with the Box app's service account")
+        .option('--location-root <location>', 'Location root for synced documents (defaults to /<type>/<name>)')
+        .option('--collection <id>', 'Collection to add synced documents to')
+        .option('--description <text>', 'Description')
+        .option('--interval <minutes>', 'Minutes between scheduled syncs (enables the schedule)')
+        .option('--schedule', 'Enable the schedule, every 60 minutes unless --interval is given')
+        .option(
+            '--notifications',
+            'SharePoint: also sync as soon as the library notifies a change (enables the schedule)',
+        )
+        .option('--json', 'Print the created source as JSON')
+        .action(async (options: CreateOptions) => {
+            const source = await (await getClient(program)).contentSources.create(createPayload(options));
+            if (options.json) {
+                print(source);
+            } else {
+                console.log(`Created ${describeSource(source)}`);
+            }
+        });
 
-    permissionOptions(
-        command
-            .command('update <id>')
-            .description(
-                'Change the name, description or schedule. Also restarts a sync whose credentials were refused.',
-            )
-            .option('--name <name>', 'New name')
-            .option('--description <text>', 'New description')
-            .option('--interval <minutes>', 'Minutes between scheduled syncs')
-            .option('--schedule', 'Enable the schedule')
-            .option('--no-schedule', 'Disable the schedule: sync only on request')
-            .option('--notifications', 'SharePoint: also sync as soon as the library notifies a change')
-            .option('--no-notifications', 'Sync on the schedule only')
-            .option('--json', 'Print the updated source as JSON'),
-    ).action(async (id: string, options: UpdateOptions) => {
-        const client = await getClient(program);
-        const wantsSync =
-            options.interval !== undefined || options.schedule !== undefined || options.notifications !== undefined;
-        const current = wantsSync ? (await client.contentSources.retrieve(id)).sync : undefined;
-        const sync = syncSettings(options, current);
-        const permissions = permissionSettings(options);
-        const payload: UpdateContentSourcePayload = {
-            ...(options.name ? { name: options.name } : {}),
-            ...(options.description !== undefined ? { description: options.description } : {}),
-            ...(sync ? { sync } : {}),
-            ...(permissions ? { permissions } : {}),
-        };
-        const source = await client.contentSources.update(id, payload);
-        if (options.json) {
-            print(source);
-        } else {
-            console.log(`Updated ${describeSource(source)}`);
-        }
-    });
+    command
+        .command('update <id>')
+        .description('Change the name, description or schedule. Also restarts a sync whose credentials were refused.')
+        .option('--name <name>', 'New name')
+        .option('--description <text>', 'New description')
+        .option('--interval <minutes>', 'Minutes between scheduled syncs')
+        .option('--schedule', 'Enable the schedule')
+        .option('--no-schedule', 'Disable the schedule: sync only on request')
+        .option('--notifications', 'SharePoint: also sync as soon as the library notifies a change')
+        .option('--no-notifications', 'Sync on the schedule only')
+        .option('--json', 'Print the updated source as JSON')
+        .action(async (id: string, options: UpdateOptions) => {
+            const client = await getClient(program);
+            const wantsSync =
+                options.interval !== undefined || options.schedule !== undefined || options.notifications !== undefined;
+            const current = wantsSync ? (await client.contentSources.retrieve(id)).sync : undefined;
+            const sync = syncSettings(options, current);
+            const payload: UpdateContentSourcePayload = {
+                ...(options.name ? { name: options.name } : {}),
+                ...(options.description !== undefined ? { description: options.description } : {}),
+                ...(sync ? { sync } : {}),
+            };
+            const source = await client.contentSources.update(id, payload);
+            if (options.json) {
+                print(source);
+            } else {
+                console.log(`Updated ${describeSource(source)}`);
+            }
+        });
 
     command
         .command('delete <id>')
