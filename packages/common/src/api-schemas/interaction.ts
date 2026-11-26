@@ -2072,6 +2072,12 @@ export const ConversationStateSchema = z
             'Conversation state passed between workflow activities: the activity-safe, per-turn dynamic subset of a multi-turn agent conversation. Rides every conversation activity payload, so it deliberately excludes anything large or fetchable — the conversation history and tool definitions live in artifact storage (referenced via `tool_reference` / the conversation storage id), and catalog/activation data lives in the workflow-memory  {@link  ConversationCatalogState }  (persisted as catalog.json).',
     });
 
+const STANDBY_TOOLS_DESCRIPTION =
+    'Tools that may be offered in a later turn of the conversation, for example the tools a skill unlocks. They ' +
+    'cannot be called until a later request lists them in the tools. Declaring them in advance keeps the prompt ' +
+    'cache of Claude on Amazon Bedrock, Vertex AI and Microsoft Foundry when one is offered; other models ' +
+    'ignore them, and so does every request of a conversation after the one that first declares its tools.';
+
 // The run stores `parent`, `environment` and `interaction` as ObjectIds, and an update casts each value to one: the
 // populated references a read returns cannot be written back, so each is published as the ID it stores.
 const runReferenceIdSchema = (description: string) =>
@@ -2202,6 +2208,10 @@ export const NamedInteractionExecutionPayloadSchema = z
             .array(ToolDefinitionSchema)
             .meta({ description: 'The tools to be used in the execution' })
             .optional(),
+        standby_tool_definitions: z
+            .array(ToolDefinitionSchema)
+            .meta({ description: STANDBY_TOOLS_DESCRIPTION })
+            .optional(),
         workflow: ExecutionRunWorkflowSchema.meta({
             description: 'The workflow related to this Interaction Run.',
         }).optional(),
@@ -2248,6 +2258,10 @@ export const InteractionExecutionPayloadSchema = z
         tool_definitions: z
             .array(ToolDefinitionSchema)
             .meta({ description: 'The tools to be used in the execution' })
+            .optional(),
+        standby_tool_definitions: z
+            .array(ToolDefinitionSchema)
+            .meta({ description: STANDBY_TOOLS_DESCRIPTION })
             .optional(),
         workflow: ExecutionRunWorkflowSchema.meta({
             description: 'The workflow related to this Interaction Run.',
@@ -2747,6 +2761,7 @@ const resumeConversationFields = {
     // exactly those callers — the first message of a conversation.
     conversation: z.unknown().optional(),
     tools: z.array(ToolDefinitionSchema),
+    standby_tools: z.array(ToolDefinitionSchema).meta({ description: STANDBY_TOOLS_DESCRIPTION }).optional(),
     strip_options: ConversationStripOptionsSchema.optional(),
     asyncCompletion: AsyncCompletionOptionsSchema.optional(),
 };
