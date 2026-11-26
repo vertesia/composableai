@@ -41,6 +41,20 @@ describe('runs --app', () => {
         expect(mocks.search).not.toHaveBeenCalled();
     });
 
+    it('filters by --after and --before, which were ignored before', async () => {
+        await runs('--after', '2026-11-01', '--before', '2026-11-26T12:00:00Z');
+        expect(mocks.search).toHaveBeenCalledWith(
+            expect.objectContaining({
+                query: expect.objectContaining({ start: '2026-11-01', end: '2026-11-26T12:00:00Z' }),
+            }),
+        );
+    });
+
+    it('refuses a date it cannot read before searching', async () => {
+        await expect(runs('--after', 'last tuesday')).rejects.toThrow('--after must be a date in ISO format');
+        expect(mocks.search).not.toHaveBeenCalled();
+    });
+
     it('refuses -q, which the server ignored, and says what to use instead', async () => {
         await expect(runs('-q', 'horse-tinder-p1-1')).rejects.toThrow(/Use --app <name> or --tags/);
         expect(mocks.search).not.toHaveBeenCalled();

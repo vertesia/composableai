@@ -13,8 +13,8 @@ type RunHistoryOptions = CliOptions<{
     model?: string;
     app?: string;
     query?: string;
-    start?: string;
-    end?: string;
+    after?: string;
+    before?: string;
     format?: 'json' | 'jsonl';
     output?: string;
 }>;
@@ -40,6 +40,9 @@ export async function runHistory(program: Command, interactionId: string | undef
     if (options.format !== 'json' && options.format !== 'jsonl') {
         throw new Error(`Unknown format:${options.format}. Supported formats: json, jsonl`);
     }
+    // --after and --before bound the run's last update; the server reads them as start and end.
+    const start = isoDateOption(options.after, '--after');
+    const end = isoDateOption(options.before, '--before');
     const client = await getClient(program);
 
     const page = options.page ? parseInt(options.page, 10) : 0;
@@ -58,8 +61,8 @@ export async function runHistory(program: Command, interactionId: string | undef
             status: options.status || undefined,
             environment: options.env || undefined,
             model: options.model || undefined,
-            start: options.start || undefined,
-            end: options.end || undefined,
+            start,
+            end,
         },
     });
 
@@ -74,6 +77,12 @@ export async function runHistory(program: Command, interactionId: string | undef
     } else {
         console.log(out);
     }
+}
+
+function isoDateOption(value: string | undefined, flag: string): string | undefined {
+    if (!value) return undefined;
+    if (Number.isNaN(Date.parse(value))) throw new Error(`${flag} must be a date in ISO format, such as 2026-01-31`);
+    return value;
 }
 
 export function registerRunsCommand(program: Command) {

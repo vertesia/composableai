@@ -204,11 +204,13 @@ export async function resolveDevelopmentTaskRuntime(
     }
     if (!environment)
         throw new Error(
-            'No execution environment: pass -e <environment>. List them with "vertesia envs"; the project has no agent default.',
+            'No execution environment: pass -e <environment>. List them with "vertesia envs"; ' +
+                'the project has no agent default.',
         );
     if (!model)
         throw new Error(
-            `No model: pass -m <model>. List the models of ${environment} with "vertesia envs models ${environment}"; the project has no agent default model.`,
+            `No model: pass -m <model>. List the models of ${environment} with ` +
+                `"vertesia envs models ${environment}"; the project has no agent default model.`,
         );
     return { environment, model };
 }

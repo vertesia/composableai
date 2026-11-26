@@ -45,6 +45,13 @@ describe('agents inspect run id', () => {
         await expect(parse).rejects.toThrow(/apps scaffolds status/);
         expect(mocks.retrieveRun).not.toHaveBeenCalled();
     });
+
+    it('accepts the AgentRun:<id> workflow id that other commands print', async () => {
+        const program = new Command().exitOverride();
+        registerAgentsCommand(program);
+        await program.parseAsync(['agents', 'inspect', 'AgentRun:0123456789abcdef01234567'], { from: 'user' });
+        expect(mocks.retrieveRun).toHaveBeenLastCalledWith('0123456789abcdef01234567');
+    });
 });
 
 describe('agents inspect history cursors', () => {

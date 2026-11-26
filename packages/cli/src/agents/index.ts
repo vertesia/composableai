@@ -199,13 +199,15 @@ export function registerAgentsCommand(program: Command) {
         .option('-o, --output <file>', 'Write JSON output to a file')
         .addHelpText(
             'after',
-            '\nWith --messages, the printed text shows the last messages, including the replies to "agents message".\n' +
-                'Use "agents stream <runId>" to follow the feed live.',
+            '\nWith --messages, the printed text shows the last messages, including the replies to\n' +
+                '"agents message". Use "agents stream <runId>" to follow the feed live.',
         )
-        .action(async (runId: string, options: InspectOptions) => {
+        .action(async (givenRunId: string, options: InspectOptions) => {
+            // Commands also print a run's workflow id, AgentRun:<id>; accept it as the id it names.
+            const runId = givenRunId.replace(/^AgentRun:/, '');
             if (!AGENT_RUN_ID_PATTERN.test(runId)) {
                 throw new Error(
-                    `"${runId}" is not an agent run id. Agent run ids are 24 hex characters, shown as "id" by ` +
+                    `"${givenRunId}" is not an agent run id. Agent run ids are 24 hex characters, shown as "id" by ` +
                         '"agents start" and "apps development-tasks start". A scaffold run_id is a Temporal run id: ' +
                         'check it with "apps scaffolds status <workflowId> <runId>".',
                 );

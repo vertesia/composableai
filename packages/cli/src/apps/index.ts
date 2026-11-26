@@ -61,15 +61,17 @@ export function registerAppsCommand(program: Command) {
     scaffolds
         .command('create <appName>')
         .description(
-            'Create and scaffold a new app package, then follow the live stream and the initial version build until it completes or fails',
+            'Create and scaffold a new app package, then follow the live stream and the initial version build ' +
+                'until it completes or fails',
         )
         .option('--title <title>', 'App title')
         .option('--description <description>', 'App description')
         .option(
             '--modules <modules>',
-            'Comma-separated modules to add: service (app-gateway runtime and routes), assistant (assistant chat UI), ' +
-                'content-app (content types, interactions and a process under /content), examples (sample resources). ' +
-                'service is always included; with no --modules the app has only service',
+            'Comma-separated modules to add: service (app-gateway runtime and routes), ' +
+                'assistant (assistant chat UI), content-app (content types, interactions and a process under ' +
+                '/content), examples (sample resources). service is always included; with no --modules the app ' +
+                'has only service',
         )
         .option('--no-create-version', 'Do not build an initial immutable version')
         .option(
