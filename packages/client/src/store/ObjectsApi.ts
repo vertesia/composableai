@@ -283,6 +283,10 @@ export class ObjectsApi extends ApiTopic {
         });
     }
 
+    importDriveText(id: string): Promise<ContentObjectTextResponse> {
+        return this.post(`/${encodeURIComponent(id)}/import-drive-text`);
+    }
+
     async upload(source: StreamSource | File) {
         const request = {
             id: source instanceof StreamSource ? source.id : undefined,

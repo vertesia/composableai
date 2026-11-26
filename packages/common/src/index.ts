@@ -90,6 +90,8 @@ export type {
 export * from './runs.js';
 export * from './schema-for-extraction.js';
 export * from './secrets.js';
+export * from './sharepoint-libraries.js';
+export * from './sharepoint-onboarding.js';
 export * from './skill.js';
 export * from './store/index.js';
 export * from './store/rendering.js';

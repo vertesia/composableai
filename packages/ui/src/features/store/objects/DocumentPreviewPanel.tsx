@@ -1,4 +1,4 @@
-import { type ContentObject, ImageRenditionFormat } from '@vertesia/common';
+import type { ContentObject } from '@vertesia/common';
 import { Button, Spinner, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
@@ -6,6 +6,8 @@ import { useUserSession } from '@vertesia/ui/session';
 import { JSONDisplay, MarkdownRenderer } from '@vertesia/ui/widgets';
 import { ChevronRight, Download, FileText, Info, LayoutGrid, Maximize2, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { useBrowserFileUrl } from '../../document-viewer/useBrowserFileUrl.js';
+import { getContentObjectDownloadName, useDownloadFile } from './components/useDownloadFile.js';
 
 interface DocumentPreviewPanelProps {
     objectId: string | null;
@@ -25,6 +27,8 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
     const { t } = useUITranslation();
     const toast = useToast();
 
+    const browserFileUrl = useBrowserFileUrl(client.files, isOpen ? (objectId ?? undefined) : undefined);
+    const { downloadFromContentSource } = useDownloadFile({ client, toast });
     const loadObjectText = useCallback(
         async (id: string) => {
             setLoadingText(true);
@@ -47,25 +51,13 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
             }
 
             try {
-                // Try to get a rendition first
-                const rendition = await client.objects.getRendition(obj.id, {
-                    format: ImageRenditionFormat.jpeg,
-                    generate_if_missing: false,
-                });
-
-                // Don't use rendition object to avoid type issues
-                if (rendition.status === 'found') {
-                    console.log('Found rendition');
-                }
-
-                // Get download URL
-                const downloadUrlResult = await client.files.getDownloadUrl(obj.content.source);
-                setImageUrl(downloadUrlResult.url);
+                const download = await client.files.getDownloadUrl(obj.content.source);
+                setImageUrl(await browserFileUrl(download));
             } catch (error) {
                 console.error('Error loading image:', error);
             }
         },
-        [client.files, client.objects],
+        [client.files, browserFileUrl],
     );
 
     useEffect(() => {
@@ -334,20 +326,10 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                         <Button
                             onClick={() => {
                                 if (object?.content?.source) {
-                                    client.files
-                                        .getDownloadUrl(object.content.source)
-                                        .then((result) => {
-                                            window.open(result.url, '_blank');
-                                        })
-                                        .catch((error) => {
-                                            console.error('Error getting download URL:', error);
-                                            toast({
-                                                title: t('agent.error'),
-                                                description: t('store.failedToDownloadFile'),
-                                                status: 'error',
-                                                duration: 3000,
-                                            });
-                                        });
+                                    void downloadFromContentSource(
+                                        object.content.source,
+                                        getContentObjectDownloadName(object),
+                                    );
                                 }
                             }}
                             variant="outline"

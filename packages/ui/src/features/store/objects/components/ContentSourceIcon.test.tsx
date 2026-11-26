@@ -8,6 +8,7 @@ describe('externalSourceSystem', () => {
     it.each([
         ['sharepoint://6af577/01ABC', 'sharepoint'],
         ['box://6af577/12345', 'box'],
+        ['google-drive://6af577/12345', 'google-drive'],
         ['gs://bucket/file.pdf', undefined],
         ['', undefined],
         [undefined, undefined],

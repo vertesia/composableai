@@ -543,6 +543,7 @@ export type CreateAccountApiKeyPayload = {
     expires_at?: string | undefined;
     scim_entra_tenant_id?: string | undefined;
     scim_entra_members_group_id?: string | undefined;
+    scim_google_drive_reader_id?: string | undefined;
 };
 export type UpdateAccountApiKeyPayload = {
     name?: string | undefined;
@@ -2338,12 +2339,12 @@ export type ContentQueryResult = {
     took?: number | undefined;
 };
 /** A folder of an external content system whose files are synced into the project without copies. */
-export type ExternalContentSource = SharePointContentSource | BoxContentSource;
+export type ExternalContentSource = SharePointContentSource | BoxContentSource | GoogleDriveContentSource;
 export type SharePointContentSource = {
     id: string;
     name: string;
     description?: string | undefined;
-    oauth_provider_id: string;
+    oauth_provider_id?: string | undefined;
     location_root: string;
     collection_id?: string | undefined;
     sync: ContentSourceSyncSettings;
@@ -2353,13 +2354,72 @@ export type SharePointContentSource = {
     created_at?: string | undefined;
     updated_at?: string | undefined;
     type: 'sharepoint';
-    permissions?: ContentSourcePermissionSettings | undefined;
+    reader_mode?: 'organization' | undefined;
+    permissions?: SharePointPermissionOptions | undefined;
     site_url: string;
     site_id: string;
     drive_id: string;
     library_name: string;
     folder_path: string;
     folder_item_id: string;
+};
+export type GoogleDriveContentSourcePermissions = {
+    mode: 'source';
+    provider: 'google-drive';
+    scim_connection_id: string;
+    refresh_minutes?: number | undefined;
+    max_stale_hours?: number | undefined;
+};
+export type SingleGoogleDriveSelection = {
+    mode: 'single';
+    drive_id: string;
+};
+export type AllGoogleDrivesSelection = {
+    mode: 'all';
+};
+export type GoogleDrivePermissionOptions = ProjectContentSourcePermissions | GoogleDriveContentSourcePermissions;
+export type SharePointPermissionOptions = ProjectContentSourcePermissions | SharePointContentSourcePermissions;
+export type GoogleDriveSelection = SingleGoogleDriveSelection | AllGoogleDrivesSelection;
+export type GoogleDriveReaderConfig = {
+    audience: string;
+    service_account: string;
+};
+export type GoogleDriveReader = {
+    audience: string;
+    service_account: string;
+    id: string;
+    issuer: string;
+    subject: string;
+};
+export type GoogleDriveContentSource = {
+    id: string;
+    name: string;
+    description?: string | undefined;
+    location_root: string;
+    collection_id?: string | undefined;
+    sync: ContentSourceSyncSettings;
+    sample_percent?: number | undefined;
+    created_by?: string | undefined;
+    updated_by?: string | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+    type: 'google-drive';
+    reader_binding_id: string;
+    selection: GoogleDriveSelection;
+    permissions?: GoogleDrivePermissionOptions | undefined;
+    parent_source_id?: string | undefined;
+};
+export type CreateGoogleDriveContentSourcePayload = {
+    name: string;
+    description?: string | undefined;
+    location_root?: string | undefined;
+    collection_id?: string | undefined;
+    sync?: ContentSourceSyncSettings | undefined;
+    sample_percent?: number | undefined;
+    type: 'google-drive';
+    reader_binding_id: string;
+    selection: GoogleDriveSelection;
+    permissions?: GoogleDrivePermissionOptions | undefined;
 };
 export type BoxContentSource = {
     id: string;
@@ -2379,7 +2439,10 @@ export type BoxContentSource = {
     folder_name: string;
     folder_path: string;
 };
-export type ContentSourcePermissionSettings = ProjectContentSourcePermissions | SharePointContentSourcePermissions;
+export type ContentSourcePermissionSettings =
+    | ProjectContentSourcePermissions
+    | SharePointContentSourcePermissions
+    | GoogleDriveContentSourcePermissions;
 export type ContentSourcePermissionStatus = {
     state: string;
     version: number;
@@ -2393,8 +2456,7 @@ export type ProjectContentSourcePermissions = {
 export type SharePointContentSourcePermissions = {
     mode: 'source';
     entra_tenant_id: string;
-    scim_connection_id: string;
-    permission_reader_provider_id: string;
+    scim_connection_id?: string | undefined;
     tenant_group_id?: string | undefined;
     refresh_minutes?: number | undefined;
     max_stale_hours?: number | undefined;
@@ -2404,17 +2466,21 @@ export type ContentSourceSyncSettings = {
     interval_minutes: number;
 };
 /** Registers a content source. */
-export type CreateContentSourcePayload = CreateSharePointContentSourcePayload | CreateBoxContentSourcePayload;
+export type CreateContentSourcePayload =
+    | CreateSharePointContentSourcePayload
+    | CreateBoxContentSourcePayload
+    | CreateGoogleDriveContentSourcePayload;
 export type CreateSharePointContentSourcePayload = {
     name: string;
     description?: string | undefined;
-    oauth_provider_id: string;
+    oauth_provider_id?: string | undefined;
     location_root?: string | undefined;
     collection_id?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
     sample_percent?: number | undefined;
     type: 'sharepoint';
-    permissions?: ContentSourcePermissionSettings | undefined;
+    sharepoint_library_binding_id?: string | undefined;
+    permissions?: SharePointPermissionOptions | undefined;
     site_url: string;
     library_name?: string | undefined;
     folder_path?: string | undefined;
@@ -2431,6 +2497,7 @@ export type CreateBoxContentSourcePayload = {
     folder_id?: string | undefined;
 };
 export type UpdateContentSourcePayload = {
+    selection?: GoogleDriveSelection | undefined;
     name?: string | undefined;
     description?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
@@ -2478,7 +2545,7 @@ export type ContentSourceSummary = {
     id: string;
     name: string;
     description?: string | undefined;
-    type: 'sharepoint' | 'box';
+    type: 'sharepoint' | 'box' | 'google-drive';
     location_root: string;
     site_url?: string | undefined;
     library_name?: string | undefined;
@@ -5939,7 +6006,6 @@ export type OAuthProviderData = {
     certificate?: string | undefined;
     default_scopes?: string[] | undefined;
     allowed_scopes?: string[] | undefined;
-    sharepoint_permission_site?: string | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
@@ -5964,7 +6030,6 @@ export type OAuthProvider = {
     certificate?: string | undefined;
     default_scopes?: string[] | undefined;
     allowed_scopes?: string[] | undefined;
-    sharepoint_permission_site?: string | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
@@ -5993,7 +6058,6 @@ export type CreateOAuthProviderPayload = {
     use_pkce?: boolean | undefined;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
-    sharepoint_permission_site?: string | undefined;
 };
 /**
  * Payload for updating an OAuth Provider.
@@ -6758,6 +6822,8 @@ export type Project = {
     namespace: string;
     description?: string | undefined;
     account: string;
+    sharepoint_library_binding?: ManagedSharePointLibrary | undefined;
+    sharepoint_library_attachments?: ManagedSharePointLibrary[] | undefined;
     configuration: ProjectConfiguration;
     integrations?: Record<string, unknown> | undefined;
     plugins: string[];
@@ -7501,6 +7567,154 @@ export type UpdateSecretRequest = {
 };
 export type DeleteSecretResponse = {
     ok: boolean;
+};
+export type ManagedSharePointLibrary = {
+    id: string;
+    tenant_id: string;
+    site_id: string;
+    site_url: string;
+    drive_id: string;
+    audience: 'uniform' | 'mirrored';
+    reader_mode?: 'organization' | undefined;
+    lifecycle?: 'disconnecting' | 'disconnected' | undefined;
+};
+export type SharePointLibraryPathParams = {
+    bindingId: string;
+};
+export type ApproveSharePointLibraryPayload =
+    | {
+          manager_id: string;
+          reader_group_id: string;
+          audience: 'uniform' | 'mirrored';
+          project_name?: string | undefined;
+      }
+    | {
+          project_id: string;
+          audience: 'uniform' | 'mirrored';
+      };
+export type ConfigureSharePointLibraryReaderPayload = {
+    permissions?: SharePointContentSourcePermissions | undefined;
+    site_policy_confirmed?: boolean | undefined;
+};
+export type SharePointLibraryApproval = {
+    manager_id: string;
+    reader_group_id: string;
+    audience: 'uniform' | 'mirrored';
+    project_name: string;
+    approved_by: string;
+    approved_at: string;
+};
+export type SharePointLibraryConnection = {
+    id: string;
+    tenant_id: string;
+    site_id: string;
+    list_id: string;
+    drive_id: string;
+    site_url: string;
+    library_url: string;
+    library_name: string;
+    project_name?: string | undefined;
+    audience?: 'uniform' | 'mirrored' | undefined;
+    can_manage: boolean;
+    stage:
+        | 'pending_approval'
+        | 'provisioning_project'
+        | 'configure_reader'
+        | 'ready'
+        | 'disconnecting'
+        | 'disconnected';
+    project_id?: string | undefined;
+    project_mode?: 'dedicated' | 'existing' | undefined;
+    reader_mode?: 'organization' | undefined;
+    organization_reader_available?: boolean | undefined;
+    source_id?: string | undefined;
+    approval?: SharePointLibraryApproval | undefined;
+    sync?: ContentSourceSummary | undefined;
+};
+export type SharePointLibraryConnectionArray = SharePointLibraryConnection[];
+export type ProjectSharePointLibraryResponse = {
+    library: SharePointLibraryConnection | null;
+    libraries?: SharePointLibraryConnection[] | undefined;
+};
+export type BeginSharePointOrganizationLinkPayload = {
+    tenant_id: string;
+};
+export type CompleteSharePointOrganizationLinkPayload = {
+    state: string;
+};
+export type SharePointOrganizationLinkAttempt = {
+    state: string;
+    expires_at: string;
+};
+export type SharePointOrganizations = {
+    organizations: SharePointOrganization[];
+};
+export type SharePointOrganization = {
+    tenant_id: string;
+    linked_at: string;
+    reader?: SharePointOrganizationReader | undefined;
+};
+export type ConfigureSharePointOrganizationReaderPayload = {
+    client_id: string;
+};
+export type SharePointOrganizationReader = {
+    client_id: string;
+    issuer: string;
+    subject: string;
+    audience: string;
+};
+export type SharePointRegion = {
+    region: string;
+};
+export type SharePointLibraryContext = {
+    site_hostname: string;
+    site_collection_id: string;
+    web_id: string;
+    list_id: string;
+};
+export type SharePointLibraryReceipt = {
+    id: string;
+    status:
+        | 'pending_resolution'
+        | 'awaiting_site_grant'
+        | 'library_unavailable'
+        | 'awaiting_approval'
+        | 'approved'
+        | 'connected'
+        | 'disconnected';
+};
+export type SharePointLibraryRequest = {
+    site_hostname: string;
+    site_collection_id: string;
+    web_id: string;
+    list_id: string;
+    id: string;
+    tenant_id: string;
+    binding_id?: string | undefined;
+    site_url?: string | undefined;
+    library_url?: string | undefined;
+    library_name?: string | undefined;
+    status:
+        | 'pending_resolution'
+        | 'awaiting_site_grant'
+        | 'library_unavailable'
+        | 'awaiting_approval'
+        | 'approved'
+        | 'connected'
+        | 'disconnected';
+    created_at: string;
+};
+export type SharePointLibraryRequests = {
+    requests: SharePointLibraryRequest[];
+    next_cursor?: string | undefined;
+};
+export type SharePointLibraryRequestsQuery = {
+    cursor?: string | undefined;
+};
+export type SharePointRequestProject = {
+    project_id: string;
+    binding_id?: string | undefined;
+    source_id?: string | undefined;
 };
 /** Packaged workflows supported by event subscriptions. */
 export type SubscriptionWorkflowDefinition = {
@@ -8819,6 +9033,7 @@ export type ContentObjectTextResponse = {
 };
 export type SetObjectTextPayload = {
     text: string;
+    expected_content_etag?: string | undefined;
     etag?: string | undefined;
 };
 export type DeleteContentObjectResult = {
@@ -12123,7 +12338,29 @@ export interface ApiComponentTypes {
     ContentTypeIntakePolicy: ContentTypeIntakePolicy;
     ProjectIntakeConfiguration: ProjectIntakeConfiguration;
     ProjectConfiguration: ProjectConfiguration;
+    ManagedSharePointLibrary: ManagedSharePointLibrary;
+    SharePointLibraryPathParams: SharePointLibraryPathParams;
+    BeginSharePointOrganizationLinkPayload: BeginSharePointOrganizationLinkPayload;
+    CompleteSharePointOrganizationLinkPayload: CompleteSharePointOrganizationLinkPayload;
+    SharePointOrganizationLinkAttempt: SharePointOrganizationLinkAttempt;
+    SharePointOrganization: SharePointOrganization;
+    ConfigureSharePointOrganizationReaderPayload: ConfigureSharePointOrganizationReaderPayload;
+    SharePointOrganizationReader: SharePointOrganizationReader;
+    SharePointOrganizations: SharePointOrganizations;
+    SharePointRegion: SharePointRegion;
+    SharePointLibraryContext: SharePointLibraryContext;
+    SharePointLibraryReceipt: SharePointLibraryReceipt;
+    SharePointLibraryRequest: SharePointLibraryRequest;
+    SharePointLibraryRequests: SharePointLibraryRequests;
+    SharePointLibraryRequestsQuery: SharePointLibraryRequestsQuery;
+    SharePointRequestProject: SharePointRequestProject;
     Project: Project;
+    ApproveSharePointLibraryPayload: ApproveSharePointLibraryPayload;
+    ConfigureSharePointLibraryReaderPayload: ConfigureSharePointLibraryReaderPayload;
+    SharePointLibraryApproval: SharePointLibraryApproval;
+    SharePointLibraryConnection: SharePointLibraryConnection;
+    SharePointLibraryConnectionArray: SharePointLibraryConnectionArray;
+    ProjectSharePointLibraryResponse: ProjectSharePointLibraryResponse;
     UpdateProjectPayload: UpdateProjectPayload;
     UpdateProjectConfigurationPayload: UpdateProjectConfigurationPayload;
     ToolCollectionObject: ToolCollectionObject;
@@ -12935,6 +13172,16 @@ export interface ApiComponentTypes {
     ContentSourcePermissionSettings: ContentSourcePermissionSettings;
     ContentSourcePermissionStatus: ContentSourcePermissionStatus;
     SharePointContentSource: SharePointContentSource;
+    GoogleDriveContentSourcePermissions: GoogleDriveContentSourcePermissions;
+    SingleGoogleDriveSelection: SingleGoogleDriveSelection;
+    AllGoogleDrivesSelection: AllGoogleDrivesSelection;
+    SharePointPermissionOptions: SharePointPermissionOptions;
+    GoogleDrivePermissionOptions: GoogleDrivePermissionOptions;
+    GoogleDriveSelection: GoogleDriveSelection;
+    GoogleDriveReaderConfig: GoogleDriveReaderConfig;
+    GoogleDriveReader: GoogleDriveReader;
+    GoogleDriveContentSource: GoogleDriveContentSource;
+    CreateGoogleDriveContentSourcePayload: CreateGoogleDriveContentSourcePayload;
     BoxContentSource: BoxContentSource;
     ExternalContentSource: ExternalContentSource;
     ExternalContentSourceArray: ExternalContentSourceArray;

@@ -1213,38 +1213,14 @@ function GroundedActions({ objectId, available }: { objectId: string; available:
 function OfficePdfActions({ object, pdfRendition, officePdfUrl }: OfficePdfActionsProps) {
     const { client } = useUserSession();
     const toast = useToast();
-    const { t } = useUITranslation();
-    const [isDownloading, setIsDownloading] = useState(false);
+    const { isDownloading, downloadFromContentSource, downloadFromUrl } = useDownloadFile({ client, toast });
 
-    const handleDownloadPdf = async () => {
-        setIsDownloading(true);
-        try {
-            let downloadUrl = officePdfUrl;
-
-            // If we have a rendition source but no signed URL yet, get a signed URL
-            if (!downloadUrl && pdfRendition?.content?.source) {
-                const response = await client.files.getDownloadUrl(
-                    pdfRendition.content.source,
-                    `${object.name || 'document'}.pdf`,
-                    'attachment',
-                );
-                downloadUrl = response.url;
-            }
-
-            if (downloadUrl) {
-                // Open in new tab - browser will handle as download due to content-disposition
-                window.open(downloadUrl, '_blank');
-            }
-        } catch (err) {
-            console.error('Failed to download PDF:', err);
-            toast({
-                status: 'error',
-                title: t('store.downloadFailed'),
-                description: t('store.failedToDownloadPdf'),
-                duration: 5000,
-            });
-        } finally {
-            setIsDownloading(false);
+    const handleDownloadPdf = () => {
+        const name = `${object.name || 'document'}.pdf`;
+        if (pdfRendition?.content?.source) {
+            void downloadFromContentSource(pdfRendition.content.source, name);
+        } else if (officePdfUrl) {
+            downloadFromUrl(officePdfUrl, name);
         }
     };
 
