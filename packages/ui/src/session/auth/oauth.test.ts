@@ -20,15 +20,19 @@ let browser: {
 let requests: { url: string; init?: RequestInit }[];
 let revocationEndpoint: string | undefined;
 let tokenEndpoint: string;
-function jwt(tokenIssuer = issuer): string {
+let grant: { access_token: string; token_type: string; refresh_token?: string } | undefined;
+function jwt(
+    tokenIssuer = issuer,
+    scope: { account: string; project?: string } = { account: 'a', project: 'p' },
+): string {
     return `e30.${btoa(
         JSON.stringify({
             iss: tokenIssuer,
             client_id: clientId,
             exp: Date.now() / 1000 + 3600,
             sub: 'user',
-            account: { id: 'a' },
-            project: { id: 'p' },
+            account: { id: scope.account },
+            ...(scope.project ? { project: { id: scope.project } } : {}),
         }),
     )}.signature`;
 }
@@ -55,6 +59,7 @@ beforeEach(() => {
     local.clear();
     revocationEndpoint = undefined;
     tokenEndpoint = `${issuer}/oauth/token`;
+    grant = undefined;
     requests = [];
     browser = {
         location: { href: `${origin}/app/report?a=a&p=p#chart`, origin, replace },
@@ -96,11 +101,13 @@ beforeEach(() => {
                     scope: 'openid profile content:read offline_access',
                 });
             if (url === tokenEndpoint)
-                return Response.json({
-                    access_token: jwt(),
-                    token_type: 'Bearer',
-                    refresh_token: 'refresh-credential',
-                });
+                return Response.json(
+                    grant ?? {
+                        access_token: jwt(),
+                        token_type: 'Bearer',
+                        refresh_token: 'refresh-credential',
+                    },
+                );
             throw new Error(`Unexpected request: ${url}`);
         }),
     );
@@ -685,4 +692,29 @@ it.each(['url', 'configured'])('preserves a %s account when its remembered proje
     const failedRetry = await setup(false, defaults);
     await expect(failedRetry.getAppOAuthToken()).rejects.toThrow('requested_scope_unavailable');
     expect(replace).toHaveBeenCalledTimes(2);
+});
+
+it('keeps a session on an account without a project instead of authorizing again', async () => {
+    // The server approves a first-party session on an account that offers no project yet, without a refresh token.
+    browser.location.href = `${origin}/app?a=empty`;
+    local.set('composableai.lastSelectedAccountId', 'empty');
+    grant = { access_token: jwt(issuer, { account: 'empty' }), token_type: 'Bearer' };
+    const oauth = await setup(true);
+    void oauth.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    const authorize = new URL(replace.mock.calls[0][0]);
+    expect(authorize.searchParams.get('account_id')).toBe('empty');
+    expect(authorize.searchParams.has('project_id')).toBe(false);
+
+    browser.location.href = `${origin}/app?code=one-time-code&state=${authorize.searchParams.get('state')}`;
+    const callback = await setup(true);
+    const token = await callback.getAppOAuthToken();
+    expect(browser.location.href).toBe(`${origin}/app?a=empty`);
+    expect(await callback.getAppOAuthToken()).toBe(token);
+
+    // A reload of the landing page reuses the token: it names no project, and the selection names none either.
+    const reloaded = await setup(true);
+    expect(await reloaded.getAppOAuthToken()).toBe(token);
+    expect(replace).toHaveBeenCalledTimes(1);
+    expect(requests.filter((request) => request.url.endsWith('/oauth/token'))).toHaveLength(1);
 });
