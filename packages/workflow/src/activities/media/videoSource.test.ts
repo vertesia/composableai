@@ -153,6 +153,11 @@ describe('getSignedVideoUrl', () => {
         expect(client.files.getDownloadUrl).not.toHaveBeenCalled();
     });
 
+    it.each([undefined, 3600])('uses the local download for authenticated media (TTL %s)', async (ttl) => {
+        const client = clientWithUrl(async () => ({ url: SIGNED_URL, authentication_required: true }));
+        await expect(getSignedVideoUrl(client, 'google-drive://source/video', ttl)).resolves.toBeUndefined();
+    });
+
     it('signs for the default lifetime when the processing route refuses the caller', async () => {
         const client = {
             files: {

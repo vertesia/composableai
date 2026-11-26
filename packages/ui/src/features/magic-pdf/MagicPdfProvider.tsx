@@ -2,6 +2,7 @@ import type { VertesiaClient } from '@vertesia/client';
 import { type ContentObject, type DocumentMetadata, PDF_RENDITION_NAME } from '@vertesia/common';
 import { useUserSession } from '@vertesia/ui/session';
 import React, { createContext, useEffect, useState } from 'react';
+import { useBrowserFileUrl } from '../document-viewer/useBrowserFileUrl.js';
 
 const DEFAULT_PAGE_COUNT = 10;
 const ADVANCED_PROCESSING_PREFIX = 'magic-pdf';
@@ -29,6 +30,7 @@ export class PageImageProvider {
         private client: VertesiaClient,
         private objectId: string,
         public totalPages: number,
+        private readonly browserUrl?: ReturnType<typeof useBrowserFileUrl>,
     ) {}
 
     private getCacheKey(page: number, type: ImageType): string {
@@ -63,7 +65,7 @@ export class PageImageProvider {
     private async fetchImageUrl(page: number, type: ImageType): Promise<string> {
         const path = this.getImagePath(page, type);
         const response = await this.client.files.getDownloadUrl(path);
-        return response.url;
+        return this.browserUrl ? this.browserUrl(response) : response.url;
     }
 
     private getImagePath(page: number, type: ImageType): string {
@@ -112,7 +114,7 @@ class PageLayoutProvider {
     private async fetchPageLayout(page: number): Promise<string> {
         const path = `${ADVANCED_PROCESSING_PREFIX}/${this.objectId}/pages/page-${page}.layout.json`;
         const response = await this.client.files.getDownloadUrl(path);
-        const result = await fetch(response.url, { method: 'GET' });
+        const result = await this.client.files.fetchDownloadUrl(response.url);
         if (!result.ok) {
             throw new Error(`Failed to fetch json layout: ${result.statusText}`);
         }
@@ -198,6 +200,7 @@ interface MagicPdfProviderProps {
 }
 export function MagicPdfProvider({ children, object }: MagicPdfProviderProps) {
     const { client } = useUserSession();
+    const browserUrl = useBrowserFileUrl(client.files, object.id);
     const page_count = (object.metadata as DocumentMetadata).page_count || DEFAULT_PAGE_COUNT;
 
     const [info, setInfo] = useState<MagicPdfContextValue>(() => {
@@ -209,7 +212,7 @@ export function MagicPdfProvider({ children, object }: MagicPdfProviderProps) {
             count: page_count,
             layoutProvider: new PageLayoutProvider(client, object.id, page_count),
             markdownProvider,
-            imageProvider: new PageImageProvider(client, object.id, page_count),
+            imageProvider: new PageImageProvider(client, object.id, page_count, browserUrl),
             pdfUrl: '',
             pdfUrlLoading: true,
         };
@@ -222,10 +225,11 @@ export function MagicPdfProvider({ children, object }: MagicPdfProviderProps) {
         const sourceToResolve = pdfRendition?.content?.source || (isPdfSource ? object.content?.source : undefined);
 
         if (sourceToResolve) {
-            client.store.objects
+            client.files
                 .getDownloadUrl(sourceToResolve, undefined, 'inline')
-                .then((response) => {
-                    setInfo((prev) => ({ ...prev, pdfUrl: response.url, pdfUrlLoading: false }));
+                .then(browserUrl)
+                .then((pdfUrl) => {
+                    setInfo((prev) => ({ ...prev, pdfUrl, pdfUrlLoading: false }));
                 })
                 .catch((e) => {
                     console.warn('Failed to get PDF URL:', e);
@@ -234,7 +238,7 @@ export function MagicPdfProvider({ children, object }: MagicPdfProviderProps) {
         } else {
             setInfo((prev) => ({ ...prev, pdfUrlLoading: false }));
         }
-    }, [client, object.metadata, object.content?.type, object.content?.source]);
+    }, [client, object.metadata, object.content?.type, object.content?.source, browserUrl]);
 
     return <MagicPdfContext.Provider value={info}>{children}</MagicPdfContext.Provider>;
 }

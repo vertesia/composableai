@@ -772,6 +772,7 @@
     "store.syncMemberHeads": "Mitglieder-Heads synchronisieren",
     "store.syncMemberHeadsDescription": "Wenn eine neue HEAD-Version eines Mitglieds erstellt wird, wird die Sammlung aktualisiert, um auf den neuen HEAD zu verweisen.",
     "store.syncedFromBox": "Aus Box synchronisiert",
+    "store.syncedFromGoogleDrive": "Aus Google Drive synchronisiert",
     "store.syncedFromSharePoint": "Aus SharePoint synchronisiert",
     "store.tableLayout": "Tabellenlayout",
     "store.tableLayoutDescription": "Definieren Sie ein benutzerdefiniertes Layout für die Anzeige der Sammlung in Tabellen.",
