@@ -1,6 +1,7 @@
 import { VertesiaClient } from '@vertesia/client';
 import type { Command } from 'commander';
 import { createProfileAuthProvider, ensureProfileAccessToken } from './profiles/auth.js';
+import { createRefreshOnForbiddenFetch } from './profiles/forbidden-refresh.js';
 import { config, type Profile } from './profiles/index.js';
 import { isKeyringAvailable } from './profiles/keyring.js';
 
@@ -78,7 +79,12 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
         // A profile access token is short-lived. Resolve it per request through the profile
         // refresh path instead of pinning the token captured here, so commands that run longer
         // than the token TTL (`agents stream`, workflow tails) keep working.
-        return new VertesiaClient({ ...env, apikey: undefined }).withAuthCallback(createProfileAuthProvider(profile));
+        const authProvider = createProfileAuthProvider(profile);
+        return new VertesiaClient({
+            ...env,
+            apikey: undefined,
+            fetch: createRefreshOnForbiddenFetch(profile, authProvider),
+        }).withAuthCallback(authProvider);
     }
 
     return new VertesiaClient(env);

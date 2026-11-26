@@ -1,6 +1,6 @@
 import { decodeEndpoints, VertesiaClient } from '@vertesia/client';
 import type { AuthTokenPayload } from '@vertesia/common';
-import { assertTokenPermissionClaims } from '@vertesia/studio-utils/token-claims';
+import { assertTokenPermissionClaims, resolveInheritedAgentClaims } from '@vertesia/studio-utils/token-claims';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { createLocalJWKSet, decodeJwt, type JSONWebKeySet, type JWTVerifyGetKey, jwtVerify } from 'jose';
@@ -40,7 +40,9 @@ export async function verifyToken(token: string) {
     // This SDK has its own authentication boundary, independent of cloud's verifyAuthToken.
     // Validate once here so tool handlers can use the final claims directly.
     assertTokenPermissionClaims(verified.payload);
-    return verified;
+    // Agent tokens may name claims they inherit from their onBehalfOf snapshot instead of repeating
+    // them. Restore them from the same signed token, so tool handlers see the complete claims.
+    return { ...verified, payload: resolveInheritedAgentClaims(verified.payload) };
 }
 
 export interface EndpointOverrides {

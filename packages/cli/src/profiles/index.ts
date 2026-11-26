@@ -16,6 +16,7 @@ import {
 } from './keyring.js';
 import { canUseOAuthProfile, discoverCliConfiguration, OAuthUnavailableError, startOAuthSession } from './oauth.js';
 import { type ConfigPayload, type ConfigResult, startConfigSession } from './server/index.js';
+import { signInWarnings } from './sign-in-warnings.js';
 import { readInlineTokenExpiry, readResultAccessTokenExpiry, readResultRefreshTokenExpiry } from './token-expiry.js';
 
 export function getConfigFile(path?: string) {
@@ -244,6 +245,7 @@ export class ConfigureProfile {
         if (options.logCompletion) {
             console.log('\n');
             console.log('Authentication completed.');
+            for (const warning of signInWarnings(result)) console.warn(`Warning: ${warning}`);
         }
         if (options.exitOnComplete) {
             process.exit(0);

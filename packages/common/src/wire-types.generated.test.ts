@@ -1132,6 +1132,10 @@ interface Checks {
         W.ContentSourceStatus,
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceStatusSchema>
     >;
+    ContentSourceNotificationStatus: Same<
+        W.ContentSourceNotificationStatus,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceNotificationStatusSchema>
+    >;
     ContentSourceSyncRound: Same<
         W.ContentSourceSyncRound,
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncRoundSchema>
@@ -1191,6 +1195,18 @@ interface Checks {
     InspectContentSourceSamplePayload: Same<
         W.InspectContentSourceSamplePayload,
         z.infer<typeof import('./api-schemas/content-sources.js').InspectContentSourceSamplePayloadSchema>
+    >;
+    DiscoverContentSourceFilePayload: Same<
+        W.DiscoverContentSourceFilePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').DiscoverContentSourceFilePayloadSchema>
+    >;
+    InspectContentSourceFilePayload: Same<
+        W.InspectContentSourceFilePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').InspectContentSourceFilePayloadSchema>
+    >;
+    ContentSourceFileDownload: Same<
+        W.ContentSourceFileDownload,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceFileDownloadSchema>
     >;
     ContentSourceRoot: Same<
         W.ContentSourceRoot,
@@ -9129,6 +9145,10 @@ interface Checks {
         W.ApiComponentTypes['ContentSourcePermissionSettings'],
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourcePermissionSettingsSchema>
     >;
+    'component:ContentSourceNotificationStatus': Same<
+        W.ApiComponentTypes['ContentSourceNotificationStatus'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceNotificationStatusSchema>
+    >;
     'component:ContentSourcePermissionStatus': Same<
         W.ApiComponentTypes['ContentSourcePermissionStatus'],
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourcePermissionStatusSchema>
@@ -9276,6 +9296,18 @@ interface Checks {
     'component:InspectContentSourceSamplePayload': Same<
         W.ApiComponentTypes['InspectContentSourceSamplePayload'],
         z.infer<typeof import('./api-schemas/content-sources.js').InspectContentSourceSamplePayloadSchema>
+    >;
+    'component:DiscoverContentSourceFilePayload': Same<
+        W.ApiComponentTypes['DiscoverContentSourceFilePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').DiscoverContentSourceFilePayloadSchema>
+    >;
+    'component:InspectContentSourceFilePayload': Same<
+        W.ApiComponentTypes['InspectContentSourceFilePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').InspectContentSourceFilePayloadSchema>
+    >;
+    'component:ContentSourceFileDownload': Same<
+        W.ApiComponentTypes['ContentSourceFileDownload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceFileDownloadSchema>
     >;
     'component:ContentSourceRoot': Same<
         W.ApiComponentTypes['ContentSourceRoot'],
@@ -11724,6 +11756,7 @@ const checks: Checks = {
     UpdateContentSourcePayload: true,
     SyncContentSourcePayload: true,
     ContentSourceStatus: true,
+    ContentSourceNotificationStatus: true,
     ContentSourceSyncRound: true,
     ContentSourceSyncCounts: true,
     ContentSourceSummary: true,
@@ -11739,6 +11772,9 @@ const checks: Checks = {
     InspectContentSourceFoldersPayload: true,
     InspectContentSourceSchemaPayload: true,
     InspectContentSourceSamplePayload: true,
+    DiscoverContentSourceFilePayload: true,
+    InspectContentSourceFilePayload: true,
+    ContentSourceFileDownload: true,
     ContentSourceRoot: true,
     ContentSourceRootsDiscovery: true,
     ContentSourceSiteDiscovery: true,
@@ -13828,6 +13864,7 @@ const checks: Checks = {
     'component:EventIngestChannelArray': true,
     'component:ContentSourceSyncSettings': true,
     'component:ContentSourcePermissionSettings': true,
+    'component:ContentSourceNotificationStatus': true,
     'component:ContentSourcePermissionStatus': true,
     'component:SharePointContentSource': true,
     'component:GoogleDriveContentSourcePermissions': true,
@@ -13865,6 +13902,9 @@ const checks: Checks = {
     'component:InspectContentSourceFoldersPayload': true,
     'component:InspectContentSourceSchemaPayload': true,
     'component:InspectContentSourceSamplePayload': true,
+    'component:DiscoverContentSourceFilePayload': true,
+    'component:InspectContentSourceFilePayload': true,
+    'component:ContentSourceFileDownload': true,
     'component:ContentSourceRoot': true,
     'component:ContentSourceRootsDiscovery': true,
     'component:ContentSourceFolder': true,
@@ -14403,6 +14443,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2985);
+        expect(Object.keys(checks)).toHaveLength(2993);
     });
 });

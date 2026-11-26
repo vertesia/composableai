@@ -1,6 +1,13 @@
-import type { ContentSecurity } from '@vertesia/common';
+import { type AuthTokenPayload, type ContentSecurity, PrincipalType } from '@vertesia/common';
 import { describe, expect, it, vi } from 'vitest';
-import { resolveAbacClaim, TokenClaimReferenceError } from './index.js';
+import {
+    type AuthTokenWithInheritedClaims,
+    assertTokenPermissionClaims,
+    INHERITED_AGENT_CLAIM_PLACEHOLDERS,
+    resolveAbacClaim,
+    resolveInheritedAgentClaims,
+    TokenClaimReferenceError,
+} from './index.js';
 
 describe('resolveAbacClaim', () => {
     it('returns absent and inline claims without loading referenced state', async () => {
@@ -31,5 +38,98 @@ describe('resolveAbacClaim', () => {
         ['E'.repeat(43), vi.fn().mockResolvedValue({ abac: { read: [null] } })],
     ])('fails closed for an invalid reference bundle (%s)', async (reference, load) => {
         await expect(resolveAbacClaim(reference, load)).rejects.toBeInstanceOf(TokenClaimReferenceError);
+    });
+});
+
+describe('resolveInheritedAgentClaims', () => {
+    const installations = { version: 1 as const, project_id: 'p'.repeat(24), ids: ['i'.repeat(24)] };
+
+    function principal(overrides: Partial<AuthTokenPayload> = {}): AuthTokenPayload {
+        return {
+            sub: 'user-1',
+            name: 'User',
+            type: PrincipalType.OAuthAccess,
+            account: { id: 'account-1', name: 'Account' },
+            account_roles: [],
+            accounts: [],
+            apps: ['crm', 'billing'],
+            app_installations: installations,
+            iss: 'issuer',
+            aud: 'audience',
+            exp: 1,
+            ...overrides,
+        };
+    }
+
+    function agentOf(onBehalfOf: AuthTokenPayload, marker: unknown): AuthTokenWithInheritedClaims {
+        return {
+            ...principal({ sub: `agent:${onBehalfOf.sub}`, type: PrincipalType.Agent, apps: [] }),
+            app_installations: undefined,
+            service_caller: { onBehalfOf },
+            inherited_claims: marker as AuthTokenWithInheritedClaims['inherited_claims'],
+        };
+    }
+
+    it('leaves a token without a marker unchanged', () => {
+        const token = principal();
+        expect(resolveInheritedAgentClaims(token)).toEqual(token);
+    });
+
+    it('reads inherited claims back from the snapshot and removes the marker', () => {
+        const resolved = resolveInheritedAgentClaims(agentOf(principal(), ['apps', 'app_installations']));
+
+        expect(resolved.apps).toEqual(['crm', 'billing']);
+        expect(resolved.app_installations).toEqual(installations);
+        expect(resolved).not.toHaveProperty('inherited_claims');
+    });
+
+    it('reads inherited permission lists back from the snapshot', () => {
+        const origin = principal({ permissions: ['content:read', 'content:write'], account_permissions: [] });
+        const agent = {
+            ...agentOf(origin, ['apps', 'permissions', 'account_permissions']),
+            ...INHERITED_AGENT_CLAIM_PLACEHOLDERS,
+        };
+        const resolved = resolveInheritedAgentClaims(agent);
+
+        expect(resolved.permissions).toEqual(['content:read', 'content:write']);
+        expect(resolved.account_permissions).toEqual([]);
+    });
+
+    it('leaves placeholders that grant nothing and pass the permission claim validator', () => {
+        expect(INHERITED_AGENT_CLAIM_PLACEHOLDERS).toEqual({
+            apps: [],
+            app_installations: undefined,
+            permissions: [],
+            account_permissions: [],
+        });
+        expect(() => assertTokenPermissionClaims({ ...INHERITED_AGENT_CLAIM_PLACEHOLDERS })).not.toThrow();
+    });
+
+    it('resolves a nested chain from the origin outwards', () => {
+        const inner = agentOf(principal(), ['apps', 'app_installations']);
+        const resolved = resolveInheritedAgentClaims(agentOf(inner, ['apps', 'app_installations']));
+
+        expect(resolved.apps).toEqual(['crm', 'billing']);
+        expect(resolved.app_installations).toEqual(installations);
+        expect(resolved.service_caller?.onBehalfOf).not.toHaveProperty('inherited_claims');
+        expect(resolved.service_caller?.onBehalfOf?.apps).toEqual(['crm', 'billing']);
+    });
+
+    it.each([
+        ['an unknown claim name', agentOf(principal(), ['groups'])],
+        ['a marker that is not a list', agentOf(principal(), 'apps')],
+        [
+            'a claim missing from the snapshot',
+            agentOf(principal({ app_installations: undefined }), ['app_installations']),
+        ],
+        ['an agent without a snapshot', { ...principal({ type: PrincipalType.Agent }), inherited_claims: ['apps'] }],
+        [
+            'a principal that is not an agent',
+            { ...principal({ service_caller: { onBehalfOf: principal() } }), inherited_claims: ['apps'] },
+        ],
+    ] as const)('fails closed on %s', (_case, token) => {
+        expect(() => resolveInheritedAgentClaims(token as AuthTokenWithInheritedClaims)).toThrow(
+            TokenClaimReferenceError,
+        );
     });
 });

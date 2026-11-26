@@ -142,6 +142,57 @@ describe('content-sources CLI', () => {
         expect(mocks.update).toHaveBeenCalledWith('src-2', { sync: { enabled: false, interval_minutes: 30 } });
     });
 
+    it('turns change notifications on, and the schedule with them', async () => {
+        // The source syncs on request only: notifications are sent with the schedule, so it is turned on too.
+        mocks.retrieve.mockResolvedValue(SHAREPOINT);
+        const notified = { enabled: true, interval_minutes: 60, notifications: true };
+        mocks.update.mockResolvedValue({ ...SHAREPOINT, sync: notified });
+
+        const output = await run('update', 'src-1', '--notifications');
+
+        expect(mocks.update).toHaveBeenCalledWith('src-1', { sync: notified });
+        expect(output).toContain('every 60 min + on change');
+    });
+
+    it('turns change notifications off, keeping the schedule as it is', async () => {
+        const scheduled = { enabled: true, interval_minutes: 30 };
+        mocks.retrieve.mockResolvedValue({ ...SHAREPOINT, sync: { ...scheduled, notifications: true } });
+        mocks.update.mockResolvedValue({ ...SHAREPOINT, sync: scheduled });
+
+        await run('update', 'src-1', '--no-notifications');
+
+        expect(mocks.update).toHaveBeenCalledWith('src-1', { sync: { ...scheduled, notifications: false } });
+    });
+
+    it('leaves change notifications alone when an update only names the interval', async () => {
+        mocks.retrieve.mockResolvedValue({ ...SHAREPOINT, sync: { ...SHAREPOINT.sync, notifications: true } });
+        mocks.update.mockResolvedValue(SHAREPOINT);
+        await run('update', 'src-1', '--interval', '240');
+        // Not sent: the server keeps the stored choice.
+        expect(mocks.update).toHaveBeenCalledWith('src-1', {
+            sync: { enabled: SHAREPOINT.sync.enabled, interval_minutes: 240 },
+        });
+    });
+
+    it('turns the schedule on for a source created with change notifications', async () => {
+        mocks.create.mockResolvedValue(SHAREPOINT);
+        await run(
+            'create',
+            '--type',
+            'sharepoint',
+            '--name',
+            'legal',
+            '--oauth-provider',
+            'oauth-1',
+            '--site-url',
+            'https://contoso.sharepoint.com/sites/legal',
+            '--notifications',
+        );
+        expect(mocks.create).toHaveBeenCalledWith(
+            expect.objectContaining({ sync: { enabled: true, interval_minutes: 60, notifications: true } }),
+        );
+    });
+
     it('renames without reading the source', async () => {
         mocks.update.mockResolvedValue(SHAREPOINT);
         await run('update', 'src-1', '--name', 'legal-2');
@@ -190,6 +241,29 @@ describe('content-sources CLI', () => {
         expect(output).toContain('(round round-2)');
         expect(output).toContain('skipped: package 1');
         expect(output).toContain('round-1');
+    });
+
+    it('prints whether the system notifies changes', async () => {
+        mocks.status.mockResolvedValue({
+            ...STATUS,
+            notifications: { state: 'active', last_notification_at: '2026-11-22T09:14:03.000Z' },
+        });
+        expect(await run('status', 'src-1')).toContain('change notifications: active · last 2026-11-22T09:14:03.000Z');
+    });
+
+    it('prints why the system does not notify changes', async () => {
+        mocks.status.mockResolvedValue({
+            ...STATUS,
+            notifications: { state: 'unavailable', error: 'Microsoft Graph returned 403' },
+        });
+        expect(await run('status', 'src-1')).toContain(
+            'change notifications: unavailable · Microsoft Graph returned 403',
+        );
+    });
+
+    it('prints nothing about notifications for a source that has none', async () => {
+        mocks.status.mockResolvedValue(STATUS);
+        expect(await run('status', 'src-1')).not.toContain('change notifications');
     });
 });
 

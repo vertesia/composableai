@@ -1,5 +1,5 @@
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 async function signedBy(issuer: string, claims: Record<string, unknown> = {}) {
     const { privateKey, publicKey } = await generateKeyPair('ES256');
@@ -20,6 +20,12 @@ async function loadVerifyToken() {
 }
 
 describe('verifyToken issuer allowlist', () => {
+    // Every test re-imports the module after `vi.resetModules()`. The first import also transforms the
+    // module graph, which alone can approach the default 5 s timeout on a busy CI runner: do it once here.
+    beforeAll(async () => {
+        await import('./auth.js');
+    }, 60_000);
+
     it('rejects malformed permission claims from a trusted issuer', async () => {
         vi.stubEnv('VERTESIA_TRUSTED_ISSUERS', 'http://localhost:8202');
         const { token } = await signedBy('http://localhost:8202', {
@@ -33,6 +39,58 @@ describe('verifyToken issuer allowlist', () => {
     afterEach(() => {
         vi.unstubAllGlobals();
         vi.unstubAllEnvs();
+    });
+
+    it('gives tool handlers the claims an agent token inherits from its onBehalfOf snapshot', async () => {
+        vi.stubEnv('VERTESIA_TRUSTED_ISSUERS', 'http://localhost:8202');
+        const installations = { version: 1, project_id: 'p', ids: ['installation-1'] };
+        const { token } = await signedBy('http://localhost:8202', {
+            type: 'agent',
+            apps: [],
+            inherited_claims: ['apps', 'app_installations'],
+            service_caller: { onBehalfOf: { type: 'user', apps: ['crm'], app_installations: installations } },
+        });
+        const verifyToken = await loadVerifyToken();
+        const { payload } = await verifyToken(token);
+        expect(payload.apps).toEqual(['crm']);
+        expect(payload.app_installations).toEqual(installations);
+        expect(payload).not.toHaveProperty('inherited_claims');
+    });
+
+    it('gives tool handlers the permission lists an agent token inherits', async () => {
+        vi.stubEnv('VERTESIA_TRUSTED_ISSUERS', 'http://localhost:8202');
+        const { token } = await signedBy('http://localhost:8202', {
+            type: 'agent',
+            apps: [],
+            permissions: [],
+            account_permissions: [],
+            inherited_claims: ['apps', 'permissions', 'account_permissions'],
+            service_caller: {
+                onBehalfOf: {
+                    type: 'user',
+                    apps: ['crm'],
+                    permissions: ['content:read'],
+                    account_permissions: [],
+                },
+            },
+        });
+        const verifyToken = await loadVerifyToken();
+        const { payload } = await verifyToken(token);
+        expect(payload.permissions).toEqual(['content:read']);
+        expect(payload.account_permissions).toEqual([]);
+        expect(payload.apps).toEqual(['crm']);
+    });
+
+    it('rejects an inherited claim its snapshot does not hold', async () => {
+        vi.stubEnv('VERTESIA_TRUSTED_ISSUERS', 'http://localhost:8202');
+        const { token } = await signedBy('http://localhost:8202', {
+            type: 'agent',
+            apps: [],
+            inherited_claims: ['app_installations'],
+            service_caller: { onBehalfOf: { type: 'user', apps: ['crm'] } },
+        });
+        const verifyToken = await loadVerifyToken();
+        await expect(verifyToken(token)).rejects.toThrow('Inherited claim is missing from its snapshot');
     });
 
     it('rejects an issuer outside the built-in domains without fetching its keys', async () => {

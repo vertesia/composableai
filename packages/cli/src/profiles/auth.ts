@@ -147,6 +147,13 @@ export async function refreshProfileAuthentication(
             'Project switching requires a stored OAuth refresh token. Run `vertesia auth refresh` without --project to authenticate again.',
         );
     }
+    if (canUseOAuthProfile(profile) && !(await readAuthBundle(profile.name))?.refreshToken) {
+        // Without this, a refresh that opens the browser looks like the CLI ignoring the stored login.
+        console.log(
+            `Profile "${profileName}" has no stored refresh token, so it has to sign in again. ` +
+                'Tick "Renew access" on the approval page to let this profile renew itself from now on.',
+        );
+    }
 
     const updater = config.updateProfile(profileName);
     await updater.start(onResult, signal);
