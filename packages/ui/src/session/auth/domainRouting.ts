@@ -69,11 +69,12 @@ export function authReturnUrl(): URL {
  * Used for full-reload navigations that intentionally reset to the app root (logout, account /
  * project switch). Building these from a bare `/` drops a gateway-mounted app off its mount and
  * lands on a URL that serves no app; resolving against `document.baseURI` keeps the reload inside
- * the mount. For the Studio UI (no `<base>` element) `document.baseURI` is the origin root, so the
- * behavior is unchanged.
+ * the mount. Without a `<base>` element (the Studio UI) `document.baseURI` is the current page URL,
+ * not the origin root, so the origin root is used instead: otherwise an account switch reloads the
+ * current page, which may need a project the new account does not have.
  */
 export function mountRootUrl(): URL {
-    const url = new URL(document.baseURI);
+    const url = document.querySelector('base[href]') ? new URL(document.baseURI) : new URL('/', document.baseURI);
     url.hash = '';
     url.search = '';
     return url;
