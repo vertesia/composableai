@@ -1,14 +1,18 @@
 import { readFile } from 'node:fs/promises';
+import { setTimeout as delay } from 'node:timers/promises';
+import type { VertesiaClient } from '@vertesia/client';
 import {
     AccessControlPrincipalType,
     AccessControlResourceType,
     type AgentMessage,
     AgentMessageType,
+    type AppBuildProgress,
     type AppInstallationKind,
     type AppInstallationPayload,
     type AppManifestData,
     type AppScaffoldModule,
     type AppScaffoldProgress,
+    type StartAppBuildResponse,
     SystemRoles,
 } from '@vertesia/common';
 import colors from 'ansi-colors';
@@ -79,6 +83,50 @@ function messageProgress(message: AgentMessage): AppScaffoldProgress | undefined
     return details?.app_scaffold_progress;
 }
 
+export const APP_BUILD_POLL_MS = 3000;
+/** Longer than any build runs; past it the build is stuck (for example queued with no worker), not slow. */
+export const APP_BUILD_FOLLOW_LIMIT_MS = 60 * 60 * 1000;
+
+/**
+ * Poll an App Builder version build until it completes or fails. The scaffold stream ends as soon as the build has
+ * started, so the build's own progress is the only place its status and version id are reported.
+ */
+export async function followAppBuild(
+    getProgress: () => Promise<AppBuildProgress>,
+    onProgress: (progress: AppBuildProgress) => void,
+    pollMs = APP_BUILD_POLL_MS,
+    limitMs = APP_BUILD_FOLLOW_LIMIT_MS,
+): Promise<AppBuildProgress> {
+    let lastShown: string | undefined;
+    const deadline = Date.now() + limitMs;
+    for (;;) {
+        const progress = await getProgress();
+        const shown = `${progress.status}:${progress.step}`;
+        if (shown !== lastShown) {
+            onProgress(progress);
+            lastShown = shown;
+        }
+        if (progress.status === 'completed' || progress.status === 'failed') return progress;
+        if (Date.now() >= deadline) {
+            throw new Error(
+                `The build is still "${progress.step}" after ${Math.round(limitMs / 60000)} minutes; it looks stuck. ` +
+                    'Check it later with "apps versions list <appId>".',
+            );
+        }
+        await delay(pollMs);
+    }
+}
+
+async function followInitialBuild(client: VertesiaClient, build: StartAppBuildResponse): Promise<void> {
+    const final = await followAppBuild(
+        () => client.apps.getBuildProgress(build.app_id, build.workflow_id, build.run_id),
+        (progress) => console.log(`[build ${progress.status}] ${progress.step}`),
+    );
+    console.log(JSON.stringify(final, null, 2));
+    // The app exists either way, but a script or agent driving the CLI must be able to tell the build did not.
+    if (final.status === 'failed') throw new Error(`Initial version build failed: ${final.error || final.step}`);
+}
+
 export async function scaffoldApp(program: Command, appName: string, options: ScaffoldOptions) {
     const client = await getClient(program);
     const modules = options.modules
@@ -95,10 +143,27 @@ export async function scaffoldApp(program: Command, appName: string, options: Sc
     console.log(JSON.stringify(run, null, 2));
     if (options.follow === false) return;
 
+    let latest: AppScaffoldProgress | undefined;
     await client.workflows.streamMessages(run.workflow_id, run.run_id, (message) => {
         const progress = messageProgress(message);
-        if (progress) console.log(`[${progress.status}] ${progress.step}`);
+        if (!progress) return;
+        latest = progress;
+        console.log(`[${progress.status}] ${progress.step}`);
     });
+    if (latest?.initial_version_build) await followInitialBuild(client, latest.initial_version_build);
+}
+
+export async function scaffoldStatus(program: Command, workflowId: string, runId: string) {
+    const client = await getClient(program);
+    const scaffold = await client.apps.getScaffoldProgress(workflowId, runId);
+    const build = scaffold.initial_version_build
+        ? await client.apps.getBuildProgress(
+              scaffold.initial_version_build.app_id,
+              scaffold.initial_version_build.workflow_id,
+              scaffold.initial_version_build.run_id,
+          )
+        : undefined;
+    console.log(JSON.stringify({ scaffold, build }, null, 2));
 }
 
 export async function createDevelopmentTask(
@@ -116,6 +181,38 @@ export async function createDevelopmentTask(
     console.log(JSON.stringify(branch, null, 2));
 }
 
+/**
+ * The environment and model of a development task. Omitted flags take the project's agent inference default,
+ * the same choice the Studio App Builder makes, so a project that has one needs no flags at all.
+ */
+export async function resolveDevelopmentTaskRuntime(
+    client: VertesiaClient,
+    options: Pick<DevelopmentTaskOptions, 'env' | 'model'>,
+): Promise<{ environment: string; model: string }> {
+    const requestedEnvironment = options.env?.trim();
+    const requestedModel = options.model?.trim();
+    // A blank flag (an unset shell variable) means omitted, so it takes the project default too.
+    let environment = requestedEnvironment || undefined;
+    let model = requestedModel || undefined;
+    if (!environment || !model) {
+        const project = await client.getProject();
+        if (!project?.id) throw new Error('No current project');
+        const { configuration } = await client.projects.retrieve(project.id);
+        const profile = await client.inferenceProfiles.getDefault(configuration ?? {}, 'agent');
+        environment ??= profile?.environment;
+        model ??= profile?.model;
+    }
+    if (!environment)
+        throw new Error(
+            'No execution environment: pass -e <environment>. List them with "vertesia envs"; the project has no agent default.',
+        );
+    if (!model)
+        throw new Error(
+            `No model: pass -m <model>. List the models of ${environment} with "vertesia envs models ${environment}"; the project has no agent default model.`,
+        );
+    return { environment, model };
+}
+
 export async function startDevelopmentTask(
     program: Command,
     appId: string,
@@ -123,12 +220,9 @@ export async function startDevelopmentTask(
     options: DevelopmentTaskOptions,
 ) {
     const prompt = options.prompt?.trim();
-    const environment = options.env?.trim();
-    const model = options.model?.trim();
     if (!prompt) throw new Error('--prompt is required');
-    if (!environment) throw new Error('--env is required');
-    if (!model) throw new Error('--model is required');
     const client = await getClient(program);
+    const { environment, model } = await resolveDevelopmentTaskRuntime(client, options);
     if (options.sourceRef) {
         await client.apps.createRepoBranch(appId, { name: `agent/${taskId}`, source_ref: options.sourceRef });
     }

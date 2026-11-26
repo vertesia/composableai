@@ -89,6 +89,8 @@ type InspectOptions = {
     limit?: unknown;
 };
 
+const AGENT_RUN_ID_PATTERN = /^[0-9a-fA-F]{24}$/;
+
 export function registerAgentsCommand(program: Command) {
     const agents = program.command('agents').description('Start, stream, and inspect durable agent runs');
 
@@ -136,6 +138,11 @@ export function registerAgentsCommand(program: Command) {
         .option('-i, --input [file]', 'Reply text file. Reads stdin when no file is provided')
         .option('--json', 'Print machine-readable JSON')
         .option('-o, --output <file>', 'Write JSON output to a file')
+        .addHelpText(
+            'after',
+            '\nThe command confirms the signal only. The agent reply is written to the run feed: read it with\n' +
+                '"agents stream <runId>" (it replays the feed from the start) or "agents inspect <runId> --messages".',
+        )
         .action(async (runId: string, message: string | undefined, options: ReplyOptions) => {
             await replyToAgentRun(program, runId, message, options);
         });
@@ -181,7 +188,7 @@ export function registerAgentsCommand(program: Command) {
 
     agents
         .command('inspect <runId>')
-        .description('Inspect a durable agent or process run')
+        .description('Inspect a durable agent or process run by its agent run id (24 hex characters)')
         .option('--details', 'Include workflow details')
         .option('--from <cursor>', 'Fetch history from details.history.next_from (implies --details and --json)')
         .option('--history', 'Include process node history')
@@ -190,7 +197,19 @@ export function registerAgentsCommand(program: Command) {
         .option('-l, --limit <limit>', 'Message/task limit', '50')
         .option('--json', 'Print raw JSON')
         .option('-o, --output <file>', 'Write JSON output to a file')
+        .addHelpText(
+            'after',
+            '\nWith --messages, the printed text shows the last messages, including the replies to "agents message".\n' +
+                'Use "agents stream <runId>" to follow the feed live.',
+        )
         .action(async (runId: string, options: InspectOptions) => {
+            if (!AGENT_RUN_ID_PATTERN.test(runId)) {
+                throw new Error(
+                    `"${runId}" is not an agent run id. Agent run ids are 24 hex characters, shown as "id" by ` +
+                        '"agents start" and "apps development-tasks start". A scaffold run_id is a Temporal run id: ' +
+                        'check it with "apps scaffolds status <workflowId> <runId>".',
+                );
+            }
             await inspectAgentRun(program, runId, options);
         });
 }
@@ -339,6 +358,9 @@ async function replyToAgentRun(program: Command, runId: string, message: string 
     };
     const response = await client.agents.sendSignal(runId, 'UserInput', payload);
     printCommandResult(response, options);
+    if (!options.json && !readOptionalString(options.output)) {
+        console.log(chalk.gray(`The reply appears in the run feed: agents stream ${runId}`));
+    }
 }
 
 async function answerTask(program: Command, taskId: string, response: string | undefined, options: AnswerTaskOptions) {
@@ -445,12 +467,35 @@ async function inspectAgentRun(program: Command, runId: string, options: Inspect
     if (Array.isArray(result.tasks)) {
         printTasks(result.tasks);
     }
+    if (Array.isArray(result.messages)) {
+        printStoredMessages(result.messages);
+    }
     if (isProcessRun(run)) {
         const state = run.process_state;
         console.log(chalk.bold('Process'));
         console.log(`  current_node: ${state.current_node}`);
         console.log(`  sequence: ${state.sequence ?? 0}`);
         console.log(`  history_entries: ${state.node_history?.length ?? 0}`);
+        const failures = (state.node_history ?? []).filter((entry) => entry.status === 'failed');
+        const failed = failures[failures.length - 1];
+        if (failed) {
+            console.log(`  failed_node: ${failed.node}`);
+            const reason = failed.context_diff?.error;
+            if (typeof reason === 'string') {
+                console.log(`  error: ${reason}`);
+            }
+        }
+    }
+}
+
+function printStoredMessages(messages: AgentMessage[]) {
+    if (!messages.length) {
+        console.log('No stored messages');
+        return;
+    }
+    console.log(chalk.bold('Messages'));
+    for (const message of messages) {
+        printAgentMessage(message);
     }
 }
 

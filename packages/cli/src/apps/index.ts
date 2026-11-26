@@ -12,11 +12,13 @@ import {
     listDevelopmentTasks,
     listInstalledApps,
     scaffoldApp,
+    scaffoldStatus,
     startDevelopmentTask,
     updateApp,
     updateAppInstallationSettings,
 } from './commands.js';
 import { registerAppCredentialsCommands } from './credentials.js';
+import { registerAppVersionCommands } from './versions.js';
 
 const exampleManifest: AppManifestData = {
     name: 'my-app',
@@ -58,29 +60,62 @@ export function registerAppsCommand(program: Command) {
     const scaffolds = apps.command('scaffolds').description('Create source-backed App Builder applications');
     scaffolds
         .command('create <appName>')
-        .description('Create and scaffold a new app package, then follow workflow progress through the live stream')
+        .description(
+            'Create and scaffold a new app package, then follow the live stream and the initial version build until it completes or fails',
+        )
         .option('--title <title>', 'App title')
         .option('--description <description>', 'App description')
-        .option('--modules <modules>', 'Comma-separated modules: service,assistant,content-app,examples')
+        .option(
+            '--modules <modules>',
+            'Comma-separated modules to add: service (app-gateway runtime and routes), assistant (assistant chat UI), ' +
+                'content-app (content types, interactions and a process under /content), examples (sample resources). ' +
+                'service is always included; with no --modules the app has only service',
+        )
         .option('--no-create-version', 'Do not build an initial immutable version')
-        .option('--no-follow', 'Return after starting instead of following live progress')
+        .option(
+            '--no-follow',
+            'Print workflow_id and run_id and return; check later with "apps scaffolds status <workflowId> <runId>"',
+        )
         .action(async (appName: string, options) => scaffoldApp(program, appName, options));
+    scaffolds
+        .command('status <workflowId> <runId>')
+        .description(
+            'Show a scaffold run and its initial version build (status, step, version_id, app_url) once it has started',
+        )
+        .action(async (workflowId: string, runId: string) => scaffoldStatus(program, workflowId, runId));
 
-    const developmentTasks = apps.command('development-tasks').description('Manage App Builder development tasks');
+    const developmentTasks = apps
+        .command('development-tasks')
+        .description(
+            'Manage App Builder development tasks. A task is an agent/<taskId> branch: create the branch first, ' +
+                'then start the App Builder on it',
+        );
     developmentTasks
         .command('create <appId> <taskId>')
-        .description('Create an agent/* task branch from an existing ref')
+        .description('Create an agent/* task branch from an existing ref (step 1 of a new task)')
         .requiredOption('--source-ref <ref>', 'Source branch, tag, or commit')
         .action(async (appId: string, taskId: string, options) =>
             createDevelopmentTask(program, appId, taskId, options),
         );
     developmentTasks
         .command('start <appId> <taskId>')
-        .description('Start the policy-controlled App Builder parent and follow its live agent stream')
+        .description(
+            'Start the App Builder on an existing agent/<taskId> branch and follow its live agent stream. ' +
+                'The branch must exist: run "create" first, or pass --source-ref to create it in this call',
+        )
         .requiredOption('--prompt <prompt>', 'Development request')
-        .requiredOption('-e, --env <environment>', 'Execution environment id')
-        .requiredOption('-m, --model <model>', 'Model id')
-        .option('--source-ref <ref>', 'Create the task branch from this ref before starting')
+        .option(
+            '-e, --env <environment>',
+            'Execution environment id (see "envs"). Default: the project agent inference profile environment',
+        )
+        .option(
+            '-m, --model <model>',
+            'Model id, as listed by "envs models <environment>". Default: the project agent inference profile model',
+        )
+        .option(
+            '--source-ref <ref>',
+            'Create the task branch from this ref before starting. Only for a new task: it fails if the branch exists',
+        )
         .option('--build-version', 'Build one immutable version after validation')
         .option('--no-follow', 'Return after starting instead of following live progress')
         .action(async (appId: string, taskId: string, options) =>
@@ -202,5 +237,6 @@ ${JSON.stringify(exampleManifest, null, 2)}
             await updateAppInstallationSettings(program, appId, options);
         });
 
+    registerAppVersionCommands(apps, program);
     registerAppCredentialsCommands(apps, program);
 }

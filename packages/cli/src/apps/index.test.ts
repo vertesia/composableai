@@ -74,6 +74,35 @@ afterEach(async () => {
     await rm(directory, { recursive: true, force: true });
 });
 
+describe('scaffolds create help', () => {
+    it('explains what each scaffold module adds', () => {
+        const program = new Command();
+        registerAppsCommand(program);
+        const apps = program.commands.find((c) => c.name() === 'apps');
+        const scaffolds = apps?.commands.find((c) => c.name() === 'scaffolds');
+        const create = scaffolds?.commands.find((c) => c.name() === 'create');
+        const description = create?.options.find((o) => o.long === '--modules')?.description ?? '';
+        for (const module of ['service', 'assistant', 'content-app', 'examples']) {
+            expect(description).toMatch(new RegExp(`${module} \\(`));
+        }
+    });
+});
+
+describe('development-tasks help', () => {
+    it('says the task branch must exist before start, and how to create it', () => {
+        const program = new Command();
+        registerAppsCommand(program);
+        const apps = program.commands.find((c) => c.name() === 'apps');
+        const tasks = apps?.commands.find((c) => c.name() === 'development-tasks');
+        const start = tasks?.commands.find((c) => c.name() === 'start');
+        const description = start?.description() ?? '';
+        expect(description).toMatch(/branch must exist/);
+        expect(description).toMatch(/run "create" first/);
+        const sourceRef = start?.options.find((o) => o.long === '--source-ref')?.description ?? '';
+        expect(sourceRef).toMatch(/fails if the branch exists/);
+    });
+});
+
 describe('instance selection', () => {
     it('preserves name lookup for the default and reads its permissions', async () => {
         await command('get-installation', 'crm');
