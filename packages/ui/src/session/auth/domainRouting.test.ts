@@ -12,8 +12,12 @@ import {
 } from './domainRouting';
 
 // Stub document.baseURI to simulate the served `<base href>` (deep gateway mount) or its absence.
-function setBaseURI(baseURI: string) {
-    (globalThis as { document?: unknown }).document = { baseURI };
+// Without a `<base>` element, `document.baseURI` is the document URL itself.
+function setBaseURI(baseURI: string, hasBaseElement = true) {
+    (globalThis as { document?: unknown }).document = {
+        baseURI,
+        querySelector: (selector: string) => (selector === 'base[href]' && hasBaseElement ? {} : null),
+    };
 }
 
 describe('domainRouting', () => {
@@ -56,8 +60,13 @@ describe('domainRouting', () => {
         });
 
         it('is the origin root for the Studio UI (no <base> element)', () => {
-            setBaseURI('https://studio.vertesia.io/');
+            setBaseURI('https://studio.vertesia.io/', false);
             expect(mountRootUrl().toString()).toBe('https://studio.vertesia.io/');
+        });
+
+        it('drops the current page path, query and hash when there is no <base> element', () => {
+            setBaseURI('https://cloud.vertesia.io/studio/build?a=acct1&p=proj1#versions', false);
+            expect(mountRootUrl().toString()).toBe('https://cloud.vertesia.io/');
         });
     });
 });
