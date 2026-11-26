@@ -16,6 +16,9 @@ export function getRequestInputDisplayText(message: AgentMessage): string {
     if (!toolApproval) return getAgentMessageText(message);
 
     const title = getString(toolApproval.tool_title) ?? getString(toolApproval.tool_name);
+    // What the tool itself says the call will do, when it declares a summary.
+    const summary = getString(toolApproval.summary);
+    if (title && summary) return `Approve ${title}: ${summary}?`;
     const target = formatToolApprovalTargetForDisplay(getString(toolApproval.target));
     if (title && target) return `Approve ${title}: ${target}?`;
 
@@ -34,7 +37,8 @@ function getString(value: unknown): string | undefined {
 }
 
 function formatToolApprovalActionSummaryForDisplay(actionSummary: string): string {
-    return actionSummary.replace(/:\s*name(?::|\s+)/i, ': ');
+    // Prompts posted before the workflow stopped writing it end with a placeholder that says nothing.
+    return actionSummary.replace(/:\s*name(?::|\s+)/i, ': ').replace(/:\s*tool action$/i, '');
 }
 
 function formatToolApprovalTargetForDisplay(target: string | undefined): string | undefined {

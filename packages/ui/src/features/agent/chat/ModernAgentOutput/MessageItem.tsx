@@ -32,6 +32,7 @@ import { PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget, isAskUserOptions } from '../AskUserWidget';
 import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
 import { useImageLightbox } from '../ImageLightbox';
+import { toolApprovalArgumentsFor } from '../ToolApprovalArguments';
 import { toolApprovalEditActionFor } from '../ToolApprovalEditAction';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
 import { ThinkingMessages } from '../WaitingMessages';
@@ -39,7 +40,11 @@ import { createAgentMarkdownAnchor } from './AgentMarkdownAnchor';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import { MessageDeliveryStatus } from './MessageDeliveryStatus';
 import { processContentForMarkdown } from './processContentForMarkdown';
-import { getToolApprovalResponseMetadata, sendRequestInputResponse } from './requestInputMessages';
+import {
+    getToolApprovalResponseMetadata,
+    isToolApprovalRequestInput,
+    sendRequestInputResponse,
+} from './requestInputMessages';
 import { getWorkstreamId } from './utils';
 
 /** className overrides for MessageItem — single source of truth for all className overrides. */
@@ -672,6 +677,7 @@ function MessageItemComponent({
                                     askUserUx.free_response?.metadata,
                                 )
                             }
+                            body={toolApprovalArgumentsFor(message)}
                             extraActions={toolApprovalEditActionFor(
                                 message,
                                 onSendMessage
@@ -772,8 +778,10 @@ function MessageItemComponent({
                         </div>
                     )}
 
-                    {/* Optional details section */}
-                    {message.details && (
+                    {/* Optional details section. Not on a tool approval prompt: the card shows the call's arguments,
+                        and the rest of its details is the run's context-window usage, which says nothing to an
+                        approver. */}
+                    {message.details && !isToolApprovalRequestInput(message) && (
                         <div className={cn('mt-2 print:hidden', resolvedStyle.detailsClassName)}>
                             <Button
                                 variant="unstyled"

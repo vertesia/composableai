@@ -33,6 +33,7 @@ import { AgentRunFeedback, agentMessageFeedbackId, isAgentMessageRatable } from 
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget, isAskUserOptions } from '../AskUserWidget';
 import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
+import { toolApprovalArgumentsFor } from '../ToolApprovalArguments';
 import { toolApprovalEditActionFor } from '../ToolApprovalEditAction';
 import { ThinkingMessages } from '../WaitingMessages';
 import {
@@ -619,6 +620,7 @@ function SummaryMessage({
                     onSubmit={(value) =>
                         sendRequestInputResponse(onSendMessage, message, value, uxConfig.free_response?.metadata)
                     }
+                    body={toolApprovalArgumentsFor(message)}
                     extraActions={toolApprovalEditActionFor(
                         message,
                         onSendMessage
@@ -2188,6 +2190,7 @@ function SummaryActivityRow({
                                                         uxConfig.free_response?.metadata,
                                                     )
                                                 }
+                                                body={toolApprovalArgumentsFor(message)}
                                                 extraActions={toolApprovalEditActionFor(
                                                     message,
                                                     onSendMessage
