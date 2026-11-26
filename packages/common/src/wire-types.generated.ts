@@ -2349,6 +2349,7 @@ export type SharePointContentSource = {
     collection_id?: string | undefined;
     sync: ContentSourceSyncSettings;
     sample_percent?: number | undefined;
+    sample_item_ids?: string[] | undefined;
     created_by?: string | undefined;
     updated_by?: string | undefined;
     created_at?: string | undefined;
@@ -2399,6 +2400,7 @@ export type GoogleDriveContentSource = {
     collection_id?: string | undefined;
     sync: ContentSourceSyncSettings;
     sample_percent?: number | undefined;
+    sample_item_ids?: string[] | undefined;
     created_by?: string | undefined;
     updated_by?: string | undefined;
     created_at?: string | undefined;
@@ -2416,6 +2418,7 @@ export type CreateGoogleDriveContentSourcePayload = {
     collection_id?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
     sample_percent?: number | undefined;
+    sample_item_ids?: string[] | undefined;
     type: 'google-drive';
     reader_binding_id: string;
     selection: GoogleDriveSelection;
@@ -2430,6 +2433,7 @@ export type BoxContentSource = {
     collection_id?: string | undefined;
     sync: ContentSourceSyncSettings;
     sample_percent?: number | undefined;
+    sample_item_ids?: string[] | undefined;
     created_by?: string | undefined;
     updated_by?: string | undefined;
     created_at?: string | undefined;
@@ -2464,6 +2468,7 @@ export type SharePointContentSourcePermissions = {
 export type ContentSourceSyncSettings = {
     enabled: boolean;
     interval_minutes: number;
+    notifications?: boolean | undefined;
 };
 /** Registers a content source. */
 export type CreateContentSourcePayload =
@@ -2478,6 +2483,7 @@ export type CreateSharePointContentSourcePayload = {
     collection_id?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
     sample_percent?: number | undefined;
+    sample_item_ids?: string[] | undefined;
     type: 'sharepoint';
     sharepoint_library_binding_id?: string | undefined;
     permissions?: SharePointPermissionOptions | undefined;
@@ -2493,6 +2499,7 @@ export type CreateBoxContentSourcePayload = {
     collection_id?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
     sample_percent?: number | undefined;
+    sample_item_ids?: string[] | undefined;
     type: 'box';
     folder_id?: string | undefined;
 };
@@ -2502,6 +2509,7 @@ export type UpdateContentSourcePayload = {
     description?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
     sample_percent?: number | null | undefined;
+    sample_item_ids?: string[] | undefined;
     permissions?: ContentSourcePermissionSettings | undefined;
     root_id?: string | undefined;
     folder_id?: string | undefined;
@@ -2514,11 +2522,19 @@ export type SyncContentSourcePayload = {
 export type ContentSourceStatus = {
     state: 'not_started' | 'running' | 'waiting' | 'stopped';
     permissions?: ContentSourcePermissionStatus | undefined;
+    notifications?: ContentSourceNotificationStatus | undefined;
     current_round?: ContentSourceSyncRound | undefined;
     last_round?: ContentSourceSyncRound | undefined;
     recent_rounds?: ContentSourceSyncRound[] | undefined;
     cursor_taken_at?: string | undefined;
     next_sync_at?: string | undefined;
+    error?: string | undefined;
+};
+/** Whether a source's system notifies Vertesia of changes, between its scheduled syncs. */
+export type ContentSourceNotificationStatus = {
+    state: 'active' | 'unavailable';
+    expires_at?: string | undefined;
+    last_notification_at?: string | undefined;
     error?: string | undefined;
 };
 export type ContentSourceSyncRound = {
@@ -2625,6 +2641,27 @@ export type InspectContentSourceSamplePayload = {
     folder_id?: string | undefined;
     folder_path?: string | undefined;
     limit?: number | undefined;
+};
+export type DiscoverContentSourceFilePayload = {
+    type: 'sharepoint';
+    oauth_provider_id: string;
+    site_url: string;
+    root_id: string;
+    item_id: string;
+};
+export type InspectContentSourceFilePayload = {
+    root_id?: string | undefined;
+    item_id: string;
+};
+/** A file of the system to read without importing it: its metadata, and a short-lived URL to download it. */
+export type ContentSourceFileDownload = {
+    id: string;
+    name: string;
+    size?: number | undefined;
+    mime_type?: string | undefined;
+    too_large: boolean;
+    max_bytes: number;
+    download_url?: string | undefined;
 };
 export type ContentSourceRoot = {
     id: string;
@@ -13149,6 +13186,7 @@ export interface ApiComponentTypes {
     EventIngestChannelArray: EventIngestChannelArray;
     ContentSourceSyncSettings: ContentSourceSyncSettings;
     ContentSourcePermissionSettings: ContentSourcePermissionSettings;
+    ContentSourceNotificationStatus: ContentSourceNotificationStatus;
     ContentSourcePermissionStatus: ContentSourcePermissionStatus;
     SharePointContentSource: SharePointContentSource;
     GoogleDriveContentSourcePermissions: GoogleDriveContentSourcePermissions;
@@ -13186,6 +13224,9 @@ export interface ApiComponentTypes {
     InspectContentSourceFoldersPayload: InspectContentSourceFoldersPayload;
     InspectContentSourceSchemaPayload: InspectContentSourceSchemaPayload;
     InspectContentSourceSamplePayload: InspectContentSourceSamplePayload;
+    DiscoverContentSourceFilePayload: DiscoverContentSourceFilePayload;
+    InspectContentSourceFilePayload: InspectContentSourceFilePayload;
+    ContentSourceFileDownload: ContentSourceFileDownload;
     ContentSourceRoot: ContentSourceRoot;
     ContentSourceRootsDiscovery: ContentSourceRootsDiscovery;
     ContentSourceFolder: ContentSourceFolder;

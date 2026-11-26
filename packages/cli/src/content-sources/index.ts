@@ -34,6 +34,7 @@ interface CreateOptions {
     description?: string;
     interval?: string;
     schedule?: boolean;
+    notifications?: boolean;
     json?: boolean;
 }
 
@@ -42,6 +43,7 @@ interface UpdateOptions {
     description?: string;
     interval?: string;
     schedule?: boolean;
+    notifications?: boolean;
     json?: boolean;
 }
 
@@ -60,7 +62,8 @@ function describeFolder(source: ExternalContentSource): string {
 }
 
 function describeSource(source: ExternalContentSource): string {
-    const schedule = source.sync.enabled ? `every ${source.sync.interval_minutes} min` : 'manual';
+    const scheduled = source.sync.enabled ? `every ${source.sync.interval_minutes} min` : 'manual';
+    const schedule = source.sync.enabled && source.sync.notifications ? `${scheduled} + on change` : scheduled;
     return `${source.id}  ${source.name}  [${source.type}]  ${describeFolder(source)}  (${source.location_root}, ${schedule})`;
 }
 
@@ -158,6 +161,14 @@ function describeStatus(status: ContentSourceStatus): string {
     if (status.next_sync_at) {
         lines.push(`next sync: ${status.next_sync_at}`);
     }
+    if (status.notifications) {
+        const { state, last_notification_at, error } = status.notifications;
+        lines.push(
+            `change notifications: ${state}` +
+                (last_notification_at ? ` · last ${last_notification_at}` : '') +
+                (error ? ` · ${error}` : ''),
+        );
+    }
     return lines.join('\n');
 }
 
@@ -180,18 +191,24 @@ function parseType(value: string): SourceType {
     return type;
 }
 
-/** The sync settings an option set asks for, or undefined when it names none. */
+/**
+ * The sync settings an option set asks for, or undefined when it names none. Change notifications are sent only
+ * when the option names them, so an update of the interval leaves them as they are.
+ */
 function syncSettings(
-    options: { interval?: string; schedule?: boolean },
+    options: { interval?: string; schedule?: boolean; notifications?: boolean },
     current?: ContentSourceSyncSettings,
 ): ContentSourceSyncSettings | undefined {
     const interval = parseInterval(options.interval);
-    if (interval === undefined && options.schedule === undefined) {
+    if (interval === undefined && options.schedule === undefined && options.notifications === undefined) {
         return undefined;
     }
     return {
-        enabled: options.schedule ?? current?.enabled ?? interval !== undefined,
+        // Asking for notifications turns the schedule on, whatever it was: they are only sent with it. Asking for an
+        // interval turns it on for a new source.
+        enabled: options.schedule ?? (options.notifications === true || (current?.enabled ?? interval !== undefined)),
         interval_minutes: interval ?? current?.interval_minutes ?? 60,
+        ...(options.notifications === undefined ? {} : { notifications: options.notifications }),
     };
 }
 
@@ -307,6 +324,10 @@ export function registerContentSourcesCommand(program: Command) {
         .option('--description <text>', 'Description')
         .option('--interval <minutes>', 'Minutes between scheduled syncs (enables the schedule)')
         .option('--schedule', 'Enable the schedule, every 60 minutes unless --interval is given')
+        .option(
+            '--notifications',
+            'SharePoint: also sync as soon as the library notifies a change (enables the schedule)',
+        )
         .option('--json', 'Print the created source as JSON')
         .action(async (options: CreateOptions) => {
             const source = await (await getClient(program)).contentSources.create(createPayload(options));
@@ -325,10 +346,13 @@ export function registerContentSourcesCommand(program: Command) {
         .option('--interval <minutes>', 'Minutes between scheduled syncs')
         .option('--schedule', 'Enable the schedule')
         .option('--no-schedule', 'Disable the schedule: sync only on request')
+        .option('--notifications', 'SharePoint: also sync as soon as the library notifies a change')
+        .option('--no-notifications', 'Sync on the schedule only')
         .option('--json', 'Print the updated source as JSON')
         .action(async (id: string, options: UpdateOptions) => {
             const client = await getClient(program);
-            const wantsSync = options.interval !== undefined || options.schedule !== undefined;
+            const wantsSync =
+                options.interval !== undefined || options.schedule !== undefined || options.notifications !== undefined;
             const current = wantsSync ? (await client.contentSources.retrieve(id)).sync : undefined;
             const sync = syncSettings(options, current);
             const payload: UpdateContentSourcePayload = {
