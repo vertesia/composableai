@@ -15,7 +15,6 @@ export async function loadJSONWorkflowDefinition(
     file: string,
     skipValidation: boolean = false,
 ): Promise<DSLWorkflowSpec> {
-    return readFile(file, 'utf-8').then((content) => {
-        return skipValidation ? validateWorkflow(parseJSON(content)) : parseJSON(content);
-    });
+    const spec = parseJSON(await readFile(file, 'utf-8'));
+    return skipValidation ? spec : validateWorkflow(spec);
 }

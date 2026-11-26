@@ -8,7 +8,6 @@
     "references": [
         { "path": "../common" },
         { "path": "../client" },
-        { "path": "../../llumiverse/common" },
-        { "path": "../workflow" }
+        { "path": "../../llumiverse/common" }
     ]
 }
