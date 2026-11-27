@@ -2565,27 +2565,10 @@
     ],
     "if": {
       "required": [
-        "scim_provisioning"
-      ],
-      "properties": {
-        "scim_provisioning": {
-          "const": true
-        }
-      }
+        "properties"
+      ]
     },
     "then": {
-      "properties": {
-        "role": {
-          "const": "admin"
-        },
-        "properties": {
-          "propertyNames": {
-            "pattern": "^[^\\u0000]*$"
-          }
-        }
-      }
-    },
-    "else": {
       "properties": {
         "properties": {
           "propertyNames": {
@@ -2595,7 +2578,7 @@
       }
     },
     "additionalProperties": false,
-    "description": "A SCIM provisioning key (`scim_provisioning: true`) takes the `admin` role. A custom `c:<name>` role must be defined in the account. No key of `properties`, at any depth, may contain a NUL character."
+    "description": "A SCIM provisioning key (`scim_provisioning: true`) requires a role with `account:admin`. Only callers with account-granted `account:admin` may designate or manage it. A custom `c:<name>` role must be defined in the account. No key of `properties`, at any depth, may contain a NUL character."
   },
   "UpdateApiKeyPayload": {
     "type": "object",
@@ -2611,7 +2594,7 @@
       },
       "scim_provisioning": {
         "type": "boolean",
-        "description": "Enables SCIM provisioning on an existing admin key. Only `true` is accepted: disable or delete the key to revoke it."
+        "description": "Enables SCIM provisioning on an existing key whose role grants `account:admin`. Requires account-granted `account:admin`; change the role in a separate request. Only `true` is accepted: disable or delete the key to revoke it."
       },
       "properties": {
         "type": "object",
