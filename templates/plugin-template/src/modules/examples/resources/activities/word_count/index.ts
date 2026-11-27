@@ -5,7 +5,7 @@ export const WordCountActivity = {
     name: 'word_count',
     title: 'Word Count',
     description:
-        'Counts words and characters in a text string. Use this activity in DSL workflows to analyze text length.',
+        'Counts words and characters in a text string. Deprecated: remote activities only run in DSL workflows, which no longer start.',
     input_schema: {
         type: 'object',
         properties: {
