@@ -5121,6 +5121,10 @@ export type AgentRunnerOptions = {
     request_template?: string | undefined;
     checkpoint?: AgentCheckpointConfiguration | undefined;
     budget?: AgentBudgetConfiguration | undefined;
+    a2a?: AgentA2AOptions | undefined;
+};
+export type AgentA2AOptions = {
+    enabled?: boolean | undefined;
 };
 /**
  * A tool invocation executed before the first model turn of a conversation.
@@ -12600,6 +12604,7 @@ export interface ApiComponentTypes {
     GeneratedTestDataRecord: GeneratedTestDataRecord;
     GeneratedTestDataRecordArray: GeneratedTestDataRecordArray;
     AgentRunnerOptions: AgentRunnerOptions;
+    AgentA2AOptions: AgentA2AOptions;
     AgentSearchScope: AgentSearchScopeWire;
     AgentSearchScope_Collection: AgentSearchScope_Collection;
     SkillContextTriggers: SkillContextTriggers;

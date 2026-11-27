@@ -178,6 +178,7 @@ export type SkillContextTriggers = Wire.SkillContextTriggers;
  * These options control how interactions are exposed and executed in the Agent Runner.
  */
 export type AgentRunnerOptions = Wire.AgentRunnerOptions;
+export type AgentA2AOptions = Wire.AgentA2AOptions;
 
 // ================= User Communication Channels ====================
 // Import for local use

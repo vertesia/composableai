@@ -2227,6 +2227,10 @@ interface Checks {
         W.AgentRunnerOptions,
         z.infer<typeof import('./api-schemas/interaction.js').AgentRunnerOptionsSchema>
     >;
+    AgentA2AOptions: Same<
+        W.AgentA2AOptions,
+        z.infer<typeof import('./api-schemas/interaction.js').AgentA2AOptionsSchema>
+    >;
     InitialToolCall: Same<
         W.InitialToolCall,
         z.infer<typeof import('./api-schemas/interaction.js').InitialToolCallSchema>
@@ -6787,6 +6791,10 @@ interface Checks {
     'component:AgentRunnerOptions': Same<
         W.ApiComponentTypes['AgentRunnerOptions'],
         z.infer<typeof import('./api-schemas/interaction.js').AgentRunnerOptionsSchema>
+    >;
+    'component:AgentA2AOptions': Same<
+        W.ApiComponentTypes['AgentA2AOptions'],
+        z.infer<typeof import('./api-schemas/interaction.js').AgentA2AOptionsSchema>
     >;
     'component:AgentSearchScope': Same<
         W.ApiComponentTypes['AgentSearchScope'],
@@ -12029,6 +12037,7 @@ const checks: Checks = {
     ConversationVisibility: true,
     SkillContextTriggers: true,
     AgentRunnerOptions: true,
+    AgentA2AOptions: true,
     InitialToolCall: true,
     AsyncConversationExecutionPayload: true,
     AsyncInteractionExecutionPayload: true,
@@ -13250,6 +13259,7 @@ const checks: Checks = {
     'component:GeneratedTestDataRecord': true,
     'component:GeneratedTestDataRecordArray': true,
     'component:AgentRunnerOptions': true,
+    'component:AgentA2AOptions': true,
     'component:AgentSearchScope': true,
     'component:AgentSearchScope_Collection': true,
     'component:SkillContextTriggers': true,
@@ -14413,6 +14423,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2987);
+        expect(Object.keys(checks)).toHaveLength(2989);
     });
 });

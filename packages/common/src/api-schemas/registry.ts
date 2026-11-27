@@ -554,6 +554,7 @@ import {
 } from './inference-profile.js';
 import * as IntegrationSchemas from './integrations.js';
 import {
+    AgentA2AOptionsSchema,
     AgentResourceActionSchema,
     AgentResourceReferenceSchema,
     AgentResourceTypeSchema,
@@ -1337,6 +1338,7 @@ const INTERACTION_AUTHORING_SCHEMAS = {
 const AGENT_CONVERSATION_SCHEMAS = {
     // How an agent run is configured.
     AgentRunnerOptions: AgentRunnerOptionsSchema,
+    AgentA2AOptions: AgentA2AOptionsSchema,
     AgentSearchScope: AgentSearchScopeSchema,
     AgentSearchScope_Collection: AgentSearchScope_CollectionSchema,
     SkillContextTriggers: SkillContextTriggersSchema,
@@ -3683,6 +3685,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ComputeInteractionFacetPayload',
     'GenerateTestDataPayload',
     'AgentRunnerOptions',
+    'AgentA2AOptions',
     'SkillContextTriggers',
     'InitialToolCall',
     'ConversationStripOptions',

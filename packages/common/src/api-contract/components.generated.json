@@ -12629,6 +12629,10 @@
       "budget": {
         "$ref": "#/components/schemas/AgentBudgetConfiguration",
         "description": "Per-agent token budget. Field-wise it overrides the project's `configuration.agent.budget`; the per-run `budget` wins over both."
+      },
+      "a2a": {
+        "$ref": "#/components/schemas/AgentA2AOptions",
+        "description": "A2A exposure of this agent. Only used when is_agent is true. An agent is not exposed unless `a2a.enabled` is true."
       }
     },
     "additionalProperties": false,
@@ -12666,6 +12670,17 @@
     "type": "string",
     "const": "collection",
     "description": "Defines the scope for agent search operations."
+  },
+  "AgentA2AOptions": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether external A2A clients can delegate tasks to this agent through the A2A gateway. Absent means false."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Exposure of an agent over the A2A protocol."
   },
   "Interaction": {
     "type": "object",
