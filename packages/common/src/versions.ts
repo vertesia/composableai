@@ -22,8 +22,9 @@ export enum ApiVersions {
      *
      * Unlike the milestones above, this one is not about a route: it gates the enforcement policy
      * itself, so a caller pinned below it gets the old lenient behaviour on EVERY endpoint while
-     * the mismatch is logged. Sending nothing means the current API, so the strict reading is what
-     * a new caller gets by default and leniency has to be asked for.
+     * the mismatch is logged. A caller that sends no version gets the same lenient behaviour, so
+     * integrations built before this milestone keep working; strict validation has to be asked for
+     * by naming this version or a later one, which current clients do on every call.
      */
     REQUEST_CONTRACT_ENFORCEMENT_V1 = 20260803,
 }
