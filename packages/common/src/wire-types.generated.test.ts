@@ -4424,6 +4424,18 @@ interface Checks {
         W.IssueTokenRequest,
         z.infer<typeof import('./api-schemas/sts.js').IssueTokenRequestSchema>
     >;
+    TokenUpgradeRequest: Same<
+        W.TokenUpgradeRequest,
+        z.infer<typeof import('./api-schemas/sts.js').TokenUpgradeRequestSchema>
+    >;
+    TokenUpgradeResponse: Same<
+        W.TokenUpgradeResponse,
+        z.infer<typeof import('./api-schemas/sts.js').TokenUpgradeResponseSchema>
+    >;
+    TokenUpgradeErrorResponse: Same<
+        W.TokenUpgradeErrorResponse,
+        z.infer<typeof import('./api-schemas/sts.js').TokenUpgradeErrorResponseSchema>
+    >;
     IssueTokenResponse: Same<
         W.IssueTokenResponse,
         z.infer<typeof import('./api-schemas/sts.js').IssueTokenResponseSchema>
@@ -11169,6 +11181,18 @@ interface Checks {
         W.ApiComponentTypes['BinaryFileResponse'],
         z.infer<typeof import('./api-schemas/app-runtime.js').BinaryFileResponseSchema>
     >;
+    'component:TokenUpgradeRequest': Same<
+        W.ApiComponentTypes['TokenUpgradeRequest'],
+        z.infer<typeof import('./api-schemas/sts.js').TokenUpgradeRequestSchema>
+    >;
+    'component:TokenUpgradeResponse': Same<
+        W.ApiComponentTypes['TokenUpgradeResponse'],
+        z.infer<typeof import('./api-schemas/sts.js').TokenUpgradeResponseSchema>
+    >;
+    'component:TokenUpgradeErrorResponse': Same<
+        W.ApiComponentTypes['TokenUpgradeErrorResponse'],
+        z.infer<typeof import('./api-schemas/sts.js').TokenUpgradeErrorResponseSchema>
+    >;
     'component:SigningAlgorithm': Same<
         W.ApiComponentTypes['SigningAlgorithm'],
         z.infer<typeof import('./api-schemas/sts.js').SigningAlgorithmSchema>
@@ -12631,6 +12655,9 @@ const checks: Checks = {
     AgentTokenRequest: true,
     ServiceAccountTokenRequest: true,
     IssueTokenRequest: true,
+    TokenUpgradeRequest: true,
+    TokenUpgradeResponse: true,
+    TokenUpgradeErrorResponse: true,
     IssueTokenResponse: true,
     IssueTokenForbiddenResponse: true,
     IssueTokenUnavailableResponse: true,
@@ -14346,6 +14373,9 @@ const checks: Checks = {
     'component:AppInstallationWithManifestArray': true,
     'component:AppInstallationListEntryArray': true,
     'component:BinaryFileResponse': true,
+    'component:TokenUpgradeRequest': true,
+    'component:TokenUpgradeResponse': true,
+    'component:TokenUpgradeErrorResponse': true,
     'component:SigningAlgorithm': true,
     'component:ApiKeyTokenRequest': true,
     'component:UserTokenRequest': true,
@@ -14413,6 +14443,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2987);
+        expect(Object.keys(checks)).toHaveLength(2993);
     });
 });

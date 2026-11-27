@@ -170,15 +170,12 @@ export const CreateApiKeyPayloadSchema = ApiKeySchema.pick({
     .partial({ type: true, expires_at: true })
     .meta({
         id: 'CreateApiKeyPayload',
-        // One `if`/`then`/`else` carries both rules, since a component holds a single conditional: the key names of
-        // `properties` hold no NUL either way, and a SCIM provisioning key also takes the `admin` role.
-        ...conditional(
-            { required: ['scim_provisioning'], properties: { scim_provisioning: { const: true } } },
-            { properties: { role: { const: SystemRoles.admin }, ...PROPERTY_KEYS_WITHOUT_NUL } },
-            { properties: PROPERTY_KEYS_WITHOUT_NUL },
-        ),
+        // Role eligibility depends on resolved permissions (including account-local inheritance),
+        // so the server validates it rather than a static role-name constraint in the wire schema.
+        ...conditional({ required: ['properties'] }, { properties: PROPERTY_KEYS_WITHOUT_NUL }),
         description:
-            'A SCIM provisioning key (`scim_provisioning: true`) takes the `admin` role. A custom `c:<name>` role ' +
+            'A SCIM provisioning key (`scim_provisioning: true`) requires a role with `account:admin`. ' +
+            'Only callers with account-granted `account:admin` may designate or manage it. A custom `c:<name>` role ' +
             `must be defined in the account. ${PROPERTY_KEYS_DESCRIPTION}`,
     });
 
@@ -210,8 +207,9 @@ export const UpdateApiKeyPayloadSchema = ApiKeySchema.pick({
             .optional()
             .meta({
                 description:
-                    'Enables SCIM provisioning on an existing admin key. Only `true` is accepted: disable or delete ' +
-                    'the key to revoke it.',
+                    'Enables SCIM provisioning on an existing key whose role grants `account:admin`. ' +
+                    'Requires account-granted `account:admin`; change the role in a separate request. ' +
+                    'Only `true` is accepted: disable or delete the key to revoke it.',
             }),
     })
     .meta({

@@ -39,4 +39,8 @@ export enum SystemRoles {
     member = 'member', // can only access, but no specific permissions
     app_member = 'app_member', // used to mark an user have access to an application. does not provide any permission on its own
     content_superadmin = 'content_superadmin', // can see all content objects and collections
+    project_admin = 'project_admin', // project-grantable capabilities of admin
+    project_app_admin = 'project_app_admin', // project_admin without studio:access
+    project_auditor = 'project_auditor', // project-grantable capabilities of auditor
+    project_support = 'project_support', // project-grantable capabilities of support
 }

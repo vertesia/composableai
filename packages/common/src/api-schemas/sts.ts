@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ISSUE_TOKEN_FORBIDDEN_ERROR_CODES } from '../sts-errors.js';
+import { ISSUE_TOKEN_FORBIDDEN_ERROR_CODES, TOKEN_UPGRADE_ERROR_CODES } from '../sts-errors.js';
 import { SystemRolesSchema } from './apikey.js';
 
 const ALGORITHM_DESCRIPTION = 'Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility.';
@@ -112,6 +112,40 @@ export const IssueTokenResponseSchema = z
         expires_in: z.number().optional(),
     })
     .meta({ id: 'IssueTokenResponse' });
+
+export const TokenUpgradeRequestSchema = z.strictObject({}).meta({
+    id: 'TokenUpgradeRequest',
+    description:
+        "For migrations and JWT feature upgrades only. Optional empty body. The bearer JWT is the token to upgrade; the target is always this STS's current JWT version. This is not lifetime renewal.",
+});
+
+export const TokenUpgradeResponseSchema = z
+    .strictObject({
+        token: z.string().min(1).meta({
+            description:
+                'The original JWT when already current, or a replacement from a supported converter. Never extends the original expiration.',
+        }),
+        token_type: z.literal('Bearer'),
+        expires_in: z
+            .number()
+            .int()
+            .min(1)
+            .meta({ description: 'Remaining lifetime in seconds, not a renewed lifetime.' }),
+        jwt_version: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).meta({
+            description:
+                'Current JWT contract. An unchanged legacy token may omit its version claim; omission means 0.',
+        }),
+    })
+    .meta({ id: 'TokenUpgradeResponse' });
+
+export const TokenUpgradeErrorResponseSchema = z
+    .strictObject({
+        error: z.string(),
+        message: z.string(),
+        errorCode: z.enum(TOKEN_UPGRADE_ERROR_CODES),
+        jwt_version: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+    })
+    .meta({ id: 'TokenUpgradeErrorResponse' });
 
 export const IssueTokenForbiddenResponseSchema = z
     .strictObject({

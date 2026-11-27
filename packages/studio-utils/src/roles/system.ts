@@ -13,9 +13,30 @@ class OwnerRole extends OrgMemberRole {
     }
 }
 
-class AdminRole extends OrgMemberRole {
+// Use the current scope list, not the account: prefix: coarse permissions and account:member
+// remain project-grantable until their permission definitions change.
+class ProjectAdminRole extends OrgMemberRole {
     constructor() {
-        super(SystemRoles.admin, Object.values(Permission));
+        super(
+            SystemRoles.project_admin,
+            Object.values(Permission).filter((permission) => !ACCOUNT_SCOPED_PERMISSIONS.includes(permission)),
+        );
+    }
+}
+
+class AdminRole extends ProjectAdminRole {
+    constructor() {
+        super();
+        this.name = SystemRoles.admin;
+        for (const permission of ACCOUNT_SCOPED_PERMISSIONS) this.permissions.add(permission);
+    }
+}
+
+class ProjectAppAdminRole extends ProjectAdminRole {
+    constructor() {
+        super();
+        this.name = SystemRoles.project_app_admin;
+        this.permissions.delete(Permission.studio_access);
     }
 }
 
@@ -26,11 +47,11 @@ class AdminRole extends OrgMemberRole {
  * Keep in lockstep with `AdminRole`: `studio_access` is the only intended difference, so a new
  * permission added to the central enum reaches both roles automatically.
  */
-class AppAdminRole extends AdminRole {
+class AppAdminRole extends ProjectAppAdminRole {
     constructor() {
         super();
         this.name = SystemRoles.app_admin;
-        this.permissions.delete(Permission.studio_access);
+        for (const permission of ACCOUNT_SCOPED_PERMISSIONS) this.permissions.add(permission);
     }
 }
 
@@ -162,9 +183,22 @@ const READ_ONLY_AUDIT_PERMISSIONS = [
     Permission.agent_run_read,
 ];
 
-class ReadOnlyAuditRole extends OrgMemberRole {
+class ProjectReadOnlyAuditRole extends OrgMemberRole {
+    constructor(name: SystemRoles.project_auditor | SystemRoles.project_support) {
+        super(
+            name,
+            READ_ONLY_AUDIT_PERMISSIONS.filter((permission) => !ACCOUNT_SCOPED_PERMISSIONS.includes(permission)),
+        );
+    }
+}
+
+class ReadOnlyAuditRole extends ProjectReadOnlyAuditRole {
     constructor(name: SystemRoles.auditor | SystemRoles.support) {
-        super(name, READ_ONLY_AUDIT_PERMISSIONS);
+        super(name === SystemRoles.auditor ? SystemRoles.project_auditor : SystemRoles.project_support);
+        this.name = name;
+        for (const permission of READ_ONLY_AUDIT_PERMISSIONS) {
+            if (ACCOUNT_SCOPED_PERMISSIONS.includes(permission)) this.permissions.add(permission);
+        }
     }
 }
 
@@ -224,6 +258,10 @@ const systemRoles: Record<SystemRoles, Role> = {
     [SystemRoles.app_member]: new AppMemberRole(),
     [SystemRoles.member]: new OrgMemberRole(SystemRoles.member, []),
     [SystemRoles.content_superadmin]: new ContentSuperAdmin(),
+    [SystemRoles.project_admin]: new ProjectAdminRole(),
+    [SystemRoles.project_app_admin]: new ProjectAppAdminRole(),
+    [SystemRoles.project_auditor]: new ProjectReadOnlyAuditRole(SystemRoles.project_auditor),
+    [SystemRoles.project_support]: new ProjectReadOnlyAuditRole(SystemRoles.project_support),
 };
 
 export const systemPartition: RolePartition = {

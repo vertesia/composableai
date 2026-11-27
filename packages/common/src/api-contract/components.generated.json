@@ -722,7 +722,11 @@
       "billing",
       "member",
       "app_member",
-      "content_superadmin"
+      "content_superadmin",
+      "project_admin",
+      "project_app_admin",
+      "project_auditor",
+      "project_support"
     ]
   },
   "Permission": {
@@ -2561,27 +2565,10 @@
     ],
     "if": {
       "required": [
-        "scim_provisioning"
-      ],
-      "properties": {
-        "scim_provisioning": {
-          "const": true
-        }
-      }
+        "properties"
+      ]
     },
     "then": {
-      "properties": {
-        "role": {
-          "const": "admin"
-        },
-        "properties": {
-          "propertyNames": {
-            "pattern": "^[^\\u0000]*$"
-          }
-        }
-      }
-    },
-    "else": {
       "properties": {
         "properties": {
           "propertyNames": {
@@ -2591,7 +2578,7 @@
       }
     },
     "additionalProperties": false,
-    "description": "A SCIM provisioning key (`scim_provisioning: true`) takes the `admin` role. A custom `c:<name>` role must be defined in the account. No key of `properties`, at any depth, may contain a NUL character."
+    "description": "A SCIM provisioning key (`scim_provisioning: true`) requires a role with `account:admin`. Only callers with account-granted `account:admin` may designate or manage it. A custom `c:<name>` role must be defined in the account. No key of `properties`, at any depth, may contain a NUL character."
   },
   "UpdateApiKeyPayload": {
     "type": "object",
@@ -2607,7 +2594,7 @@
       },
       "scim_provisioning": {
         "type": "boolean",
-        "description": "Enables SCIM provisioning on an existing admin key. Only `true` is accepted: disable or delete the key to revoke it."
+        "description": "Enables SCIM provisioning on an existing key whose role grants `account:admin`. Requires account-granted `account:admin`; change the role in a separate request. Only `true` is accepted: disable or delete the key to revoke it."
       },
       "properties": {
         "type": "object",
@@ -29503,6 +29490,80 @@
   "BinaryFileResponse": {
     "type": "string",
     "format": "binary"
+  },
+  "TokenUpgradeRequest": {
+    "type": "object",
+    "additionalProperties": false,
+    "description": "For migrations and JWT feature upgrades only. Optional empty body. The bearer JWT is the token to upgrade; the target is always this STS's current JWT version. This is not lifetime renewal."
+  },
+  "TokenUpgradeResponse": {
+    "type": "object",
+    "properties": {
+      "token": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The original JWT when already current, or a replacement from a supported converter. Never extends the original expiration."
+      },
+      "token_type": {
+        "type": "string",
+        "const": "Bearer"
+      },
+      "expires_in": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Remaining lifetime in seconds, not a renewed lifetime."
+      },
+      "jwt_version": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Current JWT contract. An unchanged legacy token may omit its version claim; omission means 0."
+      }
+    },
+    "required": [
+      "token",
+      "token_type",
+      "expires_in",
+      "jwt_version"
+    ],
+    "additionalProperties": false
+  },
+  "TokenUpgradeErrorResponse": {
+    "type": "object",
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "message": {
+        "type": "string"
+      },
+      "errorCode": {
+        "type": "string",
+        "enum": [
+          "TOKEN_REQUIRED",
+          "TOKEN_INVALID",
+          "TOKEN_EXPIRED",
+          "TOKEN_UPGRADE_FORBIDDEN",
+          "TOKEN_UPGRADE_UNSUPPORTED",
+          "TOKEN_UPGRADE_NOT_POSSIBLE",
+          "TOKEN_VERSION_TOO_NEW_FOR_SERVER",
+          "TOKEN_UPGRADE_UNAVAILABLE"
+        ]
+      },
+      "jwt_version": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "error",
+      "message",
+      "errorCode",
+      "jwt_version"
+    ],
+    "additionalProperties": false
   },
   "SigningAlgorithm": {
     "type": "string",

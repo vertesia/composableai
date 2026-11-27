@@ -2661,6 +2661,9 @@ const APP_INSTALLATION_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const STS_SCHEMAS = {
+    TokenUpgradeRequest: StsSchemas.TokenUpgradeRequestSchema,
+    TokenUpgradeResponse: StsSchemas.TokenUpgradeResponseSchema,
+    TokenUpgradeErrorResponse: StsSchemas.TokenUpgradeErrorResponseSchema,
     SigningAlgorithm: StsSchemas.SigningAlgorithmSchema,
     ApiKeyTokenRequest: StsSchemas.ApiKeyTokenRequestSchema,
     UserTokenRequest: StsSchemas.UserTokenRequestSchema,
@@ -2817,6 +2820,9 @@ const API_SCHEMAS: Readonly<Record<string, z.ZodType>> = mergeComponentGroups(AP
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'TokenUpgradeRequest',
+    'TokenUpgradeResponse',
+    'TokenUpgradeErrorResponse',
     'BeginSharePointOrganizationLinkPayload',
     'CompleteSharePointOrganizationLinkPayload',
     'SharePointOrganizationLinkAttempt',

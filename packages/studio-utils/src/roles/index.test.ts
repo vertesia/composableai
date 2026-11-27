@@ -1,4 +1,4 @@
-import { Permission, SystemRoles } from '@vertesia/common';
+import { ACCOUNT_SCOPED_PERMISSIONS, Permission, SystemRoles } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
 import { AgentRunRoleNames } from './agent-runs.js';
 import { ContentRoleNames } from './content.js';
@@ -47,8 +47,8 @@ describe('getRoleByName', () => {
 describe('listRoles', () => {
     it('returns every role across all partitions', () => {
         const roles = listRoles();
-        // 17 system roles + 3 content roles + 2 agent-run roles
-        expect(roles).toHaveLength(22);
+        // 21 system roles + 3 content roles + 2 agent-run roles
+        expect(roles).toHaveLength(26);
     });
 
     it('lists roles in partition registration order (system, content)', () => {
@@ -56,21 +56,21 @@ describe('listRoles', () => {
         const systemCount = roles.filter((r) => r.domain === 'system').length;
         const contentCount = roles.filter((r) => r.domain === 'content').length;
         const agentRunCount = roles.filter((r) => r.domain === 'agent_runs').length;
-        expect(systemCount).toBe(17);
+        expect(systemCount).toBe(21);
         expect(contentCount).toBe(3);
         expect(agentRunCount).toBe(2);
 
-        // First 17 are system, next 3 are content, final 2 are agent runs
-        for (let i = 0; i < 17; i++) expect(roles[i].domain).toBe('system');
-        for (let i = 17; i < 20; i++) expect(roles[i].domain).toBe('content');
-        for (let i = 20; i < 22; i++) expect(roles[i].domain).toBe('agent_runs');
+        // First 21 are system, next 3 are content, final 2 are agent runs
+        for (let i = 0; i < 21; i++) expect(roles[i].domain).toBe('system');
+        for (let i = 21; i < 24; i++) expect(roles[i].domain).toBe('content');
+        for (let i = 24; i < 26; i++) expect(roles[i].domain).toBe('agent_runs');
     });
 });
 
 describe('listRolesByDomain', () => {
     it('returns only system roles for "system"', () => {
         const roles = listRolesByDomain('system');
-        expect(roles).toHaveLength(17);
+        expect(roles).toHaveLength(21);
         expect(roles.every((r) => r.domain === 'system')).toBe(true);
     });
 
@@ -98,7 +98,7 @@ describe('listRolesByDomain', () => {
 describe('listSystemRoles', () => {
     it('returns SystemRole instances', () => {
         const roles = listSystemRoles();
-        expect(roles).toHaveLength(17);
+        expect(roles).toHaveLength(21);
         expect(roles.every((r) => r instanceof SystemRole)).toBe(true);
     });
 
@@ -146,7 +146,7 @@ describe('listAbacRolesForScope', () => {
 describe('getAllRoleNames', () => {
     it('returns names of every registered role', () => {
         const names = getAllRoleNames();
-        expect(names).toHaveLength(22);
+        expect(names).toHaveLength(26);
         expect(names).toContain('owner');
         expect(names).toContain('content:reader');
         expect(names).toContain('agent_runs:reader');
@@ -207,6 +207,39 @@ describe('getDelegablePermissionsForRole', () => {
 });
 
 describe('Role instances', () => {
+    it.each([
+        [SystemRoles.project_admin, SystemRoles.admin],
+        [SystemRoles.project_app_admin, SystemRoles.app_admin],
+        [SystemRoles.project_auditor, SystemRoles.auditor],
+        [SystemRoles.project_support, SystemRoles.support],
+    ])('resolves %s to the project-grantable capabilities of %s', (projectName, accountName) => {
+        const projectRole = getRoleByName(projectName);
+        const accountRole = getRoleByName(accountName);
+        expect(projectRole).toBeInstanceOf(SystemRole);
+        expect(projectRole.name).toBe(projectName);
+        expect(projectRole.permissions).toEqual(
+            new Set(
+                [...accountRole.permissions].filter(
+                    (permission) => !ACCOUNT_SCOPED_PERMISSIONS.includes(permission as Permission),
+                ),
+            ),
+        );
+        expect(projectRole.hasPermission(Permission.account_member)).toBe(true);
+        for (const permission of ACCOUNT_SCOPED_PERMISSIONS) {
+            expect(projectRole.hasPermission(permission)).toBe(false);
+        }
+        expect(projectRole.permissions).not.toBe(accountRole.permissions);
+    });
+
+    it('preserves all existing owner/admin capabilities and app_admin exclusion of Studio access', () => {
+        const all = Object.values(Permission);
+        expect(getRoleByName(SystemRoles.owner).permissions).toEqual(new Set(all));
+        expect(getRoleByName(SystemRoles.admin).permissions).toEqual(new Set(all));
+        expect(getRoleByName(SystemRoles.app_admin).permissions).toEqual(
+            new Set(all.filter((permission) => permission !== Permission.studio_access)),
+        );
+    });
+
     it('SystemRole hasPermission for granted Permission', () => {
         const owner = getRoleByName(SystemRoles.owner);
         expect(owner.hasPermission(Permission.content_read)).toBe(true);

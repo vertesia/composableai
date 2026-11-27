@@ -8,11 +8,13 @@ const id = '0123456789abcdef01234567';
 const rules: Array<[ApiComponentName, string, Array<[string, unknown, boolean]>]> = [
     [
         'CreateApiKeyPayload',
-        'gives a SCIM provisioning key the admin role and refuses NUL property names',
+        'accepts SCIM role references for server permission validation and refuses NUL property names',
         [
             ['an admin SCIM key', { name: 'k', role: 'admin', scim_provisioning: true }, true],
             ['a member key', { name: 'k', role: 'member', scim_provisioning: false }, true],
-            ['a custom-role SCIM key', { name: 'k', role: 'c:ops', scim_provisioning: true }, false],
+            ['an app-admin SCIM key', { name: 'k', role: 'app_admin', scim_provisioning: true }, true],
+            ['a project-admin SCIM key', { name: 'k', role: 'project_admin', scim_provisioning: true }, true],
+            ['a custom-role SCIM key', { name: 'k', role: 'c:ops', scim_provisioning: true }, true],
             ['a property name', { name: 'k', role: 'member', properties: { team: 'a' } }, true],
             ['a NUL in a property name', { name: 'k', role: 'member', properties: { 'a\u0000': 1 } }, false],
             [

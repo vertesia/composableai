@@ -121,6 +121,7 @@ export type {
 export * from './sts-errors.js';
 export * from './sts-token-types.js';
 export * from './tenant.js';
+export * from './token-version.js';
 export * from './tool-execution.js';
 export * from './tools.js';
 export * from './training.js';
