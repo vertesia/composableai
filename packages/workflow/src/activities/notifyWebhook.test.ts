@@ -139,7 +139,11 @@ const createTestPayload = (
 };
 
 describe('Webhook should be notified', () => {
-    it('should send POST notification successfully', async () => {
+    it.each([
+        defaultParams.webhook,
+        { url: defaultParams.webhook },
+        { url: defaultParams.webhook, version: ApiVersions.COMPLETION_RESULT_V1 - 1 },
+    ])('should send the legacy POST format for webhook %j', async (webhook) => {
         // Mock successful response
         const mockResponse = {
             ok: true,
@@ -150,7 +154,7 @@ describe('Webhook should be notified', () => {
         };
         mockFetch.mockResolvedValueOnce(mockResponse as Response);
 
-        const payload = createTestPayload();
+        const payload = createTestPayload({ webhook });
         const res: NotifyWebhookResult = await testEnv.run(notifyWebhook, payload);
 
         // Verify fetch was called with correct parameters (old format wraps detail in result)
