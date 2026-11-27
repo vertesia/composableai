@@ -10418,6 +10418,7 @@ export type AgentTokenRequest = {
     project_id: string;
     name?: string | undefined;
     on_behalf_of: string;
+    ttl_seconds?: number | undefined;
 };
 export type ServiceAccountTokenRequest = {
     type: 'service_account';

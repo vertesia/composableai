@@ -147,3 +147,20 @@
 @utility cn-rtl-flip {
     @apply rtl:-scale-x-100;
 }
+
+/*
+ * A spinning icon (`<RefreshCw className="animate-spin" />`) turns its drawing inside its box, not the box
+ * itself. A turning square box reaches past its own corners, and that overflow counts toward a scrolling
+ * parent: next to the edge of one, it toggles the scrollbar many times a second, so the text around the icon
+ * rewraps and jitters. The view box's centre is the icon's centre.
+ */
+@layer utilities {
+    svg.animate-spin {
+        animation: none;
+    }
+    svg.animate-spin > * {
+        animation: var(--animate-spin);
+        transform-origin: center;
+        transform-box: view-box;
+    }
+}

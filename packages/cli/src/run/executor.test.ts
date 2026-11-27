@@ -21,3 +21,18 @@ describe('CLI model options', () => {
         },
     );
 });
+
+describe('CLI tags', () => {
+    it.each(['a,b', 'a, b', ' a ,b '])('splits %j into separate tags', async (tags) => {
+        const client = new VertesiaClient({
+            serverUrl: 'https://example.test',
+            storeUrl: 'https://example.test',
+            apikey: 'test',
+        });
+        const execute = vi
+            .spyOn(client.interactions, 'executeByName')
+            .mockResolvedValue({} as Awaited<ReturnType<typeof client.interactions.executeByName>>);
+        await new ExecutionRequest(client, 'speech', {}, { tags }).run();
+        expect(execute.mock.calls[0][1]?.tags).toEqual(['a', 'b']);
+    });
+});

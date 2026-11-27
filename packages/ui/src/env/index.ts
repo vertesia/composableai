@@ -42,7 +42,14 @@ export interface EnvProps {
     oauth?: {
         clientId: string;
         redirectUri: string;
+        /** The scopes to request. Defaults to `openid profile`, or to the `scope` of a client ID metadata document. */
         scopes?: string[];
+        /**
+         * Without `scopes`, request none, so the authorization server grants the client's registered default scopes
+         * (RFC 6749 §3.3). Only for a registered client ID whose registration sets them, such as an installed app's
+         * client. A client ID metadata document URL ignores it.
+         */
+        useClientDefaultScopes?: boolean;
         offlineAccess?: boolean;
         /** Logical authorization server, optionally including a tenant path; defaults to endpoints.sts. */
         issuer?: string;

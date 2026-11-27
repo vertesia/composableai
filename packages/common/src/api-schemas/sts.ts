@@ -70,6 +70,10 @@ export const AgentTokenRequestSchema = z
             description:
                 'User information.\n\nThe value of this field can be either:   - a signed Vertesia token used to verify the user context   - a user ID prefixed with `user:` to indicate the user on behalf of whom the agent is     acting.',
         }),
+        ttl_seconds: z.number().int().min(60).max(3600).optional().meta({
+            description:
+                'Shortens the lifetime of the issued token to this many seconds. It never extends it: the token expires at the earliest of this lifetime, the default lifetime and, when `on_behalf_of` is a signed token, the expiry of that token.',
+        }),
     })
     .meta({
         id: 'AgentTokenRequest',

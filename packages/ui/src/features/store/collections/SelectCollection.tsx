@@ -220,7 +220,10 @@ export function SelectCollection({
                             className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-50"
                         />
                         {isSearching && (
-                            <div className="me-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            // The clipping box stays still, so the turning corners never overflow a scrolling parent.
+                            <span className="me-2 inline-flex size-4 shrink-0 overflow-hidden rounded-full">
+                                <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            </span>
                         )}
                     </div>
                     <CommandEmpty>

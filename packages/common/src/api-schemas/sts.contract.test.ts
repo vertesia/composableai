@@ -63,6 +63,26 @@ describe('STS canonical contracts', () => {
         expect(validateApiRequest('IssueTokenRequest', { type: 'project', account_id: 'acc_1' }).valid).toBe(false);
     });
 
+    it('bounds the lifetime an agent token request may ask for', () => {
+        const agent = { type: 'agent', account_id: 'acc_1', project_id: 'proj_1', on_behalf_of: 'user:u_1' };
+        expect(validateApiRequest('IssueTokenRequest', agent).valid).toBe(true);
+        for (const ttl_seconds of [60, 660, 3600]) {
+            expect(validateApiRequest('IssueTokenRequest', { ...agent, ttl_seconds }).valid).toBe(true);
+        }
+        for (const ttl_seconds of [0, 59, 3601, 90.5, '120']) {
+            expect(validateApiRequest('IssueTokenRequest', { ...agent, ttl_seconds }).valid).toBe(false);
+        }
+        // Only the agent branch takes a lifetime.
+        expect(
+            validateApiRequest('IssueTokenRequest', {
+                type: 'project',
+                account_id: 'acc_1',
+                project_id: 'proj_1',
+                ttl_seconds: 120,
+            }).valid,
+        ).toBe(false);
+    });
+
     it('checks every documented response shape and forbidden error-code literal', () => {
         expect(validateApiResponse('IssueTokenResponse', { token: 'signed', token_type: 'Bearer' }).valid).toBe(true);
         expect(validateApiResponse('IssueTokenResponse', { token: 'signed', token_type: 'bearer' }).valid).toBe(false);

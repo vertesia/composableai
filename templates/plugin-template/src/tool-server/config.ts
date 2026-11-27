@@ -1,5 +1,4 @@
 import type { ToolServerConfig } from '@vertesia/tools-sdk';
-import { appOAuthScopes } from '../app-permissions.js';
 import {
     activities,
     dashboards,
@@ -20,7 +19,6 @@ import uiNavItems from './ui-nav-items.js';
 const CONFIG__SERVER_TITLE = 'Tool Server Template';
 
 export const ServerConfig = {
-    oauth_scopes: appOAuthScopes,
     disableHtml: true,
     title: CONFIG__SERVER_TITLE,
     prefix: '/api',

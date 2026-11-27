@@ -10,6 +10,7 @@ import {
     DEV_REGIONS,
     getConfigUrl,
     getServerUrls,
+    type Profile,
     type Region,
     shouldRefreshProfileToken,
 } from './index.js';
@@ -272,6 +273,14 @@ export interface CreateProfileOptions {
 export async function createProfile(name?: string, options: CreateProfileOptions = {}) {
     const format = (value: string) => value.trim();
     const questions: CliPromptQuestion[] = [];
+    if (name && config.hasProfile(name)) {
+        // The prompt below rejects an existing name; a name given on the command line must be rejected too, or
+        // the new credential silently overwrites the existing profile's.
+        console.error(
+            `A profile named "${name}" already exists. Use \`vertesia auth login ${name}\` to sign in again.`,
+        );
+        process.exit(1);
+    }
     if (!name) {
         questions.push({
             type: 'input',
@@ -357,7 +366,9 @@ export async function createProfile(name?: string, options: CreateProfileOptions
             type: 'select',
             name: 'region',
             message: 'Deployment region',
-            choices: regions,
+            // enquirer turns `choices` into choice objects in place: pass a copy, or `regions` (the shared
+            // AVAILABLE_REGIONS constant) no longer holds the answer and the region falls back to us1.
+            choices: [...regions],
             initial: regions[0],
         };
         const regionResponse = await prompt<{ region?: string }>(regionQuestion);
@@ -389,7 +400,9 @@ export async function createProfile(name?: string, options: CreateProfileOptions
         });
         await config.use(name).save();
     } else {
-        await config.createProfile(name, target, region).start(options.onResult);
+        await config
+            .createProfile(name, target, region, { account: options.account, project: options.project })
+            .start(options.onResult);
     }
 
     return name;
@@ -398,6 +411,7 @@ export async function createProfile(name?: string, options: CreateProfileOptions
 export async function loginProfile(name?: string, options: CreateProfileOptions & RefreshProfileOptions = {}) {
     const profile = name ? config.getProfile(name) : config.current;
     if (profile) {
+        assertLoginOptionsMatchProfile(profile, options);
         await refreshProfileAuthentication(profile.name, options.onResult, undefined, {
             projectId: options.project,
         });
@@ -462,7 +476,57 @@ async function selectProfile(message = 'Select the profile') {
     return response.name;
 }
 
-function readRegion(value: string | undefined, regions: Region[] = AVAILABLE_REGIONS): Region | undefined {
+/**
+ * `--target`, `--region` and `--account` only describe a new profile. Logging in to an existing one with
+ * different values would otherwise refresh the old endpoint silently, so reject the mismatch instead.
+ */
+function assertLoginOptionsMatchProfile(profile: Profile, options: CreateProfileOptions) {
+    const mismatches: string[] = [];
+    if (options.target || options.region) {
+        const target = options.target === 'production' ? 'prod' : options.target;
+        const region = readRegion(options.region, DEV_REGIONS);
+        if (options.region && !region) {
+            console.error(`Invalid region "${options.region}". Expected one of: ${DEV_REGIONS.join(', ')}`);
+            process.exit(1);
+        }
+        // A profile made from a custom URL stores the default region, so read it from the URL instead.
+        const profileRegion = readProfileRegion(profile);
+        if (target) {
+            let expectedUrl: string;
+            try {
+                expectedUrl = getConfigUrl(target, region ?? profileRegion ?? profile.region);
+            } catch (error: unknown) {
+                console.error(error instanceof Error ? error.message : String(error));
+                process.exit(1);
+            }
+            if (expectedUrl !== profile.config_url) {
+                mismatches.push(`target ${profile.config_url}`);
+            }
+        } else if (region && profileRegion && region !== profileRegion) {
+            // Regions only apply to preview and prod profiles; profileRegion is unset for the others.
+            mismatches.push(`region ${profileRegion}`);
+        }
+    }
+    if (options.account && options.account !== profile.account) {
+        mismatches.push(`account ${profile.account}`);
+    }
+    if (mismatches.length > 0) {
+        console.error(
+            `Profile "${profile.name}" already exists with ${mismatches.join(' and ')}. ` +
+                `Delete it with \`vertesia profiles delete ${profile.name}\` or log in with another profile name.`,
+        );
+        process.exit(1);
+    }
+}
+
+/** The region of a preview or prod profile, read from its config URL. */
+function readProfileRegion(profile: Profile): Region | undefined {
+    return DEV_REGIONS.find((region) =>
+        (['preview', 'prod'] as const).some((target) => getConfigUrl(target, region) === profile.config_url),
+    );
+}
+
+function readRegion(value: string | undefined, regions: readonly Region[] = AVAILABLE_REGIONS): Region | undefined {
     return regions.find((region) => region === value);
 }
 

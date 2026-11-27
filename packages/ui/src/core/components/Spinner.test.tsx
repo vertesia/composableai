@@ -23,3 +23,21 @@ describe('SpinnerIconProvider', () => {
         expect(screen.queryByRole('img', { name: 'Loading' })).toBeNull();
     });
 });
+
+describe('Spinner', () => {
+    it('turns its drawing around the centre, not its box, so it never overflows a scrolling parent', () => {
+        render(<Spinner />);
+        const svg = screen.getByRole('img', { name: 'Loading' });
+        expect(svg.getAttribute('class')).not.toMatch(/animate-/);
+        const drawing = svg.querySelector('g');
+        const classes = drawing?.getAttribute('class')?.split(' ') ?? [];
+        expect(classes).toEqual(
+            expect.arrayContaining([
+                'animate-[spin_0.8s_linear_infinite]',
+                'origin-center',
+                '[transform-box:view-box]',
+            ]),
+        );
+        expect(drawing?.querySelectorAll('circle, path')).toHaveLength(2);
+    });
+});

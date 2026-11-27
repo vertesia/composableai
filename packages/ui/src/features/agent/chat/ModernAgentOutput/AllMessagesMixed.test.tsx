@@ -32,6 +32,7 @@ function makeRouterContext(): RouterContext {
         navigate: vi.fn(),
         router: {
             navigate: vi.fn(),
+            resolvePath: (path: string) => path,
             getTopRouter: () => ({
                 navigator: {
                     addStickyParams: (href: string) => href,

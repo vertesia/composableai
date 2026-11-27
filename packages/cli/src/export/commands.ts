@@ -22,7 +22,7 @@ type ExportContentOptions = CliOptions<{
     content?: boolean;
     status?: boolean;
     properties?: boolean;
-    metadata?: boolean;
+    includeMetadata?: boolean;
     revision?: boolean;
     quiet?: boolean;
     json?: boolean;
@@ -50,7 +50,7 @@ export async function exportContentObjects(program: Command, options: ExportCont
                 content: options.content !== false,
                 status: options.status !== false,
                 properties: options.properties !== false,
-                metadata: getBooleanOption(options.metadata),
+                metadata: getBooleanOption(options.includeMetadata),
                 revision: options.revision !== false,
             },
         })

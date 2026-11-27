@@ -55,6 +55,11 @@ describe('runs --app', () => {
         expect(mocks.search).not.toHaveBeenCalled();
     });
 
+    it('refuses --inference-profile, which never filtered anything', async () => {
+        await expect(runs('--inference-profile', 'p1')).rejects.toThrow(/cannot filter by inference profile/);
+        expect(mocks.search).not.toHaveBeenCalled();
+    });
+
     it('refuses -q, which the server ignored, and says what to use instead', async () => {
         await expect(runs('-q', 'horse-tinder-p1-1')).rejects.toThrow(/Use --app <name> or --tags/);
         expect(mocks.search).not.toHaveBeenCalled();

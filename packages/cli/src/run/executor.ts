@@ -144,7 +144,10 @@ export class ExecutionRequest {
             configMode: convertConfigMode(options.configMode),
             run_data: convertRunData(options.runData),
         };
-        const tags = getStringOption(options.tags)?.split(/\s,*\s*/);
+        const tags = getStringOption(options.tags)
+            ?.split(',')
+            .map((tag) => tag.trim())
+            .filter(Boolean);
         const payload: InteractionExecutionPayload = {
             data: readInteractionData(this.data),
             config,

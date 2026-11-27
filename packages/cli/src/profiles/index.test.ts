@@ -88,3 +88,56 @@ describe.skipIf(process.platform === 'win32')('profile file permissions', () => 
         expect(modeOf(dir)).toBe(0o700);
     });
 });
+
+describe('default profile', () => {
+    const profile = (name: string) => ({
+        name,
+        account: 'account',
+        project: 'project',
+        config_url: 'https://ui.example.test/cli',
+        studio_server_url: 'https://api.example.test',
+        zeno_server_url: 'https://store.example.test',
+    });
+
+    async function loadConfig() {
+        const dir = join(mocks.home, '.vertesia');
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(
+            join(dir, 'profiles.json'),
+            JSON.stringify({ default: 'a', profiles: [profile('a'), profile('b')] }),
+        );
+        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        return await new Config().load();
+    }
+
+    function savedDefault() {
+        return JSON.parse(readFileSync(join(mocks.home, '.vertesia', 'profiles.json'), 'utf8')).default;
+    }
+
+    it('keeps the default when a --profile override refreshes its token', async () => {
+        const config = await loadConfig();
+        config.use('b', { explicit: true });
+        await config.updateProfile('b').persistConfigResult({ ...result, profile: 'b' });
+        expect(savedDefault()).toBe('a');
+        expect(config.current?.name).toBe('b');
+    });
+
+    it('makes a profile created under a --profile override the default', async () => {
+        const config = await loadConfig();
+        config.use('b', { explicit: true });
+        await new ConfigureProfile(config, profile('c'), true).persistConfigResult({ ...result, profile: 'c' });
+        expect(savedDefault()).toBe('c');
+    });
+
+    it('still selects the profile a login names', async () => {
+        const config = await loadConfig();
+        await config.updateProfile('b').persistConfigResult({ ...result, profile: 'b' });
+        expect(savedDefault()).toBe('b');
+    });
+
+    it('clears the default when the default profile is deleted', async () => {
+        const config = await loadConfig();
+        await config.remove('a').save();
+        expect(savedDefault()).toBeUndefined();
+    });
+});
