@@ -778,16 +778,17 @@ restore the last project for that account. These settings select a workspace; th
 
 Ask an account admin to create a public client in **Apps Accessing Vertesia** on the environment
 selected by `VITE_VERTESIA_STS_URL`. Use authorization code + PKCE, `token_endpoint_auth_method=none`,
-and allow the app's permissions. Enable the refresh-token grant and
-`offline_access` when the app requests session renewal. A client ID is public configuration; no
-client secret belongs in a `VITE_*` variable.
+and allow the app's permissions. Set them as the client's **default scopes** too: the app asks for its
+client's default scopes, and a client registered with none signs people in with no project data access.
+Enable the refresh-token grant and `offline_access` when the app requests session renewal. A client ID
+is public configuration; no client secret belongs in a `VITE_*` variable.
 
 Set the client ID and callback in `.env.app.local`, then restart `pnpm dev`:
 
 ```dotenv
 VITE_OAUTH_CLIENT_ID=my-app-development
 VITE_OAUTH_REDIRECT_URI=https://localhost:5173/
-# Optional: otherwise the client's registered scopes apply.
+# Optional: otherwise the client's registered default scopes apply.
 # VITE_OAUTH_SCOPES=openid profile account:member content:read offline_access
 ```
 

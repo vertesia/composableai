@@ -355,15 +355,17 @@ async function acquireToken(forceRefresh = false): Promise<string> {
     }
     // Only a callback can skip discovery, and a callback has returned above.
     if (!authorize) throw new Error('OAuth authorization endpoint unavailable');
-    // A registered client with no configured scopes names none: the authorization server then grants the
-    // client's registered default scopes, which follow the app's declared permissions.
     let scopes = config.scopes;
     if (clientId.startsWith('https://')) {
         const document = await (clientDocument ?? fetchClientDocument(clientId));
         if (!document.redirect_uris?.includes(redirectUri))
             throw new Error('Application CIMD does not allow this callback');
         scopes ??= document.scope ? document.scope.split(/\s+/) : ['openid', 'profile'];
+    } else if (!config.useClientDefaultScopes) {
+        scopes ??= ['openid', 'profile'];
     }
+    // Left undefined only for a registered client that asked for its registered default scopes: the request then
+    // names none, and the authorization server grants those.
     const explicitScope =
         current.searchParams.has('a') || current.searchParams.has('p')
             ? {

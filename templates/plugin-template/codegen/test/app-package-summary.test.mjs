@@ -105,9 +105,9 @@ test('standalone metadata requests sign-in and session renewal unless overridden
     }
 });
 
-test('browser sign-in leaves the scopes to the registered client unless overridden', () => {
-    assert.deepEqual(oauthScopeOverride(), { offlineAccess: true });
-    assert.deepEqual(oauthScopeOverride('  '), { offlineAccess: true });
+test('browser sign-in relies on the registered client scopes unless overridden', () => {
+    assert.deepEqual(oauthScopeOverride(), { useClientDefaultScopes: true, offlineAccess: true });
+    assert.deepEqual(oauthScopeOverride('  '), { useClientDefaultScopes: true, offlineAccess: true });
     assert.deepEqual(oauthScopeOverride('openid profile content:read'), {
         scopes: ['openid', 'profile', 'content:read'],
         offlineAccess: false,

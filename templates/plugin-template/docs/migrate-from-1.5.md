@@ -206,15 +206,19 @@ Keep the required `VITE_VERTESIA_STUDIO_URL`, `VITE_VERTESIA_ZENO_URL`, and `VIT
 
 Declare the app's permissions as `oauth_scopes` on its app record, not in code. Sign-in then works this way:
 
-- A registered client ID with no `VITE_OAUTH_SCOPES` requests no scopes, and gets the scopes registered
-  on its client, which follow the app record.
+- A registered client ID with no `VITE_OAUTH_SCOPES` asks for its client's registered default scopes
+  (`useClientDefaultScopes` in `src/ui/env.ts`). For an installed app's client these follow the app record. A
+  development client registered with no default scopes signs people in with no project data access, so set its
+  default scopes to the app's permissions.
 - The public CIMD endpoint (`api/oauth-client.ts`) requests sign-in and session renewal only, unless its
   deployment sets `APP_OAUTH_SCOPES`.
 - Set `VITE_OAUTH_SCOPES` only to request fewer scopes than the record allows.
 
 If your app was generated from an earlier 1.6 template and has `src/app-permissions.ts`, delete it and take
 the template's `vite.config.ts`, `src/ui/env.ts`, `src/ui/oauth-scope-override.ts`, `src/tool-server/config.ts`
-and `api/oauth-client.ts` wiring. Copy the scopes it declared to the app record first.
+and `api/oauth-client.ts` wiring. Copy the scopes it declared to the app record first: until you do, a scope it
+declares beyond the record is granted only to installations where someone approved it earlier, and dropped at
+sign-in everywhere else.
 
 To skip manual workspace selection during development, add:
 
