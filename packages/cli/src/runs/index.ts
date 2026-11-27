@@ -13,6 +13,7 @@ type RunHistoryOptions = CliOptions<{
     model?: string;
     app?: string;
     query?: string;
+    inferenceProfile?: string;
     after?: string;
     before?: string;
     format?: 'json' | 'jsonl';
@@ -36,6 +37,10 @@ export async function runHistory(program: Command, interactionId: string | undef
         throw new Error(
             '--query is not supported: the server does not filter runs by text. Use --app <name> or --tags.',
         );
+    }
+    if (options.inferenceProfile !== undefined) {
+        // Accepted only to answer it, like --query: it never filtered anything, so old scripts got every run.
+        throw new Error('--inference-profile is not supported: run searches cannot filter by inference profile.');
     }
     if (options.format !== 'json' && options.format !== 'jsonl') {
         throw new Error(`Unknown format:${options.format}. Supported formats: json, jsonl`);
@@ -92,6 +97,7 @@ export function registerRunsCommand(program: Command) {
         .option('-t, --tags [tags]', 'A comma separated list of tags to filter the run history')
         .option('--status [status]', 'A status to filter on')
         .option('-e, --env [environmentId]', 'Filter by environment')
+        .option('--inference-profile <id>', 'Not supported: run searches cannot filter by inference profile')
         .option('-m, --model [model]', 'Filter by model')
         .option('-a, --app <name>', 'Only the runs of this App Builder app (its name, as in "apps list")')
         .option('-q, --query [query]', 'Not supported: the server does not filter runs by text; use --app or --tags')
