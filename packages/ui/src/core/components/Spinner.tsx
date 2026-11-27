@@ -37,7 +37,7 @@ export function Spinner({ size, className }: SpinnerProps) {
     if (Icon) return <Icon className={clsx(sizeClass, className)} />;
     return (
         <svg
-            className={clsx('animate-[spin_0.8s_linear_infinite] text-info', sizeClass, className)}
+            className={clsx('text-info', sizeClass, className)}
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -45,12 +45,16 @@ export function Spinner({ size, className }: SpinnerProps) {
             aria-label="Loading"
         >
             <title>Loading</title>
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
+            {/* The drawing turns inside the box, not the box itself: a turning box's corners overflow it, which
+                toggles the scrollbar of a scrolling parent and moves the text around the spinner. */}
+            <g className="origin-center animate-[spin_0.8s_linear_infinite] [transform-box:view-box]">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+            </g>
         </svg>
     );
 }
