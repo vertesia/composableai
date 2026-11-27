@@ -355,12 +355,14 @@ async function acquireToken(forceRefresh = false): Promise<string> {
     }
     // Only a callback can skip discovery, and a callback has returned above.
     if (!authorize) throw new Error('OAuth authorization endpoint unavailable');
-    let scopes = config.scopes ?? ['openid', 'profile'];
+    // A registered client with no configured scopes names none: the authorization server then grants the
+    // client's registered default scopes, which follow the app's declared permissions.
+    let scopes = config.scopes;
     if (clientId.startsWith('https://')) {
         const document = await (clientDocument ?? fetchClientDocument(clientId));
         if (!document.redirect_uris?.includes(redirectUri))
             throw new Error('Application CIMD does not allow this callback');
-        if (!config.scopes && document.scope) scopes = document.scope.split(/\s+/);
+        scopes ??= document.scope ? document.scope.split(/\s+/) : ['openid', 'profile'];
     }
     const explicitScope =
         current.searchParams.has('a') || current.searchParams.has('p')
@@ -394,13 +396,15 @@ async function acquireToken(forceRefresh = false): Promise<string> {
     authorize.searchParams.set('state', next.state);
     authorize.searchParams.set('code_challenge_method', 'S256');
     authorize.searchParams.set('code_challenge', base64url(new Uint8Array(digest)));
-    authorize.searchParams.set(
-        'scope',
-        (config.offlineAccess
-            ? [...new Set([...scopes, 'offline_access'])]
-            : scopes.filter((s) => s !== 'offline_access')
-        ).join(' '),
-    );
+    if (scopes) {
+        authorize.searchParams.set(
+            'scope',
+            (config.offlineAccess
+                ? [...new Set([...scopes, 'offline_access'])]
+                : scopes.filter((s) => s !== 'offline_access')
+            ).join(' '),
+        );
+    }
     if (accountId) authorize.searchParams.set('account_id', accountId);
     if (projectId) authorize.searchParams.set('project_id', projectId);
     sessionStorage.setItem(TRANSACTION_KEY, JSON.stringify(next));

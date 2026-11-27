@@ -6,8 +6,8 @@ import test from 'node:test';
 import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 import { GET } from '../../api/oauth-client.ts';
-import { appOAuthPermissions, appOAuthScopes } from '../../src/app-permissions.ts';
 import { summarizeAppPackage } from '../../src/modules/service/scripts/app-package-summary.mjs';
+import { oauthScopeOverride } from '../../src/ui/oauth-scope-override.ts';
 
 test('summarizes lifecycle and event hooks by registered name', () => {
     const summary = summarizeAppPackage({
@@ -87,13 +87,13 @@ test('rejects malformed declared AppGen template metadata', () => {
     );
 });
 
-test('standalone metadata uses the shared permissions and declares session renewal', async () => {
+test('standalone metadata requests sign-in and session renewal unless overridden', async () => {
     const previous = process.env.APP_OAUTH_SCOPES;
     delete process.env.APP_OAUTH_SCOPES;
     try {
         const response = GET(new Request('https://app.example.test/.well-known/oauth-client/vertesia-app'));
         const metadata = await response.json();
-        assert.equal(metadata.scope, appOAuthScopes.join(' '));
+        assert.equal(metadata.scope, 'openid profile offline_access');
         assert.ok(metadata.grant_types.includes('refresh_token'));
         process.env.APP_OAUTH_SCOPES = 'openid profile content:read';
         const narrowed = await GET(new Request('https://app.example.test/')).json();
@@ -105,17 +105,17 @@ test('standalone metadata uses the shared permissions and declares session renew
     }
 });
 
-test('browser session renewal follows the effective app OAuth permissions', () => {
-    assert.deepEqual(appOAuthPermissions(), { scopes: appOAuthScopes, offlineAccess: true });
-    assert.deepEqual(appOAuthPermissions('openid profile content:read'), {
+test('browser sign-in leaves the scopes to the registered client unless overridden', () => {
+    assert.deepEqual(oauthScopeOverride(), { offlineAccess: true });
+    assert.deepEqual(oauthScopeOverride('  '), { offlineAccess: true });
+    assert.deepEqual(oauthScopeOverride('openid profile content:read'), {
         scopes: ['openid', 'profile', 'content:read'],
         offlineAccess: false,
     });
-    assert.deepEqual(appOAuthPermissions('  openid\t offline_access  '), {
+    assert.deepEqual(oauthScopeOverride('  openid\t offline_access  '), {
         scopes: ['openid', 'offline_access'],
         offlineAccess: true,
     });
-    assert.deepEqual(appOAuthPermissions(''), { scopes: [], offlineAccess: false });
 });
 
 test('packaged metadata handler runs without its original TypeScript dependency', async () => {
@@ -137,7 +137,7 @@ test('packaged metadata handler runs without its original TypeScript dependency'
         assert.equal(metadata.client_id, clientId);
         assert.deepEqual(metadata.redirect_uris, ['https://preview-app.vercel.app/app']);
         assert.equal(metadata.token_endpoint_auth_method, 'none');
-        assert.equal(metadata.scope, appOAuthScopes.join(' '));
+        assert.equal(metadata.scope, 'openid profile offline_access');
     } finally {
         rmSync(root, { recursive: true, force: true });
     }

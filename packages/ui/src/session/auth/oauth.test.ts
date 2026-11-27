@@ -369,6 +369,25 @@ it('supports a registered client ID without fetching a CIMD', async () => {
     expect(requests).toHaveLength(1);
 });
 
+it('leaves the scopes of a registered client without configured scopes to the authorization server', async () => {
+    const oauth = await setup();
+    const { Env } = await import('../../env');
+    Env.init({
+        name: 'registered',
+        version: '1',
+        type: 'production',
+        isLocalDev: false,
+        isDocker: false,
+        endpoints: { studio: issuer, zeno: issuer, sts: issuer },
+        oauth: { clientId: 'registered-client-id', redirectUri: `${origin}/app`, offlineAccess: true },
+    });
+    void oauth.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    const authorize = new URL(replace.mock.calls[0][0]);
+    expect(authorize.searchParams.get('client_id')).toBe('registered-client-id');
+    expect(authorize.searchParams.has('scope')).toBe(false);
+});
+
 it.each(['http://localhost:5173', 'https://localhost:5173'])(
     'completes a registered-client PKCE round trip on %s',
     async (localOrigin) => {
