@@ -778,16 +778,17 @@ restore the last project for that account. These settings select a workspace; th
 
 Ask an account admin to create a public client in **Apps Accessing Vertesia** on the environment
 selected by `VITE_VERTESIA_STS_URL`. Use authorization code + PKCE, `token_endpoint_auth_method=none`,
-and allow the scopes requested in `src/app-permissions.ts`. Enable the refresh-token grant and
-`offline_access` when the app requests session renewal. A client ID is public configuration; no
-client secret belongs in a `VITE_*` variable.
+and allow the app's permissions. Set them as the client's **default scopes** too: the app asks for its
+client's default scopes, and a client registered with none signs people in with no project data access.
+Enable the refresh-token grant and `offline_access` when the app requests session renewal. A client ID
+is public configuration; no client secret belongs in a `VITE_*` variable.
 
 Set the client ID and callback in `.env.app.local`, then restart `pnpm dev`:
 
 ```dotenv
 VITE_OAUTH_CLIENT_ID=my-app-development
 VITE_OAUTH_REDIRECT_URI=https://localhost:5173/
-# Optional: otherwise src/app-permissions.ts supplies the requested scopes.
+# Optional: otherwise the client's registered default scopes apply.
 # VITE_OAUTH_SCOPES=openid profile account:member content:read offline_access
 ```
 
@@ -834,8 +835,8 @@ Gateway and embedded sessions retain precedence over standalone build configurat
 
 The public metadata endpoint `api/oauth-client.ts` remains available for explicitly configured CIMD
 clients: use its full HTTPS URL as `VITE_OAUTH_CLIENT_ID` to opt in. It is never selected automatically.
-Its permissions come from `src/app-permissions.ts`, with `APP_OAUTH_SCOPES` as an optional override.
-Declare `account:member` with API permissions.
+It requests sign-in and session renewal only (`openid profile offline_access`); set `APP_OAUTH_SCOPES`
+to request project permissions, and declare `account:member` with them.
 
 Vercel builds use `/app/` asset URLs to match `dist/app/`. Gateway builds set `VITE_RELATIVE_BASE=1`
 to emit relative URLs; the gateway injects the versioned mount through `<base href>`. That explicit
@@ -852,7 +853,7 @@ After installing the app with its manifest callbacks, set these Vercel build env
 ```dotenv
 VITE_OAUTH_CLIENT_ID=vts_your_registered_client_id
 VITE_OAUTH_REDIRECT_URI=https://my-app.vercel.app/app
-# Optional: otherwise src/app-permissions.ts supplies the requested scopes.
+# Optional: otherwise the client's registered scopes apply.
 # VITE_OAUTH_SCOPES=openid profile account:member content:read offline_access
 ```
 
@@ -872,13 +873,13 @@ self-declares trust. Expired or invalid attestations are handled by the authoriz
 
 Declare `oauth_scopes` in the app manifest when embedding the app in a host that supports app-scoped sessions, for example `"oauth_scopes": ["content:read"]`. This is a request, not a grant: the host issues a short-lived token limited to the installed app, current project, declared scopes, and the user's permissions. It does not include a refresh token. Request a new token through the iframe authentication protocol before expiry. Hosts may temporarily enable legacy authentication for manifests without this field; migrate manifests before that compatibility option is disabled.
 
-### App permission presets
+### App permissions
 
-Creation defaults to **Sign-in only** (`openid`, `profile`, `offline_access`), with no project data access.
-Choose **Browse content** to add `content:read`, or **Edit content** to add `content:read` and `content:write`.
-Users still approve access, and tokens remain limited to their own permissions in the selected project.
+The app's permissions are declared once, as `oauth_scopes` on its app record in Vertesia, not in its code.
+Without them the app gets sign-in and session renewal only (`openid`, `profile`, `offline_access`), with no
+project data access. Users still approve access, and tokens remain limited to their own permissions in the
+selected project.
 
-Edit `src/app-permissions.ts` to change the requested scopes, then rebuild and publish the app.
-The UI, Vercel CIMD, and server package share this definition; managed gateway deployments read it
-from the published version manifest. Existing app versions keep their previous permissions.
-Vercel environment overrides (`APP_OAUTH_SCOPES` and `VITE_OAUTH_SCOPES`) must match if used.
+Gateway deployments and registered clients follow the record: change the permissions there, and the next
+sign-in uses them without a rebuild. A standalone CIMD deployment declares its own scopes in
+`APP_OAUTH_SCOPES`; set `VITE_OAUTH_SCOPES` to the same value if used.
