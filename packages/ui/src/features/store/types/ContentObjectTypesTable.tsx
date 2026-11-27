@@ -1,7 +1,7 @@
 import type { ContentObjectTypeItem, ContentObjectTypeStatus } from '@vertesia/common';
 import { Badge, Button, CopyButton, Table, TBody, THead, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { useNavigate } from '@vertesia/ui/router';
+import { NavLink, useNavigate } from '@vertesia/ui/router';
 import clsx from 'clsx';
 import { Filter } from 'lucide-react';
 import dayjs from '../../../core/utils/dayjs.js';
@@ -76,7 +76,9 @@ export function ContentObjectTypesTable({
                         )}
                         <td className="group/field">
                             <div className="flex items-center gap-2 min-w-0">
-                                <span className="truncate">{obj.name}</span>
+                                <NavLink href={`/types/${obj.id}`} className="truncate hover:underline">
+                                    {obj.name}
+                                </NavLink>
                                 <CopyButton content={obj.id} className={ACTION_BTN_CLASS} />
                                 {onFilter && (
                                     <Button

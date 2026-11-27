@@ -36,6 +36,15 @@ export function NestedNavigationContext({
                     const actualBasePath = options?.basePath ? joinPath(basePath, options.basePath) : basePath;
                     return ctx.navigate(to, { ...options, basePath: actualBasePath, isBasePathNested });
                 },
+                // Where navigate() above lands: a nested base path joins the enclosing router's, while
+                // an absolute one skips every enclosing nested router's base path.
+                resolvePath: (to: string) => {
+                    const path = joinPath(basePath, to);
+                    if (!isBasePathNested) {
+                        return path;
+                    }
+                    return ctx.resolvePath ? ctx.resolvePath(path) : ctx.router.resolvePath(path);
+                },
             }}
         >
             {wrapWithFixLinks(children ? children : <RouteComponent />)}
