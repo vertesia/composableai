@@ -45,7 +45,7 @@ export default function MessagesContainer({
     return (
         <div
             ref={containerRef}
-            className={`flex-1 min-h-0 h-full overflow-y-auto py-4 px-4 sm:px-6 lg:px-8 bg-white flex flex-col ${className || ''}`}
+            className={`flex-1 min-h-0 h-full overflow-y-auto py-4 px-4 sm:px-6 lg:px-8 bg-background flex flex-col ${className || ''}`}
             data-testid="messages-container"
         >
             {sortedMessages.length === 0 ? (
