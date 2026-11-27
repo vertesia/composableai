@@ -59,6 +59,7 @@ export function NestedRouterProvider({ routes, index, children, fixLinks = false
                           ? `/${nestedRouteMatch.remainingSegments.join('/')}`
                           : undefined,
                       navigate: (to: string, options?: NavigateOptions) => nestedRouter.navigate(to, options),
+                      resolvePath: (to: string) => nestedRouter.resolvePath(to),
                   }
                 : undefined,
         [ctx, nestedRouter, nestedRouteMatch],

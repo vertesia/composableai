@@ -44,6 +44,13 @@ export abstract class BaseRouter {
     }
 
     abstract navigate(path: string, options?: NavigateOptions): void;
+
+    /**
+     * The app path that {@link navigate} goes to for `path`: nested routers prefix their base path,
+     * the top router returns it unchanged. Use it to render the `href` of a link that navigates
+     * through this router, so open-in-new-tab lands where a click would.
+     */
+    abstract resolvePath(path: string): string;
 }
 
 export class Router extends BaseRouter {
@@ -109,6 +116,10 @@ export class Router extends BaseRouter {
     navigate(path: string, options?: NavigateOptions) {
         this.navigator.navigate(path, options);
     }
+
+    resolvePath(path: string): string {
+        return path;
+    }
 }
 
 export class NestedRouter extends BaseRouter {
@@ -126,6 +137,10 @@ export class NestedRouter extends BaseRouter {
         } else {
             return (this.parent as NestedRouter).getTopRouter();
         }
+    }
+
+    resolvePath(path: string): string {
+        return this.parent.resolvePath(joinPath(this.basePath, path));
     }
 
     navigate(path: string, options?: NavigateOptions | undefined): void {
@@ -165,6 +180,11 @@ export interface RouterContext {
     matchedRoutePath: string;
     remainingPath?: string;
     navigate: (path: string, options?: NavigateOptions) => void;
+    /**
+     * The app path {@link navigate} goes to for `path`, when it differs from `router.resolvePath`
+     * (a {@link NestedNavigationContext} that applies its own base path sets it).
+     */
+    resolvePath?: (path: string) => string;
 }
 
 const ReactRouterContext = createContext<RouterContext | undefined>(undefined);

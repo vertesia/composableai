@@ -80,27 +80,46 @@ export function NavLink({
     replace,
     skipStickyParams,
 }: NavLinkProps) {
-    const { router } = useRouterContext();
+    const ctx = useRouterContext();
+    const { router } = ctx;
     // Resolve internal URLs even when a target makes navigation native. New-tab links still need
     // the mount path and tenant sticky params, but must not be intercepted by the SPA router.
     const isAnchorOrEmpty = !href || href.startsWith('#');
     const isExternalUrl = /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//');
     const isInternalUrl = !isAnchorOrEmpty && !isExternalUrl;
     const isNativeNavigation = !!target && target !== '_self';
-    // Keep the rendered href under the served `<base href>` mount (correct middle-click / hover /
-    // open-in-new-tab); the onClick navigates via the router which applies the same rule. No-op when
-    // origin-served (Studio UI). Click handler below passes the raw `href` — navigate() re-bases it.
+    // Render the href the click navigates to, so middle-click, hover and open-in-new-tab agree with
+    // it: the nested routers' base paths (the click navigates through `router`, which adds them) and
+    // the served `<base href>` mount (no-op when origin-served, as in the Studio UI). The click
+    // handler below passes the raw `href`, and navigate() applies the same rules. A link with a
+    // target never goes through the router, so its href is already app-absolute.
+    const topRouter = router.getTopRouter();
+    // The top router navigates to `href` as given, so only a nested navigation needs resolving.
+    const routedHref =
+        isInternalUrl && !isNativeNavigation && !topLevelNav
+            ? (ctx.resolvePath?.(href) ?? router.resolvePath(href))
+            : href;
     const resolvedHref = isInternalUrl
-        ? withMountBasename(!skipStickyParams ? router.getTopRouter().navigator.addStickyParams(href) : href)
+        ? withMountBasename(!skipStickyParams ? topRouter.navigator.addStickyParams(routedHref) : routedHref)
         : href;
     const _onClick = (ev: MouseEvent) => {
-        if (ev.defaultPrevented || !isInternalUrl || isNativeNavigation || isModifiedClick(ev)) {
+        if (ev.defaultPrevented || isAnchorOrEmpty) {
+            return;
+        }
+        if (isExternalUrl || isNativeNavigation || isModifiedClick(ev)) {
+            // The browser opens the link natively (new tab, window or another site). Keep the click
+            // from reaching a clickable ancestor, such as a table row, which would also navigate.
+            ev.stopPropagation();
             return;
         }
         ev.stopPropagation();
         ev.preventDefault();
-        const actualRouter = topLevelNav ? router.getTopRouter() : router;
-        actualRouter.navigate(href, { replace: replace ?? clearBreadcrumbs });
+        const options = { replace: replace ?? clearBreadcrumbs };
+        if (topLevelNav) {
+            topRouter.navigate(href, options);
+        } else {
+            ctx.navigate(href, options);
+        }
     };
     return (
         <a href={resolvedHref} className={className} target={target} onClick={_onClick}>
