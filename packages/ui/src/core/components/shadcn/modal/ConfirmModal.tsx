@@ -73,7 +73,7 @@ export function ConfirmModal({
                         {title}
                     </ModalTitle>
                     <div className="mt-2">
-                        <div className="prose text-sm text-muted">{content}</div>
+                        <div className="prose dark:prose-invert text-sm text-muted">{content}</div>
                     </div>
                 </div>
             </div>

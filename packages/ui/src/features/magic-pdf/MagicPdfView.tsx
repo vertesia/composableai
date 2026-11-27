@@ -99,7 +99,10 @@ export function MagicPdfView({ objectId, onClose }: MagicPdfViewProps) {
                     )}
                 </div>
                 <div className="flex-1 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                    {/* A still clipping box: the turning corners never overflow a scrolling parent. */}
+                    <span className="inline-flex size-8 overflow-hidden rounded-full">
+                        <span className="animate-spin rounded-full size-8 border-b-2 border-primary" />
+                    </span>
                 </div>
             </div>
         );

@@ -206,7 +206,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                 ) : text ? (
                                     <div className="shadow rounded-md p-4 border border-border bg-card text-card-foreground">
                                         {seemsMarkdown ? (
-                                            <div className="prose prose-sm max-w-none prose-p:my-2 prose-pre:bg-muted prose-pre:my-2 prose-headings:text-info ">
+                                            <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-pre:bg-muted prose-pre:my-2 prose-headings:text-info">
                                                 <MarkdownRenderer>{text}</MarkdownRenderer>
                                             </div>
                                         ) : (
