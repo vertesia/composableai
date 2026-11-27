@@ -72,7 +72,7 @@ const projectsRoot = program
 projectsRoot
     .command('use [project]')
     .description('Switch the current profile to a project without running a browser OAuth flow')
-    .option('-p, --project <project>', 'The project ID to use')
+    .option('--project <project>', 'The project ID to use')
     .action((project: string | undefined, options: { project?: string }) =>
         useProject(program, options.project || project),
     );
@@ -98,7 +98,7 @@ authRoot
         '-r, --region <region>',
         `Deployment region for a new profile: ${AVAILABLE_REGIONS.join(', ')}. Defaults to ${DEFAULT_REGION}. Only applies to preview and prod targets.`,
     )
-    .option('-p, --project <project>', 'Authenticate for the given project ID')
+    .option('--project <project>', 'Authenticate for the given project ID')
     .option('-a, --account <account>', 'The account ID to use when creating a profile')
     .action(async (profile: string | undefined, options: CreateProfileOptions) => {
         await loginProfile(profile, options);
@@ -129,7 +129,7 @@ authRoot
 authRoot
     .command('refresh')
     .description("Refresh the auth token used by the current profile. An alias to 'vertesia profiles refresh'.")
-    .option('-p, --project <project>', 'Refresh the current profile token for the given project ID')
+    .option('--project <project>', 'Refresh the current profile token for the given project ID')
     .action((options: { project?: string }) => updateCurrentProfile(undefined, undefined, options));
 
 const authGit = authRoot
@@ -254,7 +254,7 @@ profilesRoot
         `Deployment region: ${AVAILABLE_REGIONS.join(', ')}. Defaults to ${DEFAULT_REGION}. Only applies to preview and prod targets.`,
     )
     .option('-k, --apikey <key>', 'The API key or auth token to use for the profile')
-    .option('-p, --project <project>', 'The project ID to use for the profile')
+    .option('--project <project>', 'The project ID to use for the profile')
     .option('-a, --account <account>', 'The account ID to use for the profile')
     .description('Create a new configuration profile')
     .action(async (name: string | undefined, options: CreateProfileOptions) => {
@@ -270,7 +270,7 @@ profilesRoot
 profilesRoot
     .command('refresh')
     .description('Refresh token for the current configuration profile')
-    .option('-p, --project <project>', 'Refresh the current profile token for the given project ID')
+    .option('--project <project>', 'Refresh the current profile token for the given project ID')
     .action(async (options: { project?: string }) => {
         await updateCurrentProfile(undefined, undefined, options);
     });

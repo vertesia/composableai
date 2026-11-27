@@ -85,19 +85,17 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
     const { objectId, vars, file, stream, interactive, output: outputFile } = options;
     console.debug('Executing interaction in workflow', workflowName, 'with options', options);
 
-    const mergedConfig = {
-        objectIds: normalizeStringArray(objectId),
-        vars: parseJsonObject(vars || '{}'),
-    } as ExecuteWorkflowPayload;
-
-    if (file) {
-        const payload = parseJsonObject(fs.readFileSync(file, 'utf-8'));
-        Object.assign(mergedConfig, payload);
+    // Flags given on the command line win over the file, and the file over the defaults.
+    const mergedConfig = (file ? parseJsonObject(fs.readFileSync(file, 'utf-8')) : {}) as ExecuteWorkflowPayload;
+    const objectIds = normalizeStringArray(objectId);
+    if (objectIds) {
+        mergedConfig.objectIds = objectIds;
     }
-
-    if (options.queue) {
-        mergedConfig.task_queue = options.queue;
+    if (vars !== undefined) {
+        mergedConfig.vars = parseJsonObject(vars || '{}');
     }
+    mergedConfig.vars ??= {};
+    mergedConfig.task_queue = getStringOption(options.queue) ?? mergedConfig.task_queue ?? 'zeno-content';
 
     const client = await getClient(program);
     const res = await client.workflows.execute(workflowName, {
