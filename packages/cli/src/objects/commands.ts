@@ -52,6 +52,7 @@ type CreateObjectOptions = CliOptions<{
     name?: string;
     type?: string;
     path?: string;
+    mime?: string;
     recursive?: boolean;
 }>;
 
@@ -62,7 +63,6 @@ type DownloadObjectOptions = CliOptions<{
 interface TypeChoice {
     name: string;
     value: string;
-    id?: string;
 }
 
 interface TypePromptState {
@@ -116,116 +116,87 @@ async function listFilesInDirectory(dir: string, recursive = false): Promise<str
 export async function createObject(program: Command, files: string[], options: CreateObjectOptions) {
     if (files.length === 0) {
         return 'No files specified';
-    } else if (files.length > 1) {
-        const types = await listTypes(program);
-        const questions = [];
-        if (!options.type) {
-            questions.push({
-                type: 'select',
-                name: 'type',
-                message: 'Select a Type',
-                choices: types,
-                limit: 10,
-                result(this: TypePromptState) {
-                    return this.focused.value;
-                },
-            });
-            const response = await prompt<{ type: string }>(questions);
-            options.type = response.type;
-        } else {
-            const searchedType = findTypeValue(types, options.type);
-            if (searchedType === TYPE_SELECTION_ERROR) {
-                console.error(`${options.type} is not an existing type`);
-                process.exit(2);
-            }
-            options.type = searchedType;
-        }
-
-        if (options.type === AUTOMATIC_TYPE_SELECTION) {
-            delete options.type;
-        }
-        return await createObjectFromFiles(program, files, options);
-    } else {
-        let file = files[0];
-        if (file.indexOf('*') > -1) {
-            const files = await glob(file);
-            return await createObjectFromFiles(program, files, options);
-        } else if (file.includes('://')) {
-            return await createObjectFromExternalSource(await getClient(program), file, options);
-        } else {
-            file = resolve(file);
-            let stats: Stats;
-            try {
-                stats = await stat(file);
-            } catch (err: unknown) {
-                if (hasErrorCode(err, 'ENOENT')) {
-                    console.error('No such file or directory: ', file);
-                    process.exit(2);
-                }
-                console.error(err);
-                process.exit(2);
-            }
-
-            const types = await listTypes(program);
-            const questions = [];
-            if (stats.isFile()) {
-                if (!options.type) {
-                    questions.push({
-                        type: 'select',
-                        name: 'type',
-                        message: 'Select a Type',
-                        choices: types,
-                        limit: 10,
-                        result(this: TypePromptState) {
-                            return this.focused.value;
-                        },
-                    });
-                    const response = await prompt<{ type: string }>(questions);
-                    options.type = response.type;
-                } else {
-                    const searchedType = findTypeValue(types, options.type);
-                    if (searchedType === TYPE_SELECTION_ERROR) {
-                        console.error(`${options.type} is not an existing type`);
-                        process.exit(2);
-                    }
-                    options.type = searchedType;
-                }
-
-                if (options.type === AUTOMATIC_TYPE_SELECTION) {
-                    delete options.type;
-                }
-
-                return await createObjectFromFile(program, file, options);
-            } else if (stats.isDirectory()) {
-                questions.push({
-                    type: 'select',
-                    name: 'type',
-                    message: 'Select a Type (the type will be used for all the files in the directory)',
-                    choices: types,
-                    limit: 10,
-                    result(this: TypePromptState) {
-                        return this.focused.value;
-                    },
-                });
-                const response = await prompt<{ type: string }>(questions);
-                options.type = response.type;
-
-                if (options.type === AUTOMATIC_TYPE_SELECTION) {
-                    delete options.type;
-                }
-
-                const files = await listFilesInDirectory(file, options.recursive ?? false);
-                return await createObjectFromFiles(program, files, options);
-            }
-        }
     }
+    const file = files[0];
+    if (files.length > 1) {
+        options.type = await resolveObjectType(program, options.type, 'Select a Type');
+        return await createObjectFromFiles(program, files, options);
+    }
+    if (file.indexOf('*') > -1 || file.includes('://')) {
+        // No prompt here, as before; an explicit --type still has to be resolved to a type id.
+        if (options.type) {
+            options.type = await resolveObjectType(program, options.type);
+        }
+        if (file.includes('://')) {
+            return await createObjectFromExternalSource(await getClient(program), file, options);
+        }
+        return await createObjectFromFiles(program, await glob(file), options);
+    }
+
+    const path = resolve(file);
+    let stats: Stats;
+    try {
+        stats = await stat(path);
+    } catch (err: unknown) {
+        if (hasErrorCode(err, 'ENOENT')) {
+            console.error('No such file or directory: ', path);
+            process.exit(2);
+        }
+        console.error(err);
+        process.exit(2);
+    }
+    if (stats.isFile()) {
+        options.type = await resolveObjectType(program, options.type, 'Select a Type');
+        return await createObjectFromFile(program, path, options);
+    }
+    if (stats.isDirectory()) {
+        options.type = await resolveObjectType(
+            program,
+            options.type,
+            'Select a Type (the type will be used for all the files in the directory)',
+        );
+        const dirFiles = await listFilesInDirectory(path, options.recursive ?? false);
+        return await createObjectFromFiles(program, dirFiles, options);
+    }
+}
+
+/**
+ * Resolves `--type` (a type name, a type id or "auto") to a type id, or prompts when it is not given.
+ * Returns undefined for "auto", which lets the server pick the type.
+ */
+async function resolveObjectType(program: Command, type: string | undefined, promptMessage?: string) {
+    const types = await listTypes(program);
+    let value: string;
+    if (type) {
+        value = findTypeValue(types, type);
+        if (value === TYPE_SELECTION_ERROR) {
+            console.error(`${type} is not an existing type`);
+            process.exit(2);
+        }
+    } else if (promptMessage) {
+        // `limit` is a select option enquirer's typings omit, so pass the question as a variable.
+        const question = {
+            type: 'select',
+            name: 'type',
+            message: promptMessage,
+            choices: types,
+            limit: 10,
+            result(this: TypePromptState) {
+                return this.focused.value;
+            },
+        };
+        value = (await prompt<{ type: string }>(question)).type;
+    } else {
+        return undefined;
+    }
+    return value === AUTOMATIC_TYPE_SELECTION ? undefined : value;
 }
 
 export async function createObjectFromFiles(program: Command, files: string[], options: CreateObjectOptions) {
     if (!options) options = {};
     // split in 10 chunks
     const chunks = splitInChunks(files, 10);
-    void Promise.all(
+    await Promise.all(
         chunks.map(async (chunk) => {
             for (const file of chunk) {
                 await createObjectFromFile(program, file, options);
@@ -251,7 +222,7 @@ export async function createObjectFromLocalFile(client: VertesiaClient, file: st
     const stream = createReadStream(file);
 
     const content = new NodeStreamSource(stream, fileName);
-    const mime_type = mime.getType(file);
+    const mime_type = getStringOption(options.mime) || mime.getType(file);
     if (mime_type) {
         content.type = mime_type;
     }
@@ -486,7 +457,8 @@ export async function listTypes(program: Command): Promise<TypeChoice[]> {
 }
 
 export function findTypeValue(types: TypeChoice[], name: string) {
-    const type = types.find((type) => type.name === name || type.id === name);
+    // `value` is the type id, or "auto" for the automatic choice.
+    const type = types.find((type) => type.name === name || type.value === name);
     return type ? type.value : TYPE_SELECTION_ERROR;
 }
 
