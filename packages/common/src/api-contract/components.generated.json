@@ -29728,6 +29728,12 @@
       },
       "email": {
         "type": "string"
+      },
+      "expires_at": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Latest expiry of the token, in seconds since the epoch. The token expires at this time or at the end of the default service account token lifetime, whichever comes first."
       }
     },
     "required": [

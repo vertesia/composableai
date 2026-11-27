@@ -91,6 +91,16 @@ export const ServiceAccountTokenRequestSchema = z
         roles: z.array(SystemRolesSchema).optional(),
         name: z.string().optional(),
         email: z.string().optional(),
+        expires_at: z
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .meta({
+                description:
+                    'Latest expiry of the token, in seconds since the epoch. The token expires at this time or at the end ' +
+                    'of the default service account token lifetime, whichever comes first.',
+            }),
     })
     .meta({ id: 'ServiceAccountTokenRequest', required: ['account_id', 'project_id', 'type'] });
 
