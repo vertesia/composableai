@@ -9,7 +9,6 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import { type ConfigEnv, defineConfig, type Plugin, type UserConfig } from 'vite';
 import serveStatic from 'vite-plugin-serve-static';
-import { appOAuthScopes } from './src/app-permissions';
 import branding from './src/modules/app/branding';
 
 /**
@@ -234,12 +233,13 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
             react(),
             createAppBrandingPlugin(branding, new URL('./src/modules/app/branding/index.ts', import.meta.url)),
             {
-                name: 'vertesia-app-permissions',
+                // The app's permissions are declared on its app record in Vertesia, not in its code.
+                name: 'vertesia-app-package-summary',
                 generateBundle() {
                     this.emitFile({
                         type: 'asset',
                         fileName: 'app-package-summary.json',
-                        source: JSON.stringify({ oauth_scopes: appOAuthScopes, ui: true }),
+                        source: JSON.stringify({ ui: true }),
                     });
                 },
             },

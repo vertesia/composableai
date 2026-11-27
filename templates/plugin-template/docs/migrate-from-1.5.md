@@ -17,6 +17,8 @@ follow [the 1.4 migration](migrate-from-1.4.md).
   Full component replacements are an explicit opt-in.
 - Account and project environment defaults select the development workspace before authentication,
   avoiding manual selection when the user has access.
+- The app's OAuth permissions are declared once, as `oauth_scopes` on its app record in Vertesia, not in
+  its code. Changing them needs no rebuild, and installing the app needs no admin approval.
 
 The migration requires a one-time update to template wiring. Afterward, keep your customizations in
 `src/modules/app/branding/` when upgrading the template. Preserve your app routes, resources, identity,
@@ -187,7 +189,7 @@ host-token authentication.
 
 For localhost, ask an account admin to create a public OAuth client in **Apps Accessing Vertesia**
 on the selected STS environment, with authorization code + PKCE and `token_endpoint_auth_method=none`.
-Allow the app's requested scopes and register its callback. Configure `.env.app.local`:
+Allow the app's permissions and register its callback. Configure `.env.app.local`:
 
 ```dotenv
 VITE_OAUTH_CLIENT_ID=my-app-development
@@ -201,6 +203,22 @@ same-origin callback. No client secret belongs in the browser. See the README's 
 authentication section for the complete hosting matrix, scope settings and preview callback rules.
 
 Keep the required `VITE_VERTESIA_STUDIO_URL`, `VITE_VERTESIA_ZENO_URL`, and `VITE_VERTESIA_STS_URL`.
+
+Declare the app's permissions as `oauth_scopes` on its app record, not in code. Sign-in then works this way:
+
+- A registered client ID with no `VITE_OAUTH_SCOPES` asks for its client's registered default scopes
+  (`useClientDefaultScopes` in `src/ui/env.ts`). For an installed app's client these follow the app record. A
+  development client registered with no default scopes signs people in with no project data access, so set its
+  default scopes to the app's permissions.
+- The public CIMD endpoint (`api/oauth-client.ts`) requests sign-in and session renewal only, unless its
+  deployment sets `APP_OAUTH_SCOPES`.
+- Set `VITE_OAUTH_SCOPES` only to request fewer scopes than the record allows.
+
+If your app was generated from an earlier 1.6 template and has `src/app-permissions.ts`, delete it and take
+the template's `vite.config.ts`, `src/ui/env.ts`, `src/ui/oauth-scope-override.ts`, `src/tool-server/config.ts`
+and `api/oauth-client.ts` wiring. Copy the scopes it declared to the app record first: until you do, a scope it
+declares beyond the record is granted only to installations where someone approved it earlier, and dropped at
+sign-in everywhere else.
 
 To skip manual workspace selection during development, add:
 
@@ -263,6 +281,7 @@ against the deployment under test. Check these cases manually as well:
 - Standalone Firebase: the branded login appears locally and after deployment; provider sign-in returns
   successfully and STS accepts the token.
 - Embedded: the host handshake still authenticates without an unnecessary standalone redirect.
+- Permissions: a signed-in user's token carries the permissions on the app record, limited to the user's own.
 - Workspace defaults: a fresh browser session enters the configured accessible project; explicit URL
   selections win, and inaccessible projects still show recovery rather than granting access.
 - Loading: boot, authentication, permissions, and admin resource pages show the configured branding.

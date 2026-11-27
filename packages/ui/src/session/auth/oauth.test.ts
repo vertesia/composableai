@@ -362,6 +362,34 @@ it('supports a registered client ID without fetching a CIMD', async () => {
     expect(requests).toHaveLength(1);
 });
 
+it.each([
+    ['asks for sign-in by default', {}, 'openid profile offline_access'],
+    // A client registered with an allow-list and no default scopes still signs people in.
+    [
+        'keeps asking for sign-in with explicit scopes',
+        { useClientDefaultScopes: true, scopes: ['openid'] },
+        'openid offline_access',
+    ],
+    ['names no scope when it relies on its registered defaults', { useClientDefaultScopes: true }, null],
+])('a registered client without configured scopes %s', async (_name, options, expected) => {
+    const oauth = await setup();
+    const { Env } = await import('../../env');
+    Env.init({
+        name: 'registered',
+        version: '1',
+        type: 'production',
+        isLocalDev: false,
+        isDocker: false,
+        endpoints: { studio: issuer, zeno: issuer, sts: issuer },
+        oauth: { clientId: 'registered-client-id', redirectUri: `${origin}/app`, offlineAccess: true, ...options },
+    });
+    void oauth.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    const authorize = new URL(replace.mock.calls[0][0]);
+    expect(authorize.searchParams.get('client_id')).toBe('registered-client-id');
+    expect(authorize.searchParams.get('scope')).toBe(expected);
+});
+
 it.each(['http://localhost:5173', 'https://localhost:5173'])(
     'completes a registered-client PKCE round trip on %s',
     async (localOrigin) => {

@@ -2,7 +2,7 @@ import branding from 'virtual:vertesia-branding';
 import { Env, isLoopbackHostname, normalizeHostname } from '@vertesia/ui/env';
 import { requestIframeHostAuthToken } from '@vertesia/ui/shell';
 
-import { appOAuthPermissions } from '../app-permissions.js';
+import { oauthScopeOverride } from './oauth-scope-override.js';
 
 const appTitle = branding.title ?? branding.name;
 
@@ -82,7 +82,7 @@ Env.init(
                   redirectUri:
                       import.meta.env.VITE_OAUTH_REDIRECT_URI?.trim() ||
                       `${window.location.origin}${import.meta.env.DEV ? '/' : '/app'}`,
-                  ...appOAuthPermissions(import.meta.env.VITE_OAUTH_SCOPES),
+                  ...oauthScopeOverride(import.meta.env.VITE_OAUTH_SCOPES),
               }
             : undefined,
         authTokenProvider: requestIframeHostAuthToken,

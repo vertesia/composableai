@@ -1,9 +1,10 @@
-import { appOAuthScopes } from '../src/app-permissions.ts';
+/** Sign-in and session renewal only. Set `APP_OAUTH_SCOPES` to request project permissions. */
+const DEFAULT_SCOPE = 'openid profile offline_access';
 
 /** Public CIMD for this deployment. STS validates it and asks the user for consent. */
 export function GET(request: Request): Response {
     const origin = new URL(request.url).origin;
-    const scope = process.env.APP_OAUTH_SCOPES || appOAuthScopes.join(' ');
+    const scope = process.env.APP_OAUTH_SCOPES || DEFAULT_SCOPE;
     const softwareStatement = process.env.APP_OAUTH_SOFTWARE_STATEMENT?.trim();
     return Response.json(
         {
