@@ -30,7 +30,7 @@ export function getConfigFile(path?: string) {
 
 export type Region = 'us1' | 'eu1' | 'jp1' | 'dev1';
 export const DEFAULT_REGION: Region = 'us1';
-export const AVAILABLE_REGIONS: Region[] = ['us1', 'eu1', 'jp1'];
+export const AVAILABLE_REGIONS: readonly Region[] = ['us1', 'eu1', 'jp1'];
 
 /**
  * Adds `dev1`, our own cluster rather than a customer deployment. Offered only in dev mode
@@ -38,7 +38,7 @@ export const AVAILABLE_REGIONS: Region[] = ['us1', 'eu1', 'jp1'];
  * choices use. The URL templates below already resolve it (`cloud.dev1`, `api.dev1`,
  * `sts.dev1`).
  */
-export const DEV_REGIONS: Region[] = [...AVAILABLE_REGIONS, 'dev1'];
+export const DEV_REGIONS: readonly Region[] = [...AVAILABLE_REGIONS, 'dev1'];
 
 export type ConfigUrlRef = 'local' | 'dev-main' | 'preview' | 'prod' | string;
 export function getConfigUrl(value: ConfigUrlRef, region: Region = DEFAULT_REGION): string {
@@ -296,11 +296,16 @@ export class Config {
     profiles: Profile[];
     isDevMode = false;
     explicitProfile = false;
+    /** The default written to profiles.json. A per-command `--profile` changes `current` but never this. */
+    private defaultName?: string;
+    /** The profile a `--profile` override selected; it survives the remove/add of a token refresh. */
+    private overrideName?: string;
 
     constructor(data?: ProfilesData) {
         this.profiles = data?.profiles || [];
         if (data?.default) {
             this.current = this.profiles.find((p) => p.name === data.default);
+            this.defaultName = this.current?.name;
         }
     }
 
@@ -319,6 +324,12 @@ export class Config {
             process.exit(1);
         }
         this.explicitProfile = Boolean(options.explicit);
+        if (this.explicitProfile) {
+            this.overrideName = name;
+        } else {
+            this.defaultName = name;
+            this.overrideName = undefined;
+        }
         return this;
     }
 
@@ -328,7 +339,8 @@ export class Config {
         } else {
             this.profiles.push(profile);
         }
-        this.use(profile.name);
+        // Keep a `--profile` override per-command: re-adding the refreshed override must not make it the default.
+        this.use(profile.name, { explicit: this.overrideName === profile.name });
         return this;
     }
 
@@ -357,13 +369,25 @@ export class Config {
             if (this.current?.name === name) {
                 this.current = undefined;
             }
+            if (this.defaultName === name) {
+                this.defaultName = undefined;
+            }
         }
         return this;
     }
 
-    createProfile(name: string, target: ConfigUrlRef, region: Region = DEFAULT_REGION) {
+    createProfile(
+        name: string,
+        target: ConfigUrlRef,
+        region: Region = DEFAULT_REGION,
+        refs: Partial<Pick<Profile, 'account' | 'project'>> = {},
+    ) {
         const config_url = getConfigUrl(target, region);
-        return new ConfigureProfile(this, { name, config_url, region, ...readKnownServerUrls(target, region) }, true);
+        const data: Partial<Profile> = { name, config_url, region, ...readKnownServerUrls(target, region) };
+        // `--account` / `--project` pick what the sign-in authorizes; unset, the sign-in result supplies them.
+        if (refs.account) data.account = refs.account;
+        if (refs.project) data.project = refs.project;
+        return new ConfigureProfile(this, data, true);
     }
 
     updateProfile(name: string) {
@@ -397,7 +421,7 @@ export class Config {
 
     async save() {
         writePrivateJsonFile(getConfigFile('profiles.json'), {
-            default: this.current?.name,
+            default: this.defaultName,
             profiles: await Promise.all(
                 this.profiles.map(async (profile) => {
                     if (profile.apikey && !(await hasStoredAccessToken(profile.name))) {
@@ -457,6 +481,7 @@ export class Config {
             } else {
                 this.current = undefined;
             }
+            this.defaultName = this.current?.name;
             if (needsSave) {
                 await this.save();
             }
