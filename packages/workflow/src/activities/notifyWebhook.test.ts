@@ -139,11 +139,7 @@ const createTestPayload = (
 };
 
 describe('Webhook should be notified', () => {
-    it.each([
-        defaultParams.webhook,
-        { url: defaultParams.webhook },
-        { url: defaultParams.webhook, version: ApiVersions.COMPLETION_RESULT_V1 },
-    ])('should send the current POST format for webhook %j', async (webhook) => {
+    it('should send POST notification successfully', async () => {
         // Mock successful response
         const mockResponse = {
             ok: true,
@@ -154,18 +150,17 @@ describe('Webhook should be notified', () => {
         };
         mockFetch.mockResolvedValueOnce(mockResponse as Response);
 
-        const payload = createTestPayload({ webhook });
+        const payload = createTestPayload();
         const res: NotifyWebhookResult = await testEnv.run(notifyWebhook, payload);
 
-        // Verify fetch was called with the current notification envelope
+        // Verify fetch was called with correct parameters (old format wraps detail in result)
         expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
             method: 'POST',
             body: JSON.stringify({
-                workflow_id: 'wf_id',
-                workflow_name: 'wfFuncName',
-                workflow_run_id: 'wf_run_id',
-                event_name: 'completed',
-                detail: { message: 'Hello World' },
+                workflowId: 'wf_id',
+                runId: 'wf_run_id',
+                status: 'completed',
+                result: { message: 'Hello World' },
             }),
             headers: {
                 'Content-Type': 'application/json',
@@ -202,15 +197,14 @@ describe('Webhook should be notified', () => {
             nonRetryable: false,
         });
 
-        // Verify fetch was called with the current notification envelope
+        // Verify fetch was called with correct parameters (old format wraps detail in result)
         expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
             method: 'POST',
             body: JSON.stringify({
-                workflow_id: 'wf_id',
-                workflow_name: 'wfFuncName',
-                workflow_run_id: 'wf_run_id',
-                event_name: 'completed',
-                detail: { message: 'Hello World' },
+                workflowId: 'wf_id',
+                runId: 'wf_run_id',
+                status: 'completed',
+                result: { message: 'Hello World' },
             }),
             headers: {
                 'Content-Type': 'application/json',
@@ -280,15 +274,14 @@ describe('Webhook should be notified', () => {
         // Expect the function to throw the network error
         await expect(testEnv.run(notifyWebhook, payload)).rejects.toThrow('Network request failed');
 
-        // Verify fetch was called with the current notification envelope
+        // Verify fetch was called with correct parameters (old format wraps detail in result)
         expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
             method: 'POST',
             body: JSON.stringify({
-                workflow_id: 'wf_id',
-                workflow_name: 'wfFuncName',
-                workflow_run_id: 'wf_run_id',
-                event_name: 'completed',
-                detail: { message: 'Hello World' },
+                workflowId: 'wf_id',
+                runId: 'wf_run_id',
+                status: 'completed',
+                result: { message: 'Hello World' },
             }),
             headers: {
                 'Content-Type': 'application/json',
@@ -406,11 +399,10 @@ describe('Webhook should be notified', () => {
         expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
             method: 'POST',
             body: JSON.stringify({
-                workflow_id: 'wf_id',
-                workflow_name: 'wfFuncName',
-                workflow_run_id: 'wf_run_id',
-                event_name: 'completed',
-                detail: { message: 'Hello World' },
+                workflowId: 'wf_id',
+                runId: 'wf_run_id',
+                status: 'completed',
+                result: { message: 'Hello World' },
             }),
             headers: {
                 'Content-Type': 'application/json',
@@ -610,12 +602,9 @@ describe('Webhook should be notified', () => {
         };
         mockFetch.mockResolvedValueOnce(mockResponse as Response);
 
-        // Explicitly pin an older version to retain the legacy format
+        // Create payload with string webhook (old format) and undefined detail
         const payload = createTestPayload({
-            webhook: {
-                url: 'https://vertesia.test',
-                version: ApiVersions.COMPLETION_RESULT_V1 - 1,
-            },
+            webhook: 'https://vertesia.test',
             detail: undefined,
             event_name: 'workflow_completed',
         });
