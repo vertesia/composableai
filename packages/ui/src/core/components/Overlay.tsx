@@ -109,7 +109,7 @@ function getAnimationProps(position: string) {
 }
 
 function getPositionClasses(position: string, width?: string, height?: string) {
-    const baseClasses = 'fixed bg-white shadow-lg p-4 relative';
+    const baseClasses = 'fixed bg-background text-foreground shadow-lg p-4 relative';
 
     // `position` is a PHYSICAL prop ('left' | 'right' | 'top' | 'bottom' |
     // 'center'), and the framer-motion animation x/y values above use physical
