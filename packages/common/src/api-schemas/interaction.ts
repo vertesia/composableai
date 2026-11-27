@@ -866,6 +866,18 @@ export const ResolvedRuntimeConfigSchema = z
     })
     .meta({ id: 'ResolvedRuntimeConfig', description: 'Resolved runtime configuration for an interaction' });
 
+export const AgentA2AOptionsSchema = z
+    .strictObject({
+        enabled: z
+            .boolean()
+            .meta({
+                description:
+                    'Whether external A2A clients can delegate tasks to this agent through the A2A gateway. Absent means false.',
+            })
+            .optional(),
+    })
+    .meta({ id: 'AgentA2AOptions', description: 'Exposure of an agent over the A2A protocol.' });
+
 export const AgentRunnerOptionsSchema = z
     .strictObject({
         is_agent: z
@@ -925,6 +937,10 @@ export const AgentRunnerOptionsSchema = z
         budget: AgentBudgetConfigurationSchema.meta({
             description:
                 "Per-agent token budget. Field-wise it overrides the project's `configuration.agent.budget`; the per-run `budget` wins over both.",
+        }).optional(),
+        a2a: AgentA2AOptionsSchema.meta({
+            description:
+                'A2A exposure of this agent. Only used when is_agent is true. An agent is not exposed unless `a2a.enabled` is true.',
         }).optional(),
     })
     .meta({
